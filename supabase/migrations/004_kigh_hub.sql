@@ -161,6 +161,7 @@ declare
   v_type text;
   v_agreed boolean;
   v_consent boolean;
+  v_h record;
 begin
   v_first := trim(p_data->>'first_name');
   v_last := trim(p_data->>'last_name');
