@@ -4,70 +4,83 @@ import { Separator } from '@/components/ui/separator'
 import { APP_NAME } from '@/lib/constants'
 import { KighLogo } from '@/components/KighLogo'
 
-const footerLinks = {
-  community: [
-    { to: '/events', label: 'Events' },
-    { to: '/calendar', label: 'Calendar' },
-    { to: '/announcements', label: 'Announcements' },
-    { to: '/sports-youth', label: 'Sports & Youth' },
-    { to: '/gallery', label: 'Gallery' },
-    { to: '/community-support', label: 'Community Support' },
-  ],
-  directory: [
-    { to: '/businesses', label: 'Business Directory' },
-    { to: '/membership', label: 'Membership' },
-    { to: '/support', label: 'Support KIGH' },
-    { to: '/resources', label: 'Resources' },
-    { to: '/governance', label: 'Governance' },
-    { to: '/new-to-houston', label: 'New to Houston' },
-    { to: '/about', label: 'About Us' },
-    { to: '/contact', label: 'Contact / Join' },
-  ],
-  submit: [
-    { to: '/events/submit', label: 'Submit an Event' },
-    { to: '/businesses/submit', label: 'List Your Business' },
-    { to: '/announcements/submit', label: 'Submit Announcement' },
-    { to: '/community-support/submit', label: 'Submit Fundraiser' },
-  ],
-  legal: [
-    { to: '/terms', label: 'Terms of Use' },
-    { to: '/privacy', label: 'Privacy Policy' },
-    { to: '/disclaimer', label: 'Disclaimer' },
-  ],
+const community = [
+  { to: '/events', label: 'Events' },
+  { to: '/calendar', label: 'Calendar' },
+  { to: '/announcements', label: 'Announcements' },
+  { to: '/sports-youth', label: 'Sports & Youth' },
+  { to: '/gallery', label: 'Gallery' },
+  { to: '/community-support', label: 'Community Support' },
+]
+
+const directoryResources = [
+  { to: '/businesses', label: 'Business Directory' },
+  { to: '/membership', label: 'Membership' },
+  { to: '/support', label: 'Support KIGH' },
+  { to: '/resources', label: 'Resources' },
+  { to: '/governance', label: 'Governance' },
+  { to: '/new-to-houston', label: 'New to Houston' },
+]
+
+const submitAdminLegal = [
+  { to: '/events/submit', label: 'Submit an Event' },
+  { to: '/businesses/submit', label: 'List Your Business' },
+  { to: '/announcements/submit', label: 'Submit Announcement' },
+  { to: '/community-support/submit', label: 'Submit Fundraiser' },
+  { to: '/admin/login', label: 'Admin Login' },
+  { to: '/terms', label: 'Terms' },
+  { to: '/privacy', label: 'Privacy' },
+  { to: '/disclaimer', label: 'Disclaimer' },
+]
+
+function LinkList({ items }: { items: { to: string; label: string }[] }) {
+  return (
+    <ul className="space-y-2.5">
+      {items.map((link) => (
+        <li key={link.to}>
+          <Link
+            to={link.to}
+            className="text-sm text-white/70 hover:text-white transition-colors leading-snug"
+          >
+            {link.label}
+          </Link>
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 export function Footer() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="bg-foreground text-white mt-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">
-          {/* Brand */}
-          <div className="lg:col-span-2">
-            <div className="flex items-center gap-3 mb-4">
-              <KighLogo withCard className="h-12 w-12 shrink-0 border-white/20 bg-white" imgClassName="max-h-10" />
+    <footer className="bg-foreground text-white mt-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
+          <div className="sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center gap-3 mb-5">
+              <KighLogo withCard className="h-11 w-11 shrink-0 border-white/20 bg-white" imgClassName="max-h-9" />
               <div>
-                <div className="font-bold text-white">{APP_NAME}</div>
-                <div className="text-xs text-white/60">Kenyans in Greater Houston · Houston, Texas</div>
+                <div className="font-bold text-white leading-tight">{APP_NAME}</div>
+                <div className="text-xs text-white/55 mt-0.5">Kenyans in Greater Houston</div>
               </div>
             </div>
-            <p className="text-sm text-white/70 leading-relaxed max-w-xs">
-              Your trusted digital hub connecting the Kenyan community in Houston and surrounding
-              areas. Events, businesses, announcements, and more.
+            <p className="text-sm text-white/65 leading-relaxed max-w-sm mb-6">
+              Your trusted hub for events, businesses, resources, and community connection in Greater Houston.
             </p>
-            <div className="mt-5 flex items-center gap-1.5 text-sm text-white/60">
-              <MapPin className="h-4 w-4 shrink-0 text-kenyan-gold-400" />
-              <span>Houston, Texas, USA</span>
+            <div className="space-y-2 text-sm text-white/60">
+              <div className="flex items-start gap-2">
+                <MapPin className="h-4 w-4 shrink-0 text-kenyan-gold-400 mt-0.5" />
+                <span>Houston, Texas, USA</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Mail className="h-4 w-4 shrink-0 text-kenyan-gold-400 mt-0.5" />
+                <a href="mailto:info@kenyancommunityhouston.com" className="hover:text-white transition-colors">
+                  info@kenyancommunityhouston.com
+                </a>
+              </div>
             </div>
-            <div className="mt-1.5 flex items-center gap-1.5 text-sm text-white/60">
-              <Mail className="h-4 w-4 shrink-0 text-kenyan-gold-400" />
-              <a href="mailto:info@kenyancommunityhouston.com" className="hover:text-white transition-colors">
-                info@kenyancommunityhouston.com
-              </a>
-            </div>
-            {/* Social */}
-            <div className="mt-5 flex items-center gap-3">
+            <div className="mt-6 flex items-center gap-2.5">
               {[
                 { Icon: Facebook, label: 'Facebook', href: '#' },
                 { Icon: Twitter, label: 'Twitter', href: '#' },
@@ -86,74 +99,29 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Community */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Community</h4>
-            <ul className="space-y-2">
-              {footerLinks.community.map((link) => (
-                <li key={link.to}>
-                  <Link to={link.to} className="text-sm text-white/65 hover:text-white transition-colors">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-kenyan-gold-400/90 mb-4">Community</h4>
+            <LinkList items={community} />
           </div>
 
-          {/* Directory */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Directory</h4>
-            <ul className="space-y-2">
-              {footerLinks.directory.map((link) => (
-                <li key={link.to}>
-                  <Link to={link.to} className="text-sm text-white/65 hover:text-white transition-colors">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <h4 className="font-semibold text-white mb-4 mt-6">Submit</h4>
-            <ul className="space-y-2">
-              {footerLinks.submit.map((link) => (
-                <li key={link.to}>
-                  <Link to={link.to} className="text-sm text-white/65 hover:text-white transition-colors">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-kenyan-gold-400/90 mb-4">Directory & resources</h4>
+            <LinkList items={directoryResources} />
           </div>
 
-          {/* Admin shortcut */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Admin</h4>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/admin/login" className="text-sm text-white/65 hover:text-white transition-colors">
-                  Admin Login
-                </Link>
-              </li>
-            </ul>
-            <h4 className="font-semibold text-white mb-4 mt-6">Legal</h4>
-            <ul className="space-y-2">
-              {footerLinks.legal.map((link) => (
-                <li key={link.to}>
-                  <Link to={link.to} className="text-sm text-white/65 hover:text-white transition-colors">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-kenyan-gold-400/90 mb-4">Submit · admin · legal</h4>
+            <LinkList items={submitAdminLegal} />
           </div>
         </div>
 
-        <Separator className="mt-10 mb-6 bg-white/15" />
+        <Separator className="mt-14 mb-6 bg-white/12" />
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/50">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/45">
           <p>© {year} {APP_NAME}. All rights reserved.</p>
-          <p>
-            Content moderated. Accuracy not guaranteed.{' '}
-            <Link to="/disclaimer" className="underline hover:text-white/80">See disclaimer.</Link>
+          <p className="text-center sm:text-right">
+            Content moderated.{' '}
+            <Link to="/disclaimer" className="underline hover:text-white/70">Disclaimer</Link>
           </p>
         </div>
       </div>

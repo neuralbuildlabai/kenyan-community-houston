@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Menu, X, ChevronDown, LogOut, LayoutDashboard } from 'lucide-react'
+import { Menu, ChevronDown, LogOut, LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import {
@@ -18,7 +18,6 @@ import { KighLogo } from '@/components/KighLogo'
 const navLinks = [
   { to: '/events', label: 'Events' },
   { to: '/calendar', label: 'Calendar' },
-  { to: '/announcements', label: 'Announcements' },
   { to: '/businesses', label: 'Businesses' },
   { to: '/community-support', label: 'Community Support' },
   { to: '/sports-youth', label: 'Sports & Youth' },
@@ -29,6 +28,7 @@ const moreLinks = [
   { to: '/membership', label: 'Membership' },
   { to: '/support', label: 'Support KIGH' },
   { to: '/resources', label: 'Resources' },
+  { to: '/governance', label: 'Governance' },
   { to: '/new-to-houston', label: 'New to Houston' },
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },
@@ -46,8 +46,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 shadow-sm">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Logo */}
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-2.5 shrink-0 min-w-0">
           <KighLogo withCard className="h-10 w-10 sm:h-11 sm:w-11 shrink-0" imgClassName="max-h-9 sm:max-h-10" />
           <span className="hidden font-bold text-primary sm:block leading-tight text-[15px] truncate">
@@ -56,15 +55,14 @@ export function Header() {
           </span>
         </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden lg:flex items-center gap-1">
+        <nav className="hidden xl:flex items-center gap-0.5">
           {navLinks.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
               className={({ isActive }) =>
                 cn(
-                  'px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                  'px-2.5 py-2 text-sm font-medium rounded-md transition-colors',
                   isActive
                     ? 'bg-primary/10 text-primary'
                     : 'text-foreground/70 hover:text-foreground hover:bg-muted'
@@ -76,11 +74,11 @@ export function Header() {
           ))}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-1">
+              <Button variant="ghost" size="sm" className="gap-1 ml-0.5">
                 More <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="min-w-[11rem]">
               {moreLinks.map((link) => (
                 <DropdownMenuItem key={link.to} asChild>
                   <Link to={link.to}>{link.label}</Link>
@@ -90,10 +88,9 @@ export function Header() {
           </DropdownMenu>
         </nav>
 
-        {/* Right actions */}
-        <div className="flex items-center gap-2">
-          <Button asChild size="sm" className="hidden sm:flex" variant="default">
-            <Link to="/events/submit">Submit Event</Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button asChild size="sm" className="hidden sm:inline-flex" variant="default">
+            <Link to="/events/submit">Submit event</Link>
           </Button>
 
           {isAdmin && profile ? (
@@ -120,10 +117,9 @@ export function Header() {
             </DropdownMenu>
           ) : null}
 
-          {/* Mobile menu */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden">
+              <Button variant="ghost" size="icon" className="xl:hidden">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Open menu</span>
               </Button>
@@ -149,11 +145,11 @@ export function Header() {
                 ))}
                 <div className="mt-4 border-t pt-4 flex flex-col gap-2">
                   <Button asChild className="w-full" onClick={() => setMobileOpen(false)}>
-                    <Link to="/events/submit">Submit an Event</Link>
+                    <Link to="/events/submit">Submit an event</Link>
                   </Button>
                   {isAdmin && (
                     <Button asChild variant="outline" className="w-full" onClick={() => setMobileOpen(false)}>
-                      <Link to="/admin/dashboard">Admin Dashboard</Link>
+                      <Link to="/admin/dashboard">Admin dashboard</Link>
                     </Button>
                   )}
                 </div>

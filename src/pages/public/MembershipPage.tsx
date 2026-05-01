@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, UserPlus } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { KighLogo } from '@/components/KighLogo'
 import { Button } from '@/components/ui/button'
@@ -119,27 +119,36 @@ export function MembershipPage() {
         title="Membership Registration"
         description="Register as an individual, family, or associate member of Kenyans in Greater Houston."
       />
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-start gap-5">
-          <KighLogo withCard className="h-20 w-20 shrink-0" imgClassName="max-h-[4.5rem]" />
-          <div>
-            <h1 className="text-3xl font-bold">Membership Registration</h1>
-            <p className="mt-2 text-muted-foreground leading-relaxed">
-              Join the Kenyan community in Greater Houston. Register as an individual, family, or associate member and stay connected to events, resources, and community support.
-            </p>
+
+      <div className="border-b bg-gradient-to-br from-primary/[0.07] via-background to-muted/40">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-5">
+            <KighLogo withCard className="h-[4.5rem] w-[4.5rem] shrink-0 shadow-sm" imgClassName="max-h-16" />
+            <div>
+              <div className="flex items-center gap-2 text-primary mb-2">
+                <UserPlus className="h-5 w-5" />
+                <span className="text-xs font-semibold uppercase tracking-wide">KIGH membership</span>
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">Membership registration</h1>
+              <p className="mt-3 text-muted-foreground leading-relaxed">
+                Join the Kenyan community in Greater Houston. Register as an individual, family, or associate member and stay connected to events, resources, and community support.
+              </p>
+            </div>
           </div>
         </div>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Annual dues</CardTitle>
-            <CardDescription>
-              Annual membership dues are <strong className="text-foreground">$20</strong>, due by <strong className="text-foreground">January 31</strong> each year. Payment is not collected on this website yet.
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12 space-y-8">
+        <Card className="shadow-sm border-primary/15 overflow-hidden">
+          <CardHeader className="bg-muted/30 border-b border-border/60">
+            <CardTitle className="text-lg">Annual membership dues</CardTitle>
+            <CardDescription className="text-base text-foreground/90 leading-relaxed">
+              Dues are <strong className="text-foreground">$20 per year</strong>, due by <strong className="text-foreground">January 31</strong>. Payment is not collected on this website — use official channels when you are ready.
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground border-t pt-4">
+          <CardContent className="pt-5 text-sm text-muted-foreground leading-relaxed">
             Membership dues are $20 annually and due by January 31. Payment instructions are available on the{' '}
-            <Link to="/support" className="text-primary font-medium underline-offset-4 hover:underline">
+            <Link to="/support" className="text-primary font-semibold underline-offset-4 hover:underline">
               Support KIGH
             </Link>{' '}
             page.
@@ -147,9 +156,10 @@ export function MembershipPage() {
         </Card>
 
         <form onSubmit={onSubmit} className="space-y-8">
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle>Primary member information</CardTitle>
+              <CardTitle className="text-lg">1. Primary member</CardTitle>
+              <CardDescription>Contact details for the main registrant.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
@@ -203,13 +213,14 @@ export function MembershipPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle>Membership type *</CardTitle>
+              <CardTitle className="text-lg">2. Membership type *</CardTitle>
+              <CardDescription>Individual, household, or associate.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent>
               <Select value={membershipType} onValueChange={(v) => setMembershipType(v as MembershipType)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="max-w-md"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="individual">Individual membership</SelectItem>
                   <SelectItem value="family_household">Family / household membership</SelectItem>
@@ -220,14 +231,17 @@ export function MembershipPage() {
           </Card>
 
           {membershipType === 'family_household' && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                <CardTitle>Family / household members</CardTitle>
+            <Card className="shadow-sm border-dashed border-primary/25 bg-muted/20">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div>
+                  <CardTitle className="text-lg">3. Household members</CardTitle>
+                  <CardDescription>Add everyone covered by this registration.</CardDescription>
+                </div>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
-                  className="gap-1"
+                  className="gap-1 shrink-0"
                   onClick={() => setHousehold((h) => [...h, emptyHousehold()])}
                 >
                   <Plus className="h-4 w-4" /> Add member
@@ -235,13 +249,13 @@ export function MembershipPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {household.map((row, idx) => (
-                  <div key={idx} className="rounded-lg border p-4 space-y-3 relative">
+                  <div key={idx} className="rounded-xl border bg-background p-4 sm:p-5 space-y-3 relative shadow-sm">
                     {household.length > 1 && (
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute top-2 right-2 h-8 w-8 text-destructive"
+                        className="absolute top-2 right-2 h-8 w-8 text-destructive hover:text-destructive"
                         onClick={() => setHousehold((h) => h.filter((_, i) => i !== idx))}
                         aria-label="Remove household member"
                       >
@@ -255,7 +269,7 @@ export function MembershipPage() {
                       </div>
                       <div className="space-y-1.5">
                         <Label>Relationship</Label>
-                        <Input value={row.relationship} onChange={(e) => updateHousehold(idx, { relationship: e.target.value })} />
+                        <Input value={row.relationship} onChange={(e) => updateHousehold(idx, { relationship: e.target.value })} placeholder="e.g. Spouse, Child" />
                       </div>
                       <div className="space-y-1.5">
                         <Label>Age group</Label>
@@ -284,14 +298,14 @@ export function MembershipPage() {
             </Card>
           )}
 
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle>Community interest areas</CardTitle>
-              <CardDescription>Select all that apply.</CardDescription>
+              <CardTitle className="text-lg">{membershipType === 'family_household' ? '4' : '3'}. Interests</CardTitle>
+              <CardDescription>Select all areas you care about.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2">
               {MEMBERSHIP_INTEREST_OPTIONS.map((opt) => (
-                <label key={opt} className="flex items-center gap-2 text-sm cursor-pointer">
+                <label key={opt} className="flex items-center gap-2.5 text-sm cursor-pointer rounded-lg border border-transparent px-2 py-1.5 hover:bg-muted/50">
                   <Checkbox
                     checked={interests.includes(opt)}
                     onCheckedChange={(v) => {
@@ -305,28 +319,31 @@ export function MembershipPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              <label className="flex items-start gap-3 text-sm cursor-pointer">
-                <Checkbox checked={agreed} onCheckedChange={(v) => setAgreed(v === true)} className="mt-0.5" />
+          <Card className="shadow-sm border-primary/10">
+            <CardHeader>
+              <CardTitle className="text-lg">{membershipType === 'family_household' ? '5' : '4'}. Agreements *</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <label className="flex items-start gap-3 text-sm cursor-pointer leading-relaxed">
+                <Checkbox checked={agreed} onCheckedChange={(v) => setAgreed(v === true)} className="mt-1" />
                 <span>
                   I agree to follow the KIGH{' '}
-                  <Link to="/governance" className="text-primary font-medium underline-offset-4 hover:underline">
+                  <Link to="/governance" className="text-primary font-semibold underline-offset-4 hover:underline">
                     Constitution, Bylaws, and Code of Conduct
                   </Link>
-                  . *
+                  .
                 </span>
               </label>
-              <label className="flex items-start gap-3 text-sm cursor-pointer">
-                <Checkbox checked={consent} onCheckedChange={(v) => setConsent(v === true)} className="mt-0.5" />
+              <label className="flex items-start gap-3 text-sm cursor-pointer leading-relaxed">
+                <Checkbox checked={consent} onCheckedChange={(v) => setConsent(v === true)} className="mt-1" />
                 <span>
-                  I consent to KIGH using my information for membership administration and community communication. *
+                  I consent to KIGH using my information for membership administration and community communication.
                 </span>
               </label>
             </CardContent>
           </Card>
 
-          <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={loading}>
+          <Button type="submit" size="lg" className="w-full sm:w-auto min-w-[200px] font-semibold" disabled={loading}>
             {loading ? 'Submitting…' : 'Submit registration'}
           </Button>
         </form>
