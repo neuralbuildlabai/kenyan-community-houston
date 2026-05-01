@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Calendar as CalIcon, MapPin, Video, ExternalLink, Download, CalendarDays } from 'lucide-react'
-import { parseISO, isBefore, startOfDay } from 'date-fns'
+import { parseISO } from 'date-fns'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -12,12 +12,13 @@ import { formatDate, formatDateShort } from '@/lib/utils'
 import { buildEventIcs, googleCalendarUrl } from '@/lib/calendarLinks'
 import type { Event } from '@/lib/types'
 import { PageLoader } from '@/components/LoadingSpinner'
+import { isEventPast } from '@/lib/eventDate'
 
 export function CalendarPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [category, setCategory] = useState('')
-  const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming')
+  const [tab, setTab] = useState<'upcoming' | 'past' | 'all'>('upcoming')
 
   useEffect(() => {
     async function load() {
@@ -33,18 +34,19 @@ export function CalendarPage() {
     load()
   }, [])
 
-  const today = startOfDay(new Date())
-
   const filtered = useMemo(() => {
     let list = events
     if (category) list = list.filter((e) => e.category === category)
-    list = list.filter((e) => {
-      const d = startOfDay(parseISO(e.start_date))
-      return tab === 'upcoming' ? !isBefore(d, today) : isBefore(d, today)
-    })
-    if (tab === 'past') list = [...list].reverse()
+    if (tab === 'upcoming') {
+      list = list.filter((e) => !isEventPast(e.start_date))
+    } else if (tab === 'past') {
+      list = list.filter((e) => isEventPast(e.start_date))
+      list = [...list].sort((a, b) => parseISO(b.start_date).getTime() - parseISO(a.start_date).getTime())
+    } else {
+      list = [...list].sort((a, b) => parseISO(a.start_date).getTime() - parseISO(b.start_date).getTime())
+    }
     return list
-  }, [events, category, tab, today])
+  }, [events, category, tab])
 
   function downloadIcs(ev: Event) {
     const ics = buildEventIcs({
@@ -96,6 +98,9 @@ export function CalendarPage() {
           <Button type="button" size="sm" variant={tab === 'past' ? 'default' : 'outline'} onClick={() => setTab('past')} className="rounded-full">
             Past
           </Button>
+          <Button type="button" size="sm" variant={tab === 'all' ? 'default' : 'outline'} onClick={() => setTab('all')} className="rounded-full">
+            All
+          </Button>
         </div>
 
         <div className="space-y-5">
@@ -118,7 +123,7 @@ export function CalendarPage() {
                 <CalIcon className="mx-auto h-11 w-11 text-primary/30 mb-3" />
                 <p className="font-medium text-foreground text-lg">Nothing on the calendar in this view yet</p>
                 <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto leading-relaxed">
-                  Try another category, switch to past events, or check back soon. You can also suggest an event for community review.
+                  Try another category, switch between Upcoming, Past, and All, or check back soon. You can also suggest an event for community review.
                 </p>
                 <div className="flex flex-wrap justify-center gap-2 mt-6">
                   <Button asChild variant="default" size="sm">
@@ -143,6 +148,9 @@ export function CalendarPage() {
                     <div className="p-5 sm:p-6 flex-1 space-y-3 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="secondary">{ev.category}</Badge>
+                        {isEventPast(ev.start_date) ? (
+                          <Badge variant="muted">Past event</Badge>
+                        ) : null}
                         {ev.is_virtual ? (
                           <Badge variant="outline" className="gap-1 border-primary/40">
                             <Video className="h-3 w-3" /> Virtual / Online

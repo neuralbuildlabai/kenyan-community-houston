@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { format } from 'date-fns'
 import { Link } from 'react-router-dom'
 import {
   Calendar,
@@ -31,12 +32,13 @@ export function HomePage() {
 
   useEffect(() => {
     async function load() {
+      const todayYmd = format(new Date(), 'yyyy-MM-dd')
       const [{ data: ev }, { data: ann }, { data: fund }] = await Promise.all([
         supabase
           .from('events')
           .select('*')
           .eq('status', 'published')
-          .gte('start_date', new Date().toISOString())
+          .gte('start_date', todayYmd)
           .order('start_date', { ascending: true })
           .limit(3),
         supabase

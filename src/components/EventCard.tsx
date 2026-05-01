@@ -3,6 +3,7 @@ import { Calendar, MapPin, Tag, Star, Video } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
+import { isEventPast } from '@/lib/eventDate'
 import type { Event } from '@/lib/types'
 
 interface EventCardProps {
@@ -10,6 +11,7 @@ interface EventCardProps {
 }
 
 export function EventCard({ event }: EventCardProps) {
+  const past = isEventPast(event.start_date)
   return (
     <Card className="group overflow-hidden transition-shadow hover:shadow-md">
       <Link to={`/events/${event.slug}`}>
@@ -44,6 +46,9 @@ export function EventCard({ event }: EventCardProps) {
         <CardContent className="p-4">
           <div className="mb-1.5 flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="text-xs">{event.category}</Badge>
+            {past ? (
+              <Badge variant="muted" className="text-xs">Past event</Badge>
+            ) : null}
             {event.is_virtual ? (
               <Badge variant="outline" className="text-xs gap-0.5 border-primary/40">
                 <Video className="h-3 w-3" /> Virtual

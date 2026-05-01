@@ -1,34 +1,58 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Calendar, MapPin, Clock, Tag, ExternalLink, ArrowLeft, Ticket, Video } from 'lucide-react'
+import { Calendar, MapPin, Clock, Tag, ExternalLink, ArrowLeft, Ticket, Video, FileText } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PageLoader } from '@/components/LoadingSpinner'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
-import type { Event } from '@/lib/types'
+import type { Event, Resource } from '@/lib/types'
+import { isEventPast } from '@/lib/eventDate'
+
+function resourceHref(r: Resource): string | null {
+  if (r.external_url) return r.external_url
+  if (r.file_url) return encodeURI(r.file_url)
+  return null
+}
 
 export function EventDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const [event, setEvent] = useState<Event | null>(null)
+  const [relatedResources, setRelatedResources] = useState<Resource[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
+      setLoading(true)
       const { data } = await supabase
         .from('events')
         .select('*')
         .eq('slug', slug)
         .eq('status', 'published')
         .single()
-      setEvent(data as Event)
+      const ev = data as Event | null
+      setEvent(ev)
+      if (ev?.id) {
+        const { data: res } = await supabase
+          .from('resources')
+          .select('*')
+          .eq('related_event_id', ev.id)
+          .eq('status', 'published')
+          .eq('access_level', 'public')
+          .order('title', { ascending: true })
+        setRelatedResources((res as Resource[]) ?? [])
+      } else {
+        setRelatedResources([])
+      }
       setLoading(false)
     }
     load()
   }, [slug])
 
   if (loading) return <PageLoader />
+
+  const past = event ? isEventPast(event.start_date) : false
 
   if (!event) {
     return (
@@ -69,6 +93,7 @@ export function EventDetailPage() {
           <div className="lg:col-span-2">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <Badge variant="secondary">{event.category}</Badge>
+              {past ? <Badge variant="muted">Past event</Badge> : null}
               {event.is_virtual ? (
                 <Badge variant="outline" className="gap-1 border-primary/40">
                   <Video className="h-3.5 w-3.5" /> Virtual / Online
@@ -81,6 +106,37 @@ export function EventDetailPage() {
             <h1 className="text-3xl font-bold text-foreground mb-4">{event.title}</h1>
 
             <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap mb-6">{event.description}</p>
+
+            {relatedResources.length > 0 && (
+              <div className="rounded-xl border border-border/80 bg-muted/20 p-5 mb-6 space-y-3">
+                <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  Related materials
+                </h2>
+                <ul className="space-y-2">
+                  {relatedResources.map((r) => {
+                    const href = resourceHref(r)
+                    if (!href) return null
+                    return (
+                      <li key={r.id}>
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-medium text-primary underline-offset-4 hover:underline inline-flex items-center gap-1.5"
+                        >
+                          {r.title}
+                          <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                        </a>
+                        {r.file_type ? (
+                          <span className="text-xs text-muted-foreground ml-2">({r.file_type})</span>
+                        ) : null}
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            )}
 
             {event.tags?.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-4">
