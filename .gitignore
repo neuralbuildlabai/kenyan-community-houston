@@ -25,6 +25,7 @@ dist-ssr
 
 # Environment
 .env
+.env.test
 .env.local
 .env.development.local
 .env.test.local
@@ -37,3 +38,7 @@ supabase/.temp/
 
 # KIGH private/internal review files
 kigh-private-review/
+
+# Playwright
+playwright-report/
+test-results/
