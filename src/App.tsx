@@ -50,6 +50,7 @@ import { AdminSubmissionsPage } from '@/pages/admin/SubmissionsPage'
 import { AdminContactsPage } from '@/pages/admin/ContactsPage'
 import { AdminSettingsPage } from '@/pages/admin/SettingsPage'
 import { AdminUsersPage } from '@/pages/admin/UsersPage'
+import { AdminChangePasswordPage } from '@/pages/admin/AdminChangePasswordPage'
 import { AdminResourcesPage } from '@/pages/admin/AdminResourcesPage'
 import { AdminMembersPage } from '@/pages/admin/AdminMembersPage'
 import { AdminCommunityGroupsPage } from '@/pages/admin/AdminCommunityGroupsPage'
@@ -113,6 +114,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             >
+              <Route path="change-password" element={<AdminChangePasswordPage />} />
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<AdminDashboardPage />} />
               <Route path="events" element={<Navigate to="/admin/calendar" replace />} />

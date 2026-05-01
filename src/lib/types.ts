@@ -23,6 +23,18 @@ export type FundraiserVerificationStatus =
   | 'verified'
   | 'flagged'
 
+/** Row in `admin_user_profiles` (password policy / board metadata). */
+export interface AdminUserSecurity {
+  user_id: string
+  must_change_password: boolean
+  temporary_password_set_at: string | null
+  password_changed_at: string | null
+  display_name: string | null
+  position_title: string | null
+  created_at?: string
+  updated_at?: string
+}
+
 export interface Profile {
   id: string
   email: string

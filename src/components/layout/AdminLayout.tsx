@@ -1,12 +1,25 @@
 import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { AdminSidebar } from './AdminSidebar'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/contexts/AuthContext'
+
+const ADMIN_CHANGE_PASSWORD_PATH = '/admin/change-password'
 
 export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const location = useLocation()
+  const { loading, adminGateLoading, adminPasswordGate } = useAuth()
+
+  const gatePending = loading || adminGateLoading
+  const onChangePasswordPage = location.pathname === ADMIN_CHANGE_PASSWORD_PATH
+  const mustRedirect = !gatePending && adminPasswordGate.required && !onChangePasswordPage
+
+  if (mustRedirect) {
+    return <Navigate to={ADMIN_CHANGE_PASSWORD_PATH} replace state={{ reason: adminPasswordGate.reason }} />
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -54,7 +67,13 @@ export function AdminLayout() {
         {/* Page content */}
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
-            <Outlet />
+            {gatePending && !onChangePasswordPage ? (
+              <div className="flex min-h-[40vh] items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              </div>
+            ) : (
+              <Outlet />
+            )}
           </div>
         </main>
       </div>
