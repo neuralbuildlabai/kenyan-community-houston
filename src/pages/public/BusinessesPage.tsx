@@ -62,7 +62,7 @@ export function BusinessesPage() {
 
         <div className="mb-5 flex items-center justify-between">
           <p className="text-sm text-muted-foreground">{loading ? 'Loading…' : `${items.length} business${items.length !== 1 ? 'es' : ''}`}</p>
-          <Button asChild size="sm"><Link to="/submit/business">List Your Business</Link></Button>
+          <Button asChild size="sm"><Link to="/businesses/submit">List Your Business</Link></Button>
         </div>
 
         {loading ? <PageLoader /> : items.length === 0 ? (

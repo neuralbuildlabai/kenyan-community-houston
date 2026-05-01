@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Calendar, MapPin, Tag, Star } from 'lucide-react'
+import { Calendar, MapPin, Tag, Star, Video } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
@@ -15,9 +15,9 @@ export function EventCard({ event }: EventCardProps) {
       <Link to={`/events/${event.slug}`}>
         {/* Image */}
         <div className="relative h-44 bg-muted overflow-hidden">
-          {event.flyer_url ? (
+          {(event.image_url || event.flyer_url) ? (
             <img
-              src={event.flyer_url}
+              src={event.image_url || event.flyer_url || ''}
               alt={event.title}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
@@ -42,8 +42,13 @@ export function EventCard({ event }: EventCardProps) {
         </div>
 
         <CardContent className="p-4">
-          <div className="mb-1.5 flex items-center gap-2">
+          <div className="mb-1.5 flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="text-xs">{event.category}</Badge>
+            {event.is_virtual ? (
+              <Badge variant="outline" className="text-xs gap-0.5 border-primary/40">
+                <Video className="h-3 w-3" /> Virtual
+              </Badge>
+            ) : null}
             {event.is_free ? (
               <Badge variant="success" className="text-xs">Free</Badge>
             ) : event.ticket_price ? (
@@ -55,7 +60,9 @@ export function EventCard({ event }: EventCardProps) {
             {event.title}
           </h3>
 
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{event.description}</p>
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+            {event.short_description || event.description}
+          </p>
 
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <MapPin className="h-3.5 w-3.5 shrink-0" />

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Calendar, MapPin, Clock, Tag, ExternalLink, ArrowLeft, Ticket } from 'lucide-react'
+import { Calendar, MapPin, Clock, Tag, ExternalLink, ArrowLeft, Ticket, Video } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -45,7 +45,7 @@ export function EventDetailPage() {
       <SEOHead
         title={event.title}
         description={event.description?.slice(0, 160)}
-        image={event.flyer_url ?? undefined}
+        image={(event.image_url || event.flyer_url) ?? undefined}
         type="article"
       />
 
@@ -54,10 +54,13 @@ export function EventDetailPage() {
           <Link to="/events"><ArrowLeft className="h-4 w-4" /> All Events</Link>
         </Button>
 
-        {/* Flyer */}
-        {event.flyer_url && (
+        {(event.image_url || event.flyer_url) && (
           <div className="mb-8 rounded-2xl overflow-hidden max-h-96 bg-muted">
-            <img src={event.flyer_url} alt={event.title} className="w-full h-full object-cover" />
+            <img
+              src={event.image_url || event.flyer_url || ''}
+              alt={event.title}
+              className="w-full h-full object-cover"
+            />
           </div>
         )}
 
@@ -66,6 +69,11 @@ export function EventDetailPage() {
           <div className="lg:col-span-2">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <Badge variant="secondary">{event.category}</Badge>
+              {event.is_virtual ? (
+                <Badge variant="outline" className="gap-1 border-primary/40">
+                  <Video className="h-3.5 w-3.5" /> Virtual / Online
+                </Badge>
+              ) : null}
               {event.is_featured && <Badge variant="gold" className="gap-1">⭐ Featured</Badge>}
               {event.is_free && <Badge variant="success">Free Event</Badge>}
             </div>
@@ -112,9 +120,16 @@ export function EventDetailPage() {
               <div className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div>
-                  <div className="font-medium text-sm">Location</div>
-                  <div className="text-sm text-muted-foreground">{event.location}</div>
-                  {event.address && <div className="text-xs text-muted-foreground">{event.address}</div>}
+                  <div className="font-medium text-sm">{event.is_virtual ? 'Format' : 'Location'}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {event.is_virtual ? 'Virtual / Online' : event.location}
+                  </div>
+                  {!event.is_virtual && event.address && (
+                    <div className="text-xs text-muted-foreground">{event.address}</div>
+                  )}
+                  {event.timezone && (
+                    <div className="text-xs text-muted-foreground mt-1">Timezone: {event.timezone}</div>
+                  )}
                 </div>
               </div>
 
@@ -130,6 +145,20 @@ export function EventDetailPage() {
             </div>
 
             <div className="space-y-2">
+              {event.is_virtual && event.virtual_url && (
+                <Button asChild className="w-full gap-2">
+                  <a href={event.virtual_url} target="_blank" rel="noopener noreferrer">
+                    <Video className="h-4 w-4" /> Join online
+                  </a>
+                </Button>
+              )}
+              {event.registration_url && (
+                <Button asChild variant="secondary" className="w-full gap-2">
+                  <a href={event.registration_url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" /> Register / RSVP
+                  </a>
+                </Button>
+              )}
               {event.ticket_url && (
                 <Button asChild className="w-full gap-2">
                   <a href={event.ticket_url} target="_blank" rel="noopener noreferrer">

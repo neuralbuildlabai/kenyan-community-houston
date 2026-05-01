@@ -11,6 +11,7 @@ import { AdminLayout } from '@/components/layout/AdminLayout'
 import { HomePage } from '@/pages/public/HomePage'
 import { EventsPage } from '@/pages/public/EventsPage'
 import { EventDetailPage } from '@/pages/public/EventDetailPage'
+import { CalendarPage } from '@/pages/public/CalendarPage'
 import { AnnouncementsPage } from '@/pages/public/AnnouncementsPage'
 import { AnnouncementDetailPage } from '@/pages/public/AnnouncementDetailPage'
 import { BusinessesPage } from '@/pages/public/BusinessesPage'
@@ -23,6 +24,11 @@ import { GalleryPage } from '@/pages/public/GalleryPage'
 import { NewToHoustonPage } from '@/pages/public/NewToHoustonPage'
 import { AboutPage } from '@/pages/public/AboutPage'
 import { ContactPage } from '@/pages/public/ContactPage'
+import { GovernancePage } from '@/pages/public/GovernancePage'
+import { MembershipPage } from '@/pages/public/MembershipPage'
+import { MembershipSuccessPage } from '@/pages/public/MembershipSuccessPage'
+import { SupportPage } from '@/pages/public/SupportPage'
+import { ResourcesPage } from '@/pages/public/ResourcesPage'
 import { SubmitEventPage } from '@/pages/public/SubmitEventPage'
 import { SubmitAnnouncementPage } from '@/pages/public/SubmitAnnouncementPage'
 import { SubmitBusinessPage } from '@/pages/public/SubmitBusinessPage'
@@ -33,7 +39,7 @@ import { NotFoundPage } from '@/pages/public/NotFoundPage'
 
 import { AdminLoginPage } from '@/pages/admin/LoginPage'
 import { AdminDashboardPage } from '@/pages/admin/DashboardPage'
-import { AdminEventsPage } from '@/pages/admin/EventsPage'
+import { AdminCalendarPage } from '@/pages/admin/CalendarPage'
 import { AdminAnnouncementsPage } from '@/pages/admin/AnnouncementsPage'
 import { AdminBusinessesPage } from '@/pages/admin/BusinessesPage'
 import { AdminFundraisersPage } from '@/pages/admin/FundraisersPage'
@@ -42,6 +48,8 @@ import { AdminSubmissionsPage } from '@/pages/admin/SubmissionsPage'
 import { AdminContactsPage } from '@/pages/admin/ContactsPage'
 import { AdminSettingsPage } from '@/pages/admin/SettingsPage'
 import { AdminUsersPage } from '@/pages/admin/UsersPage'
+import { AdminResourcesPage } from '@/pages/admin/AdminResourcesPage'
+import { AdminMembersPage } from '@/pages/admin/AdminMembersPage'
 
 export default function App() {
   return (
@@ -56,6 +64,7 @@ export default function App() {
               <Route path="events" element={<EventsPage />} />
               <Route path="events/:slug" element={<EventDetailPage />} />
               <Route path="events/submit" element={<SubmitEventPage />} />
+              <Route path="calendar" element={<CalendarPage />} />
 
               <Route path="announcements" element={<AnnouncementsPage />} />
               <Route path="announcements/:slug" element={<AnnouncementDetailPage />} />
@@ -76,6 +85,11 @@ export default function App() {
               <Route path="new-to-houston" element={<NewToHoustonPage />} />
               <Route path="about" element={<AboutPage />} />
               <Route path="contact" element={<ContactPage />} />
+              <Route path="governance" element={<GovernancePage />} />
+              <Route path="membership" element={<MembershipPage />} />
+              <Route path="membership/success" element={<MembershipSuccessPage />} />
+              <Route path="support" element={<SupportPage />} />
+              <Route path="resources" element={<ResourcesPage />} />
 
               <Route path="privacy" element={<PrivacyPage />} />
               <Route path="terms" element={<TermsPage />} />
@@ -96,7 +110,10 @@ export default function App() {
             >
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<AdminDashboardPage />} />
-              <Route path="events" element={<AdminEventsPage />} />
+              <Route path="events" element={<Navigate to="/admin/calendar" replace />} />
+              <Route path="calendar" element={<AdminCalendarPage />} />
+              <Route path="resources" element={<AdminResourcesPage />} />
+              <Route path="members" element={<AdminMembersPage />} />
               <Route path="announcements" element={<AdminAnnouncementsPage />} />
               <Route path="businesses" element={<AdminBusinessesPage />} />
               <Route path="fundraisers" element={<AdminFundraisersPage />} />

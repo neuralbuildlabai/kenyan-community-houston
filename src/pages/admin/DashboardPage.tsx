@@ -83,7 +83,7 @@ export function AdminDashboardPage() {
   }, [])
 
   const statCards = stats ? [
-    { label: 'Events', value: stats.events, pending: stats.pending_events, icon: Calendar, href: '/admin/events', color: 'text-blue-600' },
+    { label: 'Calendar', value: stats.events, pending: stats.pending_events, icon: Calendar, href: '/admin/calendar', color: 'text-blue-600' },
     { label: 'Announcements', value: stats.announcements, pending: stats.pending_announcements, icon: Megaphone, href: '/admin/announcements', color: 'text-green-600' },
     { label: 'Businesses', value: stats.businesses, pending: stats.pending_businesses, icon: Building2, href: '/admin/businesses', color: 'text-orange-600' },
     { label: 'Fundraisers', value: stats.fundraisers, pending: stats.pending_fundraisers, icon: Heart, href: '/admin/fundraisers', color: 'text-red-600' },
@@ -183,7 +183,7 @@ export function AdminDashboardPage() {
             <div className="grid grid-cols-2 gap-3">
               {[
                 { label: 'Review Submissions', href: '/admin/submissions', icon: FileText },
-                { label: 'Manage Events', href: '/admin/events', icon: Calendar },
+                { label: 'Manage calendar', href: '/admin/calendar', icon: Calendar },
                 { label: 'Manage Businesses', href: '/admin/businesses', icon: Building2 },
                 { label: 'Gallery Upload', href: '/admin/gallery', icon: Image },
                 { label: 'View Contacts', href: '/admin/contacts', icon: MessageSquare },

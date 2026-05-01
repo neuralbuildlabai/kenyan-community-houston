@@ -70,7 +70,7 @@ export function CommunitySupportPage() {
 
         <div className="mb-5 flex items-center justify-between">
           <p className="text-sm text-muted-foreground">{loading ? 'Loading…' : `${items.length} fundraiser${items.length !== 1 ? 's' : ''}`}</p>
-          <Button asChild size="sm"><Link to="/submit/fundraiser">Submit Fundraiser</Link></Button>
+          <Button asChild size="sm"><Link to="/community-support/submit">Submit Fundraiser</Link></Button>
         </div>
 
         {loading ? <PageLoader /> : items.length === 0 ? (

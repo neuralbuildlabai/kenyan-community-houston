@@ -5,13 +5,14 @@ import {
   Megaphone,
   Building2,
   Heart,
-  Trophy,
   Image,
   MessageSquare,
   Inbox,
   Settings,
   Users,
   ChevronRight,
+  FolderOpen,
+  UserPlus,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -19,7 +20,9 @@ import { APP_NAME } from '@/lib/constants'
 
 const navItems = [
   { to: '/admin/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
-  { to: '/admin/events', label: 'Events', Icon: CalendarDays },
+  { to: '/admin/calendar', label: 'Calendar', Icon: CalendarDays },
+  { to: '/admin/resources', label: 'Resources', Icon: FolderOpen },
+  { to: '/admin/members', label: 'Members', Icon: UserPlus },
   { to: '/admin/announcements', label: 'Announcements', Icon: Megaphone },
   { to: '/admin/businesses', label: 'Businesses', Icon: Building2 },
   { to: '/admin/fundraisers', label: 'Fundraisers', Icon: Heart },

@@ -13,9 +13,11 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 import { APP_NAME } from '@/lib/constants'
+import { KighLogo } from '@/components/KighLogo'
 
 const navLinks = [
   { to: '/events', label: 'Events' },
+  { to: '/calendar', label: 'Calendar' },
   { to: '/announcements', label: 'Announcements' },
   { to: '/businesses', label: 'Businesses' },
   { to: '/community-support', label: 'Community Support' },
@@ -24,6 +26,9 @@ const navLinks = [
 ]
 
 const moreLinks = [
+  { to: '/membership', label: 'Membership' },
+  { to: '/support', label: 'Support KIGH' },
+  { to: '/resources', label: 'Resources' },
   { to: '/new-to-houston', label: 'New to Houston' },
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },
@@ -43,13 +48,11 @@ export function Header() {
     <header className="sticky top-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 shadow-sm">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 shrink-0">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white font-bold text-sm">
-            KCH
-          </div>
-          <span className="hidden font-bold text-primary sm:block leading-tight text-[15px]">
+        <Link to="/" className="flex items-center gap-2.5 shrink-0 min-w-0">
+          <KighLogo withCard className="h-10 w-10 sm:h-11 sm:w-11 shrink-0" imgClassName="max-h-9 sm:max-h-10" />
+          <span className="hidden font-bold text-primary sm:block leading-tight text-[15px] truncate">
             Kenyan Community<br />
-            <span className="text-kenyan-gold-600 font-semibold text-xs">Houston</span>
+            <span className="text-kenyan-gold-600 font-semibold text-xs">Houston · KIGH</span>
           </span>
         </Link>
 
@@ -90,7 +93,7 @@ export function Header() {
         {/* Right actions */}
         <div className="flex items-center gap-2">
           <Button asChild size="sm" className="hidden sm:flex" variant="default">
-            <Link to="/submit/event">Submit Event</Link>
+            <Link to="/events/submit">Submit Event</Link>
           </Button>
 
           {isAdmin && profile ? (
@@ -146,7 +149,7 @@ export function Header() {
                 ))}
                 <div className="mt-4 border-t pt-4 flex flex-col gap-2">
                   <Button asChild className="w-full" onClick={() => setMobileOpen(false)}>
-                    <Link to="/submit/event">Submit an Event</Link>
+                    <Link to="/events/submit">Submit an Event</Link>
                   </Button>
                   {isAdmin && (
                     <Button asChild variant="outline" className="w-full" onClick={() => setMobileOpen(false)}>

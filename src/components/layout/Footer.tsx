@@ -2,10 +2,12 @@ import { Link } from 'react-router-dom'
 import { MapPin, Mail, Facebook, Twitter, Instagram, Youtube } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { APP_NAME } from '@/lib/constants'
+import { KighLogo } from '@/components/KighLogo'
 
 const footerLinks = {
   community: [
     { to: '/events', label: 'Events' },
+    { to: '/calendar', label: 'Calendar' },
     { to: '/announcements', label: 'Announcements' },
     { to: '/sports-youth', label: 'Sports & Youth' },
     { to: '/gallery', label: 'Gallery' },
@@ -13,15 +15,19 @@ const footerLinks = {
   ],
   directory: [
     { to: '/businesses', label: 'Business Directory' },
+    { to: '/membership', label: 'Membership' },
+    { to: '/support', label: 'Support KIGH' },
+    { to: '/resources', label: 'Resources' },
+    { to: '/governance', label: 'Governance' },
     { to: '/new-to-houston', label: 'New to Houston' },
     { to: '/about', label: 'About Us' },
     { to: '/contact', label: 'Contact / Join' },
   ],
   submit: [
-    { to: '/submit/event', label: 'Submit an Event' },
-    { to: '/submit/business', label: 'List Your Business' },
-    { to: '/submit/announcement', label: 'Submit Announcement' },
-    { to: '/submit/fundraiser', label: 'Submit Fundraiser' },
+    { to: '/events/submit', label: 'Submit an Event' },
+    { to: '/businesses/submit', label: 'List Your Business' },
+    { to: '/announcements/submit', label: 'Submit Announcement' },
+    { to: '/community-support/submit', label: 'Submit Fundraiser' },
   ],
   legal: [
     { to: '/terms', label: 'Terms of Use' },
@@ -39,13 +45,11 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white font-bold">
-                KCH
-              </div>
+            <div className="flex items-center gap-3 mb-4">
+              <KighLogo withCard className="h-12 w-12 shrink-0 border-white/20 bg-white" imgClassName="max-h-10" />
               <div>
                 <div className="font-bold text-white">{APP_NAME}</div>
-                <div className="text-xs text-white/60">Houston, Texas</div>
+                <div className="text-xs text-white/60">Kenyans in Greater Houston · Houston, Texas</div>
               </div>
             </div>
             <p className="text-sm text-white/70 leading-relaxed max-w-xs">

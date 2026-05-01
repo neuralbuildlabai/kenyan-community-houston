@@ -19,6 +19,53 @@ export const EVENT_CATEGORIES = [
   'Other',
 ] as const
 
+/** Calendar filters + admin options (includes legacy event labels where useful). */
+export const CALENDAR_FILTER_CATEGORIES = [
+  'Community',
+  'Cultural',
+  'Youth',
+  'Sports',
+  'Education',
+  'Career',
+  'Health & Wellness',
+  'Fundraiser',
+  'Volunteer',
+  'Vendor/Business',
+  'Meeting',
+  'Networking',
+  'Religious',
+  'Music & Entertainment',
+  'Food & Dining',
+  'Family',
+  'Other',
+] as const
+
+export const MEMBERSHIP_INTEREST_OPTIONS = [
+  'Events',
+  'Culture',
+  'Youth programs',
+  'Sports',
+  'Welfare / community support',
+  'Business networking',
+  'Education & career development',
+  'Volunteering',
+  'Newcomer support',
+] as const
+
+export const RESOURCE_LIBRARY_CATEGORIES = [
+  'Governance',
+  'Membership',
+  'Events',
+  'Youth Programs',
+  'Finance & Transparency',
+  'Volunteer Resources',
+  'Vendor Resources',
+  'Presentations',
+  'Meeting Minutes',
+  'Community Forms',
+  'Media & Branding',
+] as const
+
 export const BUSINESS_CATEGORIES = [
   'Food & Catering',
   'Salon & Beauty',

@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { APP_NAME } from '@/lib/constants'
+import { KighLogo } from '@/components/KighLogo'
 
 export function AdminLoginPage() {
   const navigate = useNavigate()
@@ -32,9 +33,11 @@ export function AdminLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-xl mb-4">K</div>
+          <div className="flex justify-center mb-4">
+            <KighLogo withCard className="h-16 w-16" imgClassName="max-h-14" />
+          </div>
           <h1 className="text-2xl font-bold">{APP_NAME}</h1>
-          <p className="text-muted-foreground text-sm mt-1">Admin Portal</p>
+          <p className="text-muted-foreground text-sm mt-1">Admin Portal · KIGH</p>
         </div>
         <div className="bg-background rounded-2xl border shadow-sm p-8">
           <form onSubmit={handleLogin} className="space-y-5">

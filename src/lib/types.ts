@@ -35,30 +35,114 @@ export interface Profile {
   updated_at: string
 }
 
+/** Matches `content_status` on `events` in Supabase (includes legacy + calendar). */
+export type EventStatus =
+  | 'draft'
+  | 'pending'
+  | 'published'
+  | 'unpublished'
+  | 'archived'
+  | 'cancelled'
+  | 'rejected'
+
 export interface Event {
   id: string
   title: string
   slug: string
-  description: string
-  body: string | null
+  description: string | null
+  body?: string | null
   location: string
   address: string | null
   start_date: string
   end_date: string | null
+  start_time: string | null
+  end_time: string | null
   is_free: boolean
   ticket_price: number | null
   ticket_url: string | null
+  registration_url?: string | null
   category: string
   tags: string[]
   flyer_url: string | null
-  organizer_name: string
+  image_url?: string | null
+  short_description?: string | null
+  timezone?: string | null
+  city?: string | null
+  state?: string | null
+  is_virtual?: boolean
+  virtual_url?: string | null
+  capacity?: number | null
+  organizer_name: string | null
   organizer_email: string | null
-  organizer_phone: string | null
-  status: ContentStatus
+  organizer_phone?: string | null
+  organizer_contact?: string | null
+  organizer_website?: string | null
+  status: EventStatus
   is_featured: boolean
-  submitted_by: string | null
-  approved_by: string | null
+  submitted_by?: string | null
+  approved_by?: string | null
   published_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type MembershipType = 'individual' | 'family_household' | 'associate'
+
+export type DuesStatus = 'pending' | 'paid' | 'waived' | 'overdue'
+
+export type MembershipRecordStatus = 'pending' | 'active' | 'inactive' | 'rejected'
+
+export interface Member {
+  id: string
+  first_name: string
+  last_name: string
+  email: string
+  phone: string | null
+  address_line1: string | null
+  city: string | null
+  state: string | null
+  zip_code: string | null
+  kenyan_county_or_heritage: string | null
+  preferred_communication: string | null
+  membership_type: MembershipType
+  interests: string[]
+  agreed_to_constitution: boolean
+  consent_to_communications: boolean
+  dues_status: DuesStatus
+  membership_status: MembershipRecordStatus
+  submitted_at: string
+  created_at: string
+  updated_at: string
+}
+
+export interface HouseholdMember {
+  id: string
+  member_id: string
+  full_name: string
+  relationship: string | null
+  age_group: 'adult' | 'youth' | 'child' | null
+  email: string | null
+  phone: string | null
+  created_at: string
+}
+
+export type ResourceAccessLevel = 'public' | 'members_only' | 'admin_only' | 'needs_review'
+
+export type ResourceStatus = 'draft' | 'published' | 'archived'
+
+export interface Resource {
+  id: string
+  title: string
+  slug: string
+  description: string | null
+  category: string
+  file_type: string | null
+  file_url: string | null
+  external_url: string | null
+  access_level: ResourceAccessLevel
+  status: ResourceStatus
+  resource_date: string | null
+  related_event_id: string | null
   created_at: string
   updated_at: string
 }
@@ -72,6 +156,7 @@ export interface Announcement {
   category: string
   tags: string[]
   image_url: string | null
+  external_url?: string | null
   author_name: string
   author_id: string | null
   status: ContentStatus
@@ -90,6 +175,7 @@ export interface Business {
   slug: string
   description: string
   long_description: string | null
+  services?: string | null
   category: string
   subcategory: string | null
   tags: string[]
@@ -125,6 +211,7 @@ export interface Fundraiser {
   category: string
   tags: string[]
   image_url: string | null
+  donation_url?: string | null
   goal_amount: number | null
   raised_amount: number
   currency: string

@@ -83,9 +83,14 @@ export function EventsPage() {
           <p className="text-sm text-muted-foreground">
             {loading ? 'Loading…' : `${events.length} event${events.length !== 1 ? 's' : ''} found`}
           </p>
-          <Button asChild size="sm" variant="default">
-            <Link to="/submit/event">Submit an Event</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2 justify-end">
+            <Button asChild size="sm" variant="outline">
+              <Link to="/calendar">Community calendar</Link>
+            </Button>
+            <Button asChild size="sm" variant="default">
+              <Link to="/events/submit">Submit an Event</Link>
+            </Button>
+          </div>
         </div>
 
         {loading ? (
