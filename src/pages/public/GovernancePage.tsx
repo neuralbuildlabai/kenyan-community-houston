@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { FileText, Download, Scale, Shield } from 'lucide-react'
+import { FileText, Download, Scale, Shield, HeartHandshake } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { KighLogo } from '@/components/KighLogo'
 import { Button } from '@/components/ui/button'
@@ -181,6 +181,23 @@ export function GovernancePage() {
             ))}
           </div>
         </div>
+
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/[0.04] to-kenyan-gold-500/[0.05] shadow-sm overflow-hidden">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <HeartHandshake className="h-5 w-5 text-primary shrink-0" />
+              Serve alongside leadership & committees
+            </CardTitle>
+            <CardDescription className="text-base text-foreground/85 leading-relaxed">
+              Leadership and committees work best when members contribute in ways that fit their gifts and schedules — not only through elected titles. If you would like to explore volunteering with KIGH, we would be glad to hear from you.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link to="/serve">Call to Serve</Link>
+            </Button>
+          </CardContent>
+        </Card>
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-4">Related governance files</h2>

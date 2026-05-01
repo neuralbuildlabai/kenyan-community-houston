@@ -13,6 +13,7 @@ import {
   Users,
   Library,
   UsersRound,
+  HeartHandshake,
 } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { EventCard } from '@/components/EventCard'
@@ -212,6 +213,24 @@ export function HomePage() {
                 </Button>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.06] via-background to-kenyan-gold-500/[0.06] p-8 sm:p-10 shadow-md">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div className="max-w-xl">
+              <div className="flex items-center gap-2 text-primary mb-2">
+                <HeartHandshake className="h-5 w-5" />
+                <span className="text-xs font-semibold uppercase tracking-wide">Volunteer with KIGH</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">A Call to Serve</h2>
+              <p className="text-muted-foreground leading-relaxed">
+                KIGH is looking for community members willing to help with leadership, committees, events, youth programs, welfare support, communications, and community outreach.
+              </p>
+            </div>
+            <Button asChild size="lg" className="font-semibold shrink-0 w-full sm:w-auto">
+              <Link to="/serve">I Want to Serve</Link>
+            </Button>
           </div>
         </section>
 

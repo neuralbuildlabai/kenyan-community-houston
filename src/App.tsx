@@ -31,6 +31,8 @@ import { SupportPage } from '@/pages/public/SupportPage'
 import { ResourcesPage } from '@/pages/public/ResourcesPage'
 import { CommunityGroupsPage } from '@/pages/public/CommunityGroupsPage'
 import { CommunityGroupsSubmitPage } from '@/pages/public/CommunityGroupsSubmitPage'
+import { ServePage } from '@/pages/public/ServePage'
+import { ServeApplyPage } from '@/pages/public/ServeApplyPage'
 import { SubmitEventPage } from '@/pages/public/SubmitEventPage'
 import { SubmitAnnouncementPage } from '@/pages/public/SubmitAnnouncementPage'
 import { SubmitBusinessPage } from '@/pages/public/SubmitBusinessPage'
@@ -54,6 +56,7 @@ import { AdminChangePasswordPage } from '@/pages/admin/AdminChangePasswordPage'
 import { AdminResourcesPage } from '@/pages/admin/AdminResourcesPage'
 import { AdminMembersPage } from '@/pages/admin/AdminMembersPage'
 import { AdminCommunityGroupsPage } from '@/pages/admin/AdminCommunityGroupsPage'
+import { AdminServiceInterestsPage } from '@/pages/admin/AdminServiceInterestsPage'
 
 export default function App() {
   return (
@@ -90,6 +93,8 @@ export default function App() {
               <Route path="about" element={<AboutPage />} />
               <Route path="contact" element={<ContactPage />} />
               <Route path="governance" element={<GovernancePage />} />
+              <Route path="serve" element={<ServePage />} />
+              <Route path="serve/apply" element={<ServeApplyPage />} />
               <Route path="membership" element={<MembershipPage />} />
               <Route path="membership/success" element={<MembershipSuccessPage />} />
               <Route path="support" element={<SupportPage />} />
@@ -128,6 +133,7 @@ export default function App() {
               <Route path="gallery" element={<AdminGalleryPage />} />
               <Route path="submissions" element={<AdminSubmissionsPage />} />
               <Route path="contacts" element={<AdminContactsPage />} />
+              <Route path="service-interests" element={<AdminServiceInterestsPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="users" element={<AdminUsersPage />} />
             </Route>

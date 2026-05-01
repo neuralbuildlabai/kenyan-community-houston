@@ -15,6 +15,7 @@ import {
   FolderOpen,
   UserPlus,
   UsersRound,
+  HeartHandshake,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -50,6 +51,7 @@ const navGroups: { heading: string; items: NavItem[] }[] = [
     items: [
       { to: '/admin/submissions', label: 'Public submissions', Icon: Inbox },
       { to: '/admin/contacts', label: 'Contact messages', Icon: MessageSquare },
+      { to: '/admin/service-interests', label: 'Call to Serve', Icon: HeartHandshake },
     ],
   },
   {

@@ -394,3 +394,33 @@ export interface AdminActivityLog {
 }
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+
+export type ServiceInterestAvailability =
+  | 'occasional'
+  | 'monthly'
+  | 'events_only'
+  | 'committee_role'
+  | 'leadership_role'
+
+export type ServiceInterestStatus =
+  | 'new'
+  | 'contacted'
+  | 'in_review'
+  | 'matched'
+  | 'archived'
+
+export interface ServiceInterest {
+  id: string
+  full_name: string
+  email: string
+  phone: string | null
+  area_of_interest: string | null
+  how_to_help: string | null
+  availability: ServiceInterestAvailability
+  skills_experience: string | null
+  open_to_leadership_contact: boolean
+  notes: string | null
+  status: ServiceInterestStatus
+  created_at: string
+  updated_at: string
+}

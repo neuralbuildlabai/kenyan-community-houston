@@ -138,6 +138,19 @@ export function MembershipPage() {
         </div>
       </div>
 
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 -mt-2 mb-2">
+        <Card className="border-primary/15 shadow-sm bg-muted/25">
+          <CardContent className="py-4 px-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              <span className="font-semibold text-foreground">Interested in volunteering?</span> KIGH welcomes help with events, committees, youth programs, and community support — whether you have a little time or a lot.
+            </p>
+            <Button asChild size="sm" variant="default" className="shrink-0 w-full sm:w-auto">
+              <Link to="/serve">Call to Serve</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12 space-y-8">
         <Card className="shadow-sm border-primary/15 overflow-hidden">
           <CardHeader className="bg-muted/30 border-b border-border/60">

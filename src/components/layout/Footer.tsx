@@ -16,6 +16,7 @@ const community = [
 const directoryResources = [
   { to: '/businesses', label: 'Business Directory' },
   { to: '/community-groups', label: 'Community Groups' },
+  { to: '/serve', label: 'Call to Serve' },
   { to: '/membership', label: 'Membership' },
   { to: '/support', label: 'Support KIGH' },
   { to: '/resources', label: 'Resources' },

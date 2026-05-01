@@ -26,6 +26,7 @@ const navLinks = [
 
 const moreLinks = [
   { to: '/membership', label: 'Membership' },
+  { to: '/serve', label: 'Call to Serve' },
   { to: '/support', label: 'Support KIGH' },
   { to: '/resources', label: 'Resources' },
   { to: '/community-groups', label: 'Community Groups' },
