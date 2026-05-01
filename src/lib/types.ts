@@ -45,6 +45,60 @@ export interface Profile {
   bio: string | null
   created_at: string
   updated_at: string
+  preferred_name?: string | null
+  city?: string | null
+  state?: string | null
+  zip_code?: string | null
+  county_or_heritage?: string | null
+  preferred_communication?: string | null
+  occupation?: string | null
+  business_or_profession?: string | null
+  emergency_contact_name?: string | null
+  emergency_contact_phone?: string | null
+  interests?: string[]
+  willing_to_volunteer?: boolean
+  willing_to_serve?: boolean
+  volunteer_interests?: string[]
+  service_notes?: string | null
+  avatar_storage_bucket?: string | null
+  avatar_storage_path?: string | null
+  avatar_original_filename?: string | null
+  avatar_mime_type?: string | null
+  avatar_file_size?: number | null
+  profile_visibility?: 'private' | 'members_only' | 'public'
+}
+
+export interface ProfileHouseholdMember {
+  id: string
+  user_id: string
+  full_name: string
+  relationship: string | null
+  age_group: 'adult' | 'youth' | 'child' | null
+  email: string | null
+  phone: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type MemberMediaSubmissionStatus = 'pending' | 'approved' | 'rejected' | 'archived'
+
+export interface MemberMediaSubmission {
+  id: string
+  user_id: string
+  title: string
+  description: string | null
+  media_type: 'image' | 'video'
+  storage_bucket: string
+  storage_path: string
+  original_filename: string | null
+  mime_type: string | null
+  file_size: number | null
+  event_id: string | null
+  permission_to_use: boolean
+  status: MemberMediaSubmissionStatus
+  created_at: string
+  updated_at: string
 }
 
 /** Matches `content_status` on `events` in Supabase (includes legacy + calendar). */
@@ -122,6 +176,8 @@ export interface Member {
   consent_to_communications: boolean
   dues_status: DuesStatus
   membership_status: MembershipRecordStatus
+  willing_to_volunteer?: boolean
+  willing_to_serve?: boolean
   submitted_at: string
   created_at: string
   updated_at: string

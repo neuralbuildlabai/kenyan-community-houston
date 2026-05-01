@@ -10,6 +10,7 @@ const ADMIN_PATHS = [
   '/admin/service-interests',
   '/admin/gallery',
   '/admin/users',
+  '/admin/media-submissions',
 ] as const
 
 test.describe('admin pages', () => {

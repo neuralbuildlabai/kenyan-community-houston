@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
   CalendarDays,
@@ -16,10 +16,15 @@ import {
   UserPlus,
   UsersRound,
   HeartHandshake,
+  Clapperboard,
+  LogOut,
+  UserCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { APP_NAME } from '@/lib/constants'
+import { postLogoutPath } from '@/lib/logoutRedirect'
+import { Button } from '@/components/ui/button'
 
 type NavItem = { to: string; label: string; Icon: LucideIcon }
 
@@ -52,6 +57,7 @@ const navGroups: { heading: string; items: NavItem[] }[] = [
       { to: '/admin/submissions', label: 'Public submissions', Icon: Inbox },
       { to: '/admin/contacts', label: 'Contact messages', Icon: MessageSquare },
       { to: '/admin/service-interests', label: 'Call to Serve', Icon: HeartHandshake },
+      { to: '/admin/media-submissions', label: 'Media submissions', Icon: Clapperboard },
     ],
   },
   {
@@ -63,8 +69,16 @@ const navGroups: { heading: string; items: NavItem[] }[] = [
   },
 ]
 
-export function AdminSidebar() {
-  const { profile } = useAuth()
+export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
+  const { profile, signOut } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  async function handleLogout() {
+    await signOut()
+    navigate(postLogoutPath(location.pathname))
+    onNavigate?.()
+  }
 
   return (
     <aside className="flex h-full w-64 flex-col border-r bg-foreground text-white">
@@ -89,6 +103,7 @@ export function AdminSidebar() {
                 <li key={to}>
                   <NavLink
                     to={to}
+                    onClick={() => onNavigate?.()}
                     className={({ isActive }) =>
                       cn(
                         'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
@@ -110,7 +125,7 @@ export function AdminSidebar() {
       </nav>
 
       {profile && (
-        <div className="border-t border-white/10 p-4 shrink-0">
+        <div className="border-t border-white/10 p-4 shrink-0 space-y-3">
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-kenyan-gold-600 text-white text-xs font-semibold">
               {profile.full_name?.[0] ?? profile.email[0].toUpperCase()}
@@ -122,6 +137,23 @@ export function AdminSidebar() {
               <div className="text-xs text-white/50 capitalize truncate">{profile.role.replace(/_/g, ' ')}</div>
             </div>
           </div>
+          <NavLink
+            to="/profile"
+            onClick={() => onNavigate?.()}
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-white/85 hover:bg-white/10 hover:text-white"
+          >
+            <UserCircle className="h-4 w-4 shrink-0" />
+            My profile
+          </NavLink>
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full gap-2 justify-center bg-white/15 text-white hover:bg-white/25 border-0"
+            onClick={() => void handleLogout()}
+          >
+            <LogOut className="h-4 w-4" />
+            Logout
+          </Button>
         </div>
       )}
     </aside>

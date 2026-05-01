@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Plus, Pencil, Search, Download, Upload, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Search, Download, Upload, Trash2, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -276,6 +276,10 @@ export function AdminResourcesPage() {
     return '—'
   }
 
+  function publicFileHref(url: string): string {
+    return url.startsWith('http') ? url : encodeURI(url)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -342,7 +346,7 @@ export function AdminResourcesPage() {
             <TableRow>
               <TableHead>Title</TableHead>
               <TableHead className="hidden md:table-cell">Category</TableHead>
-              <TableHead className="hidden lg:table-cell">File</TableHead>
+              <TableHead className="min-w-[160px]">File / links</TableHead>
               <TableHead>Access</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -368,10 +372,48 @@ export function AdminResourcesPage() {
                 <TableRow key={x.id}>
                   <TableCell className="font-medium max-w-[200px] truncate">{x.title}</TableCell>
                   <TableCell className="hidden md:table-cell text-sm">{x.category}</TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <Badge variant="outline" className="font-normal">
-                      {fileKindLabel(x)}
-                    </Badge>
+                  <TableCell>
+                    <div className="flex flex-col gap-1.5 min-w-0 max-w-[220px]">
+                      <Badge variant="outline" className="font-normal w-fit">
+                        {fileKindLabel(x)}
+                      </Badge>
+                      {x.file_url ? (
+                        <a
+                          href={publicFileHref(x.file_url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-medium text-primary underline-offset-4 hover:underline truncate"
+                        >
+                          View / download
+                        </a>
+                      ) : null}
+                      {x.external_url ? (
+                        <a
+                          href={x.external_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-4 hover:underline truncate"
+                        >
+                          <ExternalLink className="h-3 w-3 shrink-0" />
+                          Open external link
+                        </a>
+                      ) : null}
+                      {x.storage_path && x.storage_bucket ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          className="h-8 w-full sm:w-fit text-xs gap-1"
+                          onClick={() => void downloadSigned(x)}
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          Download private file
+                        </Button>
+                      ) : null}
+                      {!x.file_url && !x.external_url && !(x.storage_path && x.storage_bucket) ? (
+                        <span className="text-xs text-muted-foreground">No file attached</span>
+                      ) : null}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">{x.access_level}</Badge>
@@ -380,11 +422,6 @@ export function AdminResourcesPage() {
                     <Badge variant={x.status === 'published' ? 'default' : 'secondary'}>{x.status}</Badge>
                   </TableCell>
                   <TableCell className="text-right space-x-1 whitespace-nowrap">
-                    {x.storage_path && x.storage_bucket ? (
-                      <Button size="icon" variant="ghost" className="h-8 w-8" type="button" onClick={() => downloadSigned(x)} title="Download (signed URL)">
-                        <Download className="h-3.5 w-3.5" />
-                      </Button>
-                    ) : null}
                     <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(x)}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
@@ -503,7 +540,7 @@ export function AdminResourcesPage() {
                   </span>
                   <Button type="button" size="sm" variant="outline" className="gap-1 h-8" onClick={() => void downloadSignedFromForm()}>
                     <Download className="h-3.5 w-3.5" />
-                    Download
+                    Download private file
                   </Button>
                   <Button type="button" size="sm" variant="destructive" className="gap-1 h-8" onClick={() => void removeStoredPrivate()}>
                     <Trash2 className="h-3.5 w-3.5" />

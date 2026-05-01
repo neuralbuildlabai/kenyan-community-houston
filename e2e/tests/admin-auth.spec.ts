@@ -14,4 +14,11 @@ test.describe('admin auth', () => {
     await expect(page.getByRole('link', { name: /Calendar/i }).first()).toBeVisible()
     await expect(page.getByRole('link', { name: /Contact messages/i })).toBeVisible()
   })
+
+  test('logout is visible and returns to admin login', async ({ page }) => {
+    await loginAsAdmin(page)
+    await expect(page.getByRole('button', { name: 'Logout' }).first()).toBeVisible()
+    await page.getByRole('button', { name: 'Logout' }).first().click()
+    await expect(page).toHaveURL(/\/admin\/login/)
+  })
 })

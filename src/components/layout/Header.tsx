@@ -1,19 +1,18 @@
 import { useState } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Menu, ChevronDown, LogOut, LayoutDashboard } from 'lucide-react'
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { Menu, ChevronDown, LogOut, LayoutDashboard, UserCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
-import { APP_NAME } from '@/lib/constants'
 import { KighLogo } from '@/components/KighLogo'
+import { postLogoutPath } from '@/lib/logoutRedirect'
 
 const navLinks = [
   { to: '/events', label: 'Events' },
@@ -37,13 +36,15 @@ const moreLinks = [
 ]
 
 export function Header() {
-  const { isAdmin, profile, signOut } = useAuth()
+  const { user, isAdmin, signOut } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  async function handleSignOut() {
+  async function handleLogout() {
     await signOut()
-    navigate('/')
+    navigate(postLogoutPath(location.pathname))
+    setMobileOpen(false)
   }
 
   return (
@@ -90,44 +91,43 @@ export function Header() {
           </DropdownMenu>
         </nav>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <Button asChild size="sm" className="hidden sm:inline-flex" variant="default">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
+          <Button asChild size="sm" className="hidden sm:inline-flex shrink-0" variant="default">
             <Link to="/events/submit">Submit event</Link>
           </Button>
 
-          {isAdmin && profile ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <div className="h-6 w-6 rounded-full bg-primary text-white text-xs flex items-center justify-center font-semibold">
-                    {profile.full_name?.[0] ?? profile.email[0].toUpperCase()}
-                  </div>
-                  <span className="hidden sm:block text-sm">{profile.full_name?.split(' ')[0] ?? 'Admin'}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link to="/admin/dashboard" className="flex items-center gap-2">
-                    <LayoutDashboard className="h-4 w-4" /> Dashboard
+          {user ? (
+            <div className="hidden lg:flex items-center gap-1 shrink-0">
+              <Button asChild variant="ghost" size="sm" className="whitespace-nowrap">
+                <Link to="/profile" className="gap-1.5">
+                  <UserCircle className="h-4 w-4" />
+                  My Profile
+                </Link>
+              </Button>
+              {isAdmin ? (
+                <Button asChild variant="ghost" size="sm" className="whitespace-nowrap">
+                  <Link to="/admin/dashboard" className="gap-1.5">
+                    <LayoutDashboard className="h-4 w-4" />
+                    Admin Dashboard
                   </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="text-destructive flex items-center gap-2">
-                  <LogOut className="h-4 w-4" /> Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </Button>
+              ) : null}
+              <Button variant="outline" size="sm" className="whitespace-nowrap" onClick={() => void handleLogout()}>
+                <LogOut className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
           ) : null}
 
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="xl:hidden">
+              <Button variant="ghost" size="icon" className="xl:hidden shrink-0">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Open menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-80 pt-10">
-              <nav className="flex flex-col gap-1">
+            <SheetContent side="right" className="w-80 pt-10 flex flex-col">
+              <nav className="flex flex-col gap-1 flex-1 overflow-y-auto">
                 {[...navLinks, ...moreLinks].map((link) => (
                   <NavLink
                     key={link.to}
@@ -149,9 +149,30 @@ export function Header() {
                   <Button asChild className="w-full" onClick={() => setMobileOpen(false)}>
                     <Link to="/events/submit">Submit an event</Link>
                   </Button>
-                  {isAdmin && (
+                  {user ? (
+                    <>
+                      <Button asChild variant="outline" className="w-full" onClick={() => setMobileOpen(false)}>
+                        <Link to="/profile" className="gap-2">
+                          <UserCircle className="h-4 w-4" />
+                          My Profile
+                        </Link>
+                      </Button>
+                      {isAdmin ? (
+                        <Button asChild variant="outline" className="w-full" onClick={() => setMobileOpen(false)}>
+                          <Link to="/admin/dashboard" className="gap-2">
+                            <LayoutDashboard className="h-4 w-4" />
+                            Admin Dashboard
+                          </Link>
+                        </Button>
+                      ) : null}
+                      <Button variant="secondary" className="w-full gap-2" onClick={() => void handleLogout()}>
+                        <LogOut className="h-4 w-4" />
+                        Logout
+                      </Button>
+                    </>
+                  ) : (
                     <Button asChild variant="outline" className="w-full" onClick={() => setMobileOpen(false)}>
-                      <Link to="/admin/dashboard">Admin dashboard</Link>
+                      <Link to="/login">Member login</Link>
                     </Button>
                   )}
                 </div>

@@ -58,6 +58,12 @@ import { AdminResourcesPage } from '@/pages/admin/AdminResourcesPage'
 import { AdminMembersPage } from '@/pages/admin/AdminMembersPage'
 import { AdminCommunityGroupsPage } from '@/pages/admin/AdminCommunityGroupsPage'
 import { AdminServiceInterestsPage } from '@/pages/admin/AdminServiceInterestsPage'
+import { AdminMediaSubmissionsPage } from '@/pages/admin/AdminMediaSubmissionsPage'
+
+import { RequireAuth } from '@/components/RequireAuth'
+import { MemberLoginPage } from '@/pages/member/MemberLoginPage'
+import { ProfilePage } from '@/pages/member/ProfilePage'
+import { ProfileMediaPage } from '@/pages/member/ProfileMediaPage'
 
 export default function App() {
   return (
@@ -100,6 +106,23 @@ export default function App() {
               <Route path="membership/success" element={<MembershipSuccessPage />} />
               <Route path="support" element={<SupportPage />} />
               <Route path="resources" element={<ResourcesPage />} />
+              <Route path="login" element={<MemberLoginPage />} />
+              <Route
+                path="profile"
+                element={
+                  <RequireAuth>
+                    <ProfilePage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="profile/media"
+                element={
+                  <RequireAuth>
+                    <ProfileMediaPage />
+                  </RequireAuth>
+                }
+              />
               <Route path="community-groups" element={<CommunityGroupsPage />} />
               <Route path="community-groups/submit" element={<CommunityGroupsSubmitPage />} />
 
@@ -136,6 +159,7 @@ export default function App() {
               <Route path="submissions" element={<AdminSubmissionsPage />} />
               <Route path="contacts" element={<AdminContactsPage />} />
               <Route path="service-interests" element={<AdminServiceInterestsPage />} />
+              <Route path="media-submissions" element={<AdminMediaSubmissionsPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="users" element={<AdminUsersPage />} />
             </Route>

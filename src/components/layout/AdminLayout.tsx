@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { AdminSidebar } from './AdminSidebar'
@@ -8,9 +8,39 @@ import { useAuth } from '@/contexts/AuthContext'
 
 const ADMIN_CHANGE_PASSWORD_PATH = '/admin/change-password'
 
+const ROUTE_LABELS: Record<string, string> = {
+  '/admin/dashboard': 'Dashboard',
+  '/admin/calendar': 'Calendar',
+  '/admin/resources': 'Resources',
+  '/admin/members': 'Members',
+  '/admin/community-groups': 'Community groups',
+  '/admin/announcements': 'Announcements',
+  '/admin/businesses': 'Businesses',
+  '/admin/fundraisers': 'Fundraisers',
+  '/admin/gallery': 'Gallery',
+  '/admin/submissions': 'Public submissions',
+  '/admin/contacts': 'Contact messages',
+  '/admin/service-interests': 'Call to Serve',
+  '/admin/media-submissions': 'Media submissions',
+  '/admin/settings': 'Site settings',
+  '/admin/users': 'Admin users',
+  '/admin/change-password': 'Change password',
+}
+
+function mobilePageTitle(pathname: string): string {
+  if (ROUTE_LABELS[pathname]) return ROUTE_LABELS[pathname]
+  const tail = pathname.replace(/^\/admin\/?/, '')
+  if (!tail) return 'Admin'
+  return tail
+    .split('/')
+    .map((s) => s.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()))
+    .join(' · ')
+}
+
 export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
+  const mobileTitle = useMemo(() => mobilePageTitle(location.pathname), [location.pathname])
   const { adminGateLoading, adminPasswordGate } = useAuth()
 
   /** ProtectedRoute already waits on session `loading`; gate spinner is only for admin security. */
@@ -44,7 +74,7 @@ export function AdminLayout() {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <AdminSidebar />
+        <AdminSidebar onNavigate={() => setSidebarOpen(false)} />
         <Button
           variant="ghost"
           size="icon"
@@ -58,11 +88,14 @@ export function AdminLayout() {
       {/* Main content */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
         {/* Mobile top bar */}
-        <div className="flex h-16 items-center gap-3 border-b bg-white px-4 lg:hidden">
-          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
+        <div className="flex h-16 items-center gap-3 border-b bg-white px-4 lg:hidden min-w-0">
+          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setSidebarOpen(true)} aria-label="Open admin menu">
             <Menu className="h-5 w-5" />
           </Button>
-          <span className="font-semibold text-sm text-foreground">KCH Admin</span>
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold text-sm text-foreground truncate">{mobileTitle}</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide truncate">KCH Admin</div>
+          </div>
         </div>
 
         {/* Page content */}

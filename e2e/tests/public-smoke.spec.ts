@@ -23,6 +23,7 @@ const ROUTES = [
   '/privacy',
   '/disclaimer',
   '/contact',
+  '/login',
 ] as const
 
 for (const route of ROUTES) {
