@@ -34,3 +34,6 @@ dist-ssr
 supabase/.temp/
 .vercel
 .env*.local
+
+# KIGH private/internal review files
+kigh-private-review/
