@@ -39,6 +39,7 @@ import { SubmitBusinessPage } from '@/pages/public/SubmitBusinessPage'
 import { SubmitFundraiserPage } from '@/pages/public/SubmitFundraiserPage'
 import { PrivacyPage } from '@/pages/public/PrivacyPage'
 import { TermsPage } from '@/pages/public/TermsPage'
+import { DisclaimerPage } from '@/pages/public/DisclaimerPage'
 import { NotFoundPage } from '@/pages/public/NotFoundPage'
 
 import { AdminLoginPage } from '@/pages/admin/LoginPage'
@@ -104,6 +105,7 @@ export default function App() {
 
               <Route path="privacy" element={<PrivacyPage />} />
               <Route path="terms" element={<TermsPage />} />
+              <Route path="disclaimer" element={<DisclaimerPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
 

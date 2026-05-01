@@ -1,3 +1,4 @@
+import { ShieldCheck } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { APP_NAME } from '@/lib/constants'
 
@@ -5,9 +6,25 @@ export function PrivacyPage() {
   return (
     <>
       <SEOHead title="Privacy Policy" />
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-3xl font-bold mb-8">Privacy Policy</h1>
-        <div className="prose prose-sm max-w-none text-foreground/80 space-y-6">
+
+      <div className="border-b bg-gradient-to-br from-muted/50 via-background to-primary/[0.05]">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">Privacy Policy</h1>
+              <p className="mt-3 text-muted-foreground text-base sm:text-lg leading-relaxed">
+                How {APP_NAME} collects, uses, and protects the information you share with us.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+        <div className="prose prose-sm max-w-none text-foreground/85 space-y-6 leading-relaxed">
           <p><strong>Last updated:</strong> January 2025</p>
 
           <h2 className="text-xl font-semibold text-foreground">1. Information We Collect</h2>

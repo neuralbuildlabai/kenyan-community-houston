@@ -57,9 +57,14 @@ export function Footer() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="bg-foreground text-white mt-20">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
+    <footer className="relative bg-foreground text-white mt-20">
+      {/* Top accent stripe */}
+      <div
+        className="h-1 w-full bg-gradient-to-r from-primary via-kenyan-gold-500 to-primary opacity-70"
+        aria-hidden
+      />
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
+        <div className="grid grid-cols-1 gap-10 sm:gap-12 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-3 mb-5">
               <KighLogo withCard className="h-11 w-11 shrink-0 border-white/20 bg-white" imgClassName="max-h-9" />
@@ -68,8 +73,8 @@ export function Footer() {
                 <div className="text-xs text-white/55 mt-0.5">Kenyans in Greater Houston</div>
               </div>
             </div>
-            <p className="text-sm text-white/65 leading-relaxed max-w-sm mb-6">
-              Your trusted hub for events, businesses, resources, and community connection in Greater Houston.
+            <p className="text-sm text-white/70 leading-relaxed max-w-sm mb-6">
+              Your trusted hub for events, businesses, resources, and community connection across Greater Houston.
             </p>
             <div className="space-y-2 text-sm text-white/60">
               <div className="flex items-start gap-2">
@@ -118,13 +123,15 @@ export function Footer() {
           </div>
         </div>
 
-        <Separator className="mt-14 mb-6 bg-white/12" />
+        <Separator className="mt-14 mb-7 bg-white/12" />
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/45">
-          <p>© {year} {APP_NAME}. All rights reserved.</p>
-          <p className="text-center sm:text-right">
-            Content moderated.{' '}
-            <Link to="/disclaimer" className="underline hover:text-white/70">Disclaimer</Link>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/55">
+          <p className="text-white/55">© {year} {APP_NAME}. All rights reserved.</p>
+          <p className="text-center sm:text-right text-white/55">
+            Content moderated by community volunteers ·{' '}
+            <Link to="/disclaimer" className="underline-offset-2 hover:text-white hover:underline transition-colors">
+              Disclaimer
+            </Link>
           </p>
         </div>
       </div>

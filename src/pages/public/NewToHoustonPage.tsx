@@ -77,16 +77,19 @@ export function NewToHoustonPage() {
     <>
       <SEOHead title="New to Houston" description="A newcomer's guide to settling in Houston for Kenyans — housing, transportation, schools, employment, and more." />
 
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-10">
-        <div className="text-center mb-12">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">
-            <MapPin className="h-7 w-7 text-primary" />
+      <div className="border-b bg-gradient-to-br from-primary/[0.07] via-background to-kenyan-gold-500/[0.06]">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 sm:py-14 text-center">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/12 text-primary mb-5 shadow-sm">
+            <MapPin className="h-7 w-7" />
           </div>
-          <h1 className="text-3xl font-bold mb-3">New to Houston?</h1>
-          <p className="text-muted-foreground max-w-xl mx-auto text-lg">
-            Welcome to Houston! This guide is here to help you navigate life in the city with confidence.
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight mb-3">New to Houston?</h1>
+          <p className="text-muted-foreground max-w-xl mx-auto text-base sm:text-lg leading-relaxed">
+            Welcome to Houston. This guide is here to help you navigate life in the city with confidence — neighborhood by neighborhood, step by step.
           </p>
         </div>
+      </div>
+
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
 
         <div className="mb-10 rounded-xl border border-border/80 bg-muted/20 px-4 py-4 sm:px-5 text-center text-sm text-muted-foreground leading-relaxed">
           Find churches, benevolence groups, welfare groups, and community institutions serving Kenyans in Greater Houston in our{' '}
