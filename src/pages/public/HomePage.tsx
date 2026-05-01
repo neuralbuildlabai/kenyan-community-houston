@@ -14,6 +14,7 @@ import {
   Sparkles,
   HeartHandshake,
   TreePine,
+  Compass,
 } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { EventCard } from '@/components/EventCard'
@@ -21,6 +22,7 @@ import { AnnouncementCard } from '@/components/AnnouncementCard'
 import { FundraiserCard } from '@/components/FundraiserCard'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 import { PageLoader } from '@/components/LoadingSpinner'
 import { supabase } from '@/lib/supabase'
 import type { Event, Announcement, Fundraiser } from '@/lib/types'
@@ -72,21 +74,19 @@ export function HomePage() {
 
   if (loading) return <PageLoader />
 
-  // Featured event handling: when there's only one upcoming event, give it
-  // a more balanced 2-column layout so it doesn't feel lonely.
   const featuredEvent = events[0]
   const additionalEvents = events.slice(1)
 
   return (
     <>
-      <SEOHead />
+      <SEOHead
+        title="Home"
+        description="KIGH is the community home for Kenyans in Greater Houston — events, culture, support, businesses, and belonging in one place. Join, attend, serve, and stay connected."
+      />
 
-      {/* ── Premium hero ─────────────────────────────────────────────── */}
+      {/* ── Hero ───────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden text-white">
-        {/* Base gradient (still renders if image missing) */}
         <div className="absolute inset-0 bg-gradient-to-br from-foreground via-kenyan-green-900 to-kenyan-green-800" />
-        {/* Houston skyline backdrop with graceful fallback.
-            Expected asset: /kigh-media/site/hero/houston-downtown.jpg */}
         <HoustonSkylineBackdrop />
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-28">
@@ -101,13 +101,11 @@ export function HomePage() {
                 Kenyans in Greater Houston
               </Badge>
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold leading-[1.05] tracking-tight mb-6 drop-shadow-sm">
-              Your Kenyan community,
-              <br className="hidden sm:block" />
-              <span className="text-kenyan-gold-300"> rooted in Houston.</span>
+            <h1 className="text-4xl sm:text-5xl lg:text-[3.35rem] font-bold leading-[1.08] tracking-tight mb-6 drop-shadow-sm">
+              Where Kenyans in Houston connect, celebrate, and care for one another.
             </h1>
             <p className="text-lg sm:text-xl text-white/90 leading-relaxed mb-9 max-w-2xl">
-              Events, announcements, businesses, resources, and community support — all in one trusted place for Kenyans across Greater Houston.
+              From family gatherings and youth programs to business connections, community support, and newcomer resources, KIGH brings our people together in one place — online and in person.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button
@@ -127,31 +125,30 @@ export function HomePage() {
               </Button>
             </div>
 
-            {/* small community signal row */}
-            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-sm text-white/75">
+            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-sm text-white/80">
               <span className="inline-flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5 text-kenyan-gold-300" /> Greater Houston, TX
+                <MapPin className="h-3.5 w-3.5 text-kenyan-gold-300 shrink-0" /> Greater Houston, Texas
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-kenyan-gold-300" /> Curated &amp; community-moderated
+                <HeartHandshake className="h-3.5 w-3.5 text-kenyan-gold-300 shrink-0" /> Community-led and volunteer-powered
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <HeartHandshake className="h-3.5 w-3.5 text-kenyan-gold-300" /> Built by volunteers, for the community
+                <Sparkles className="h-3.5 w-3.5 text-kenyan-gold-300 shrink-0" /> Events, support, culture, and connection
               </span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Quick access (refined chip rail) ─────────────────────────── */}
-      <section className="border-b bg-gradient-to-b from-white to-muted/40 py-6 sm:py-7">
+      {/* ── Quick access ───────────────────────────────────────────── */}
+      <section className="border-b bg-gradient-to-b from-muted/25 via-white to-muted/35 py-7 sm:py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">
-              Quick access
-            </p>
-            <p className="text-xs text-muted-foreground/80">Jump straight to what you need</p>
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Quick access</p>
           </div>
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl mb-5">
+            Start where you need to — attend, join, support, serve, or explore.
+          </p>
           <div className="flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-2.5">
             {[
               { to: '/events', Icon: Calendar, label: 'Events' },
@@ -179,16 +176,69 @@ export function HomePage() {
       </section>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14 sm:py-16 space-y-16 sm:space-y-20">
-        {/* ── Upcoming events ──────────────────────────────────────── */}
+        {/* ── Why this community hub matters ───────────────────────── */}
+        <section className="rounded-3xl border border-border/70 bg-gradient-to-br from-primary/[0.04] via-background to-kenyan-gold-500/[0.05] px-6 py-10 sm:px-10 sm:py-12 shadow-sm">
+          <div className="max-w-3xl mb-8 sm:mb-10">
+            <p className="text-xs font-semibold text-primary/85 uppercase tracking-[0.14em] mb-2">Why we are here</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-4">
+              Why this community hub matters
+            </h2>
+            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+              KIGH exists to make it easier for Kenyans in Greater Houston to find each other, support one another, celebrate our culture, share opportunities, and build a stronger community for families, newcomers, youth, businesses, and future generations.
+            </p>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-3">
+            {[
+              {
+                title: 'Belonging',
+                Icon: Users,
+                body: 'Find community, meet families, and stay connected to Kenyan culture in Houston.',
+              },
+              {
+                title: 'Support',
+                Icon: Heart,
+                body: 'Discover fundraisers, welfare efforts, newcomer help, and ways to show up for one another.',
+              },
+              {
+                title: 'Opportunity',
+                Icon: Compass,
+                body: 'Connect with events, businesses, volunteers, youth programs, and community resources.',
+              },
+            ].map(({ title, Icon, body }) => (
+              <Card key={title} className="border-border/80 bg-card/90 shadow-sm hover:border-primary/25 transition-colors">
+                <CardContent className="pt-6 pb-5 px-5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary mb-3">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* ── New to Houston (compact pathway) ──────────────────────── */}
+        <section className="rounded-2xl border border-primary/15 bg-muted/25 px-5 py-5 sm:px-6 sm:py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold text-foreground tracking-tight">New to Houston?</h2>
+            <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed max-w-2xl">
+              Find community groups, Kenyan businesses, events, support resources, and practical information to help you settle in.
+            </p>
+          </div>
+          <Button asChild variant="default" className="shrink-0 font-semibold w-full sm:w-auto">
+            <Link to="/new-to-houston">Newcomer resources</Link>
+          </Button>
+        </section>
+
+        {/* ── Upcoming events ───────────────────────────────────────── */}
         <section>
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-7">
             <div>
-              <p className="text-xs font-semibold text-primary/80 uppercase tracking-[0.14em] mb-1.5">
-                What's happening
-              </p>
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Upcoming events</h2>
-              <p className="text-sm text-muted-foreground mt-1.5">
-                From the live community calendar — curated and moderated by KIGH.
+              <p className="text-xs font-semibold text-primary/80 uppercase tracking-[0.14em] mb-1.5">Community calendar</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Gather with the community</h2>
+              <p className="text-sm sm:text-base text-muted-foreground mt-2 max-w-2xl leading-relaxed">
+                See upcoming KIGH events, family gatherings, youth activities, workshops, and community meetings.
               </p>
             </div>
             <Button asChild variant="default" size="sm" className="gap-1.5 shrink-0 w-fit shadow-sm">
@@ -199,37 +249,46 @@ export function HomePage() {
           </div>
 
           {events.length === 0 ? (
-            <div className="rounded-2xl border bg-gradient-to-br from-muted/50 to-muted/20 px-6 py-10 text-center">
+            <div className="rounded-2xl border bg-gradient-to-br from-muted/50 to-muted/25 px-6 py-10 text-center">
               <CalendarDays className="mx-auto h-10 w-10 text-primary/40 mb-3" />
-              <p className="text-base font-medium text-foreground">No upcoming events listed yet</p>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto mt-1.5 leading-relaxed">
-                Check the calendar soon, or suggest an event for community review.
+              <p className="text-base font-medium text-foreground">Nothing on the calendar just yet</p>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto mt-2 leading-relaxed">
+                More community events will appear here as they are announced. Meantime, browse the calendar or share something the community should know about.
               </p>
-              <Button asChild variant="default" size="sm" className="mt-5">
-                <Link to="/events/submit">Suggest an event</Link>
-              </Button>
+              <div className="flex flex-wrap justify-center gap-2 mt-6">
+                <Button asChild variant="default" size="sm">
+                  <Link to="/calendar">Open calendar</Link>
+                </Button>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/events/submit">Suggest an event</Link>
+                </Button>
+              </div>
             </div>
           ) : events.length === 1 && featuredEvent ? (
-            // Balanced layout when there is only one event — pair with a soft "more coming" callout
-            <div className="grid gap-6 lg:grid-cols-5 items-stretch">
-              <div className="lg:col-span-3">
-                <EventCard event={featuredEvent} />
-              </div>
-              <div className="lg:col-span-2 rounded-2xl border border-dashed border-primary/25 bg-gradient-to-br from-primary/[0.04] via-background to-kenyan-gold-500/[0.05] p-6 sm:p-7 flex flex-col justify-center">
-                <div className="flex items-center gap-2 text-primary mb-2.5">
-                  <Sparkles className="h-4 w-4" />
-                  <span className="text-xs font-semibold uppercase tracking-wide">More coming soon</span>
+            <div className="space-y-4">
+              <Badge variant="secondary" className="text-xs font-medium w-fit">
+                Featured upcoming event
+              </Badge>
+              <div className="grid gap-6 lg:grid-cols-5 items-stretch">
+                <div className="lg:col-span-3">
+                  <EventCard event={featuredEvent} />
                 </div>
-                <p className="text-sm sm:text-base text-foreground/80 leading-relaxed mb-5">
-                  KIGH adds events as they are reviewed. Browse the full calendar for everything on the schedule, or share an event you would like the community to know about.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <Button asChild size="sm" variant="outline">
-                    <Link to="/calendar">Open calendar</Link>
-                  </Button>
-                  <Button asChild size="sm" variant="ghost" className="text-primary hover:text-primary">
-                    <Link to="/events/submit">Suggest an event</Link>
-                  </Button>
+                <div className="lg:col-span-2 rounded-2xl border border-dashed border-primary/25 bg-gradient-to-br from-primary/[0.04] via-background to-kenyan-gold-500/[0.05] p-6 sm:p-7 flex flex-col justify-center">
+                  <div className="flex items-center gap-2 text-primary mb-2.5">
+                    <Sparkles className="h-4 w-4" />
+                    <span className="text-xs font-semibold uppercase tracking-wide">More on the way</span>
+                  </div>
+                  <p className="text-sm sm:text-base text-foreground/80 leading-relaxed mb-5">
+                    More community events will appear here as they are announced. Browse the full calendar for everything on the schedule, or share an event you would like the community to know about.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button asChild size="sm" variant="outline">
+                      <Link to="/calendar">Open calendar</Link>
+                    </Button>
+                    <Button asChild size="sm" variant="ghost" className="text-primary hover:text-primary">
+                      <Link to="/events/submit">Suggest an event</Link>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -244,20 +303,19 @@ export function HomePage() {
           )}
         </section>
 
-        {/* ── Community highlights ─────────────────────────────────── */}
+        {/* ── Community updates & support ───────────────────────────── */}
         <section>
-          <div className="mb-7">
-            <p className="text-xs font-semibold text-primary/80 uppercase tracking-[0.14em] mb-1.5">
-              Stay in the loop
+          <div className="mb-8 max-w-3xl">
+            <p className="text-xs font-semibold text-primary/80 uppercase tracking-[0.14em] mb-1.5">Stay close to the community</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Community updates and support</h2>
+            <p className="text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed">
+              Stay informed about announcements, fundraisers, welfare efforts, and ways the community is showing up for one another.
             </p>
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-              Community highlights
-            </h2>
           </div>
           <div className="grid gap-8 lg:grid-cols-2 lg:gap-10">
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="text-lg font-semibold text-foreground">Latest announcements</h3>
+                <h3 className="text-lg font-semibold text-foreground">Announcements</h3>
                 <Button asChild variant="ghost" size="sm" className="gap-1 text-muted-foreground shrink-0">
                   <Link to="/announcements">
                     All <ArrowRight className="h-3.5 w-3.5" />
@@ -271,10 +329,10 @@ export function HomePage() {
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-dashed bg-muted/20 px-5 py-7 text-center">
+                <div className="rounded-xl border border-dashed bg-muted/30 px-5 py-8 text-center">
                   <p className="text-sm font-medium text-foreground">All quiet for now</p>
-                  <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed max-w-sm mx-auto">
-                    New community announcements will appear here as KIGH publishes them.
+                  <p className="text-xs text-muted-foreground mt-2 leading-relaxed max-w-sm mx-auto">
+                    New community announcements will appear here once published.
                   </p>
                 </div>
               )}
@@ -282,10 +340,10 @@ export function HomePage() {
 
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="text-lg font-semibold text-foreground">Community support</h3>
+                <h3 className="text-lg font-semibold text-foreground">Fundraisers</h3>
                 <Button asChild variant="ghost" size="sm" className="gap-1 text-muted-foreground shrink-0">
                   <Link to="/community-support">
-                    Fundraisers <ArrowRight className="h-3.5 w-3.5" />
+                    View all <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </Button>
               </div>
@@ -296,16 +354,16 @@ export function HomePage() {
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-dashed bg-muted/20 px-5 py-7 text-center">
+                <div className="rounded-xl border border-dashed bg-muted/30 px-5 py-8 text-center">
                   <p className="text-sm font-medium text-foreground">No active fundraisers right now</p>
-                  <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed max-w-sm mx-auto">
-                    When the community is rallying around someone, you'll see it here.
+                  <p className="text-xs text-muted-foreground mt-2 leading-relaxed max-w-sm mx-auto">
+                    When the community is rallying around someone, you will see it here.
                   </p>
                 </div>
               )}
-              <div className="rounded-2xl border bg-card p-5 shadow-sm">
+              <div className="rounded-2xl border border-primary/10 bg-gradient-to-br from-card to-muted/20 p-5 shadow-sm">
                 <p className="text-sm text-muted-foreground leading-relaxed mb-3">
-                  Community programs also rely on direct support through official KIGH channels.
+                  Support KIGH programs, cultural events, youth activities, newcomer resources, and community care through official treasury channels.
                 </p>
                 <Button asChild size="sm" variant="secondary" className="font-medium">
                   <Link to="/support">Ways to Support KIGH</Link>
@@ -315,53 +373,41 @@ export function HomePage() {
           </div>
         </section>
 
-        {/* ── Community image band (graceful fallback if photos missing) */}
+        {/* ── Families, culture, next generation ───────────────────── */}
         <section>
-          <div className="mb-7 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold text-primary/80 uppercase tracking-[0.14em] mb-1.5">
-                The heart of KIGH
-              </p>
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-                Families, friends, and futures
-              </h2>
-              <p className="text-sm sm:text-base text-muted-foreground mt-2 max-w-2xl leading-relaxed">
-                We gather for cultural moments, youth programs, and everyday community. These are the people and places that make KIGH home in Houston.
-              </p>
-            </div>
+          <div className="mb-8 max-w-3xl">
+            <p className="text-xs font-semibold text-primary/80 uppercase tracking-[0.14em] mb-1.5">The heart of KIGH</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Families, culture, and the next generation</h2>
+            <p className="text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed">
+              KIGH is more than a calendar. It is where children meet community, families build friendships, and our culture continues to grow in Greater Houston.
+            </p>
           </div>
 
-          <div className="grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {/*
-              Expected images (drop into public/kigh-media/site/community/):
-                - family-park.jpg
-                - community-kids-park.jpg
-              See public/kigh-media/site/README.md for guidance.
-            */}
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             <CommunityImageCard
               src="/kigh-media/site/community/family-park.jpg"
               alt="A Kenyan family enjoying a community gathering at a Houston park"
               caption="Family days, year-round"
+              description="Community gatherings give families a place to relax, connect, and create memories together."
               Icon={Users}
               aspect="aspect-[4/3]"
             />
             <CommunityImageCard
               src="/kigh-media/site/community/community-kids-park.jpg"
               alt="Children playing together at a community park gathering"
-              caption="Where the next generation grows up"
+              caption="Where the next generation grows"
+              description="Youth activities, mentorship, and family-centered events help young people stay connected to community and culture."
               Icon={TreePine}
               aspect="aspect-[4/3]"
             />
-            <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.06] via-background to-kenyan-gold-500/[0.07] p-6 sm:p-7 flex flex-col justify-center shadow-sm">
+            <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.07] via-background to-kenyan-gold-500/[0.08] p-6 sm:p-7 flex flex-col justify-center shadow-sm">
               <div className="flex items-center gap-2 text-primary mb-2.5">
                 <HeartHandshake className="h-4 w-4" />
-                <span className="text-xs font-semibold uppercase tracking-wide">Belonging</span>
+                <span className="text-xs font-semibold uppercase tracking-wide">Together</span>
               </div>
-              <h3 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight mb-2">
-                Built around real people
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                KIGH brings together neighbors, families, and friends across Greater Houston — through events, support, and shared culture.
+              <h3 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight mb-2">Built around real people</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-5">
+                Behind every event and resource are volunteers, families, elders, young professionals, and neighbors choosing to show up.
               </p>
               <Button asChild size="sm" variant="default" className="font-medium w-fit">
                 <Link to="/about">About the community</Link>
@@ -370,9 +416,8 @@ export function HomePage() {
           </div>
         </section>
 
-        {/* ── Membership CTA (primary path) ────────────────────────── */}
+        {/* ── Membership CTA ────────────────────────────────────────── */}
         <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-kenyan-green-800 to-kenyan-green-900 text-white shadow-xl">
-          {/* decorative accent */}
           <div
             className="absolute -top-20 -right-20 h-72 w-72 rounded-full bg-kenyan-gold-500/20 blur-3xl pointer-events-none"
             aria-hidden
@@ -385,15 +430,13 @@ export function HomePage() {
             <div className="lg:col-span-3 max-w-2xl">
               <div className="flex items-center gap-2 mb-3">
                 <Users className="h-5 w-5 text-kenyan-gold-300" />
-                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-kenyan-gold-200">
-                  Community
-                </span>
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-kenyan-gold-200">Your community home</span>
               </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 leading-tight tracking-tight">
-                Are you Kenyan in Houston?
+                Make this your community home
               </h2>
               <p className="text-white/85 text-base sm:text-lg leading-relaxed mb-7 max-w-xl">
-                Register for membership, explore community resources, and stay connected with events and support — wherever you are in Greater Houston.
+                Register as an individual, family, or associate member to stay connected to events, resources, community support, and opportunities to serve.
               </p>
               <div className="flex flex-wrap gap-3">
                 <Button
@@ -414,7 +457,6 @@ export function HomePage() {
               </div>
             </div>
 
-            {/* Quick membership facts */}
             <div className="lg:col-span-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
               {[
                 { label: 'Annual dues', value: '$20 / year' },
@@ -425,9 +467,7 @@ export function HomePage() {
                   key={f.label}
                   className="rounded-xl border border-white/15 bg-white/[0.06] backdrop-blur-sm px-4 py-3"
                 >
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-kenyan-gold-200/90">
-                    {f.label}
-                  </p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-kenyan-gold-200/90">{f.label}</p>
                   <p className="text-sm sm:text-base font-medium text-white mt-0.5">{f.value}</p>
                 </div>
               ))}
@@ -435,19 +475,17 @@ export function HomePage() {
           </div>
         </section>
 
-        {/* ── Call to Serve (secondary path, intentionally lighter) ── */}
+        {/* ── Call to Serve ─────────────────────────────────────────── */}
         <section className="rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-primary/[0.03] p-6 sm:p-8 shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
             <div className="max-w-xl space-y-2">
               <div className="flex items-center gap-2 text-primary/80 mb-1">
                 <HeartHandshake className="h-4 w-4" />
-                <span className="text-xs font-semibold uppercase tracking-[0.14em]">A Call to Serve</span>
+                <span className="text-xs font-semibold uppercase tracking-[0.14em]">Serve the community</span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
-                Lend your time, skills, or heart
-              </h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Help carry the community forward</h2>
               <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                KIGH is looking for community members willing to help with events, youth programs, welfare support, communications, membership, and outreach.
+                KIGH is powered by people who give what they can — a few hours, a skill, a connection, a helping hand, or a willingness to lead. If you are ready to serve, we would love to hear from you.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row flex-wrap gap-2.5 shrink-0">
