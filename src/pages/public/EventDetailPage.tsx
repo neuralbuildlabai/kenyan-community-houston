@@ -16,6 +16,17 @@ function resourceHref(r: Resource): string | null {
   return null
 }
 
+/** Apr 24 session materials: consistent order on event detail. */
+function sortRelatedResources(rows: Resource[]): Resource[] {
+  const order = ['kigh-financial-literacy', 'hr-benefits-joyce-marendes', 'tax-presentation-04-24-2026']
+  return [...rows].sort((a, b) => {
+    const ia = order.indexOf(a.slug)
+    const ib = order.indexOf(b.slug)
+    if (ia !== -1 || ib !== -1) return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib)
+    return a.title.localeCompare(b.title)
+  })
+}
+
 export function EventDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const [event, setEvent] = useState<Event | null>(null)
@@ -40,8 +51,7 @@ export function EventDetailPage() {
           .eq('related_event_id', ev.id)
           .eq('status', 'published')
           .eq('access_level', 'public')
-          .order('title', { ascending: true })
-        setRelatedResources((res as Resource[]) ?? [])
+        setRelatedResources(sortRelatedResources((res as Resource[]) ?? []))
       } else {
         setRelatedResources([])
       }

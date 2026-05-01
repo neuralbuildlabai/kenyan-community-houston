@@ -1,6 +1,9 @@
 -- ============================================================
--- Seed: KIGH Family Fun Day (upcoming) + Tax Presentation (past)
--- Idempotent on events.slug. Links tax resource to tax event.
+-- Seed: KIGH Family Fun Day (upcoming)
+-- Idempotent on events.slug.
+-- April 24 session materials + single public event live in 006
+-- (kigh-financial-literacy-session-2026-04-24); no separate tax
+-- calendar row here — avoids duplicate Apr 24 events.
 -- ============================================================
 
 INSERT INTO events (
@@ -51,31 +54,6 @@ INSERT INTO events (
   '/kigh-media/events/kigh-family-fun-day-2026.jpeg',
   'Kenyans in Greater Houston / KIGH',
   null
-),
-(
-  'tax-presentation-04-24-2026',
-  'Tax Presentation 04-24-2026',
-  'Education',
-  $tx$Public KIGH tax presentation session held for the community. Slides and reference materials are available in the resource library as the published PDF.$tx$,
-  'Community tax education session; date confirmed April 24, 2026. See resource library for the presentation file.',
-  '2026-04-24',
-  null,
-  null,
-  null,
-  'America/Chicago',
-  'KIGH community program — Greater Houston',
-  null,
-  'Houston',
-  'TX',
-  false,
-  true,
-  'published',
-  now(),
-  false,
-  null,
-  null,
-  'Kenyans in Greater Houston / KIGH',
-  null
 )
 ON CONFLICT (slug) DO UPDATE SET
   title = EXCLUDED.title,
@@ -101,12 +79,3 @@ ON CONFLICT (slug) DO UPDATE SET
   organizer_name = EXCLUDED.organizer_name,
   organizer_email = EXCLUDED.organizer_email,
   updated_at = now();
-
-UPDATE resources r
-SET
-  related_event_id = e.id,
-  updated_at = now()
-FROM events e
-WHERE e.slug = 'tax-presentation-04-24-2026'
-  AND r.slug = 'tax-presentation-04-24-2026'
-  AND (r.related_event_id IS DISTINCT FROM e.id);
