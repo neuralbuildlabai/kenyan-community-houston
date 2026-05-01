@@ -14,6 +14,7 @@ import {
   ChevronRight,
   FolderOpen,
   UserPlus,
+  UsersRound,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -39,6 +40,7 @@ const navGroups: { heading: string; items: NavItem[] }[] = [
     items: [
       { to: '/admin/announcements', label: 'Announcements', Icon: Megaphone },
       { to: '/admin/businesses', label: 'Businesses', Icon: Building2 },
+      { to: '/admin/community-groups', label: 'Community groups', Icon: UsersRound },
       { to: '/admin/fundraisers', label: 'Fundraisers', Icon: Heart },
       { to: '/admin/gallery', label: 'Gallery', Icon: Image },
     ],

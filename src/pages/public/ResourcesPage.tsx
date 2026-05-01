@@ -28,9 +28,12 @@ export function ResourcesPage() {
   useEffect(() => {
     async function load() {
       setLoading(true)
+      // Explicit columns only — never request storage_bucket / storage_path / mime_type on public pages.
       let q = supabase
         .from('resources')
-        .select('*')
+        .select(
+          'id, title, slug, description, category, file_type, file_url, external_url, access_level, status, resource_date, related_event_id, created_at, updated_at'
+        )
         .eq('status', 'published')
         .eq('access_level', 'public')
         .order('title', { ascending: true })

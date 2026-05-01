@@ -29,6 +29,8 @@ import { MembershipPage } from '@/pages/public/MembershipPage'
 import { MembershipSuccessPage } from '@/pages/public/MembershipSuccessPage'
 import { SupportPage } from '@/pages/public/SupportPage'
 import { ResourcesPage } from '@/pages/public/ResourcesPage'
+import { CommunityGroupsPage } from '@/pages/public/CommunityGroupsPage'
+import { CommunityGroupsSubmitPage } from '@/pages/public/CommunityGroupsSubmitPage'
 import { SubmitEventPage } from '@/pages/public/SubmitEventPage'
 import { SubmitAnnouncementPage } from '@/pages/public/SubmitAnnouncementPage'
 import { SubmitBusinessPage } from '@/pages/public/SubmitBusinessPage'
@@ -50,6 +52,7 @@ import { AdminSettingsPage } from '@/pages/admin/SettingsPage'
 import { AdminUsersPage } from '@/pages/admin/UsersPage'
 import { AdminResourcesPage } from '@/pages/admin/AdminResourcesPage'
 import { AdminMembersPage } from '@/pages/admin/AdminMembersPage'
+import { AdminCommunityGroupsPage } from '@/pages/admin/AdminCommunityGroupsPage'
 
 export default function App() {
   return (
@@ -90,6 +93,8 @@ export default function App() {
               <Route path="membership/success" element={<MembershipSuccessPage />} />
               <Route path="support" element={<SupportPage />} />
               <Route path="resources" element={<ResourcesPage />} />
+              <Route path="community-groups" element={<CommunityGroupsPage />} />
+              <Route path="community-groups/submit" element={<CommunityGroupsSubmitPage />} />
 
               <Route path="privacy" element={<PrivacyPage />} />
               <Route path="terms" element={<TermsPage />} />
@@ -114,6 +119,7 @@ export default function App() {
               <Route path="calendar" element={<AdminCalendarPage />} />
               <Route path="resources" element={<AdminResourcesPage />} />
               <Route path="members" element={<AdminMembersPage />} />
+              <Route path="community-groups" element={<AdminCommunityGroupsPage />} />
               <Route path="announcements" element={<AdminAnnouncementsPage />} />
               <Route path="businesses" element={<AdminBusinessesPage />} />
               <Route path="fundraisers" element={<AdminFundraisersPage />} />

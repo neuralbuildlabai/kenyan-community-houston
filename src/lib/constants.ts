@@ -52,6 +52,27 @@ export const MEMBERSHIP_INTEREST_OPTIONS = [
   'Newcomer support',
 ] as const
 
+/** DB `community_groups.category` values (non-commercial directory). */
+export const COMMUNITY_GROUP_CATEGORY_VALUES = [
+  'religious_institution',
+  'benevolence_group',
+  'welfare_group',
+  'youth_family_group',
+  'cultural_organization',
+  'professional_networking_group',
+  'other',
+] as const
+
+export const COMMUNITY_GROUP_CATEGORIES: { value: (typeof COMMUNITY_GROUP_CATEGORY_VALUES)[number]; label: string }[] = [
+  { value: 'religious_institution', label: 'Religious Institution' },
+  { value: 'benevolence_group', label: 'Benevolence Group' },
+  { value: 'welfare_group', label: 'Welfare Group' },
+  { value: 'youth_family_group', label: 'Youth / Family Group' },
+  { value: 'cultural_organization', label: 'Cultural Organization' },
+  { value: 'professional_networking_group', label: 'Professional / Networking Group' },
+  { value: 'other', label: 'Other' },
+]
+
 export const RESOURCE_LIBRARY_CATEGORIES = [
   'Governance',
   'Membership',

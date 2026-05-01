@@ -12,6 +12,7 @@ import {
   MapPin,
   Users,
   Library,
+  UsersRound,
 } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { EventCard } from '@/components/EventCard'
@@ -116,6 +117,7 @@ export function HomePage() {
               { to: '/businesses', Icon: Building2, label: 'Businesses' },
               { to: '/support', Icon: Heart, label: 'Support' },
               { to: '/resources', Icon: Library, label: 'Resources' },
+              { to: '/community-groups', Icon: UsersRound, label: 'Community Groups' },
               { to: '/new-to-houston', Icon: MapPin, label: 'New to Houston' },
             ].map(({ to, Icon, label }) => (
               <Link

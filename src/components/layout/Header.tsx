@@ -28,6 +28,7 @@ const moreLinks = [
   { to: '/membership', label: 'Membership' },
   { to: '/support', label: 'Support KIGH' },
   { to: '/resources', label: 'Resources' },
+  { to: '/community-groups', label: 'Community Groups' },
   { to: '/governance', label: 'Governance' },
   { to: '/new-to-houston', label: 'New to Houston' },
   { to: '/about', label: 'About' },

@@ -88,6 +88,14 @@ export function NewToHoustonPage() {
           </p>
         </div>
 
+        <div className="mb-10 rounded-xl border border-border/80 bg-muted/20 px-4 py-4 sm:px-5 text-center text-sm text-muted-foreground leading-relaxed">
+          Find churches, benevolence groups, welfare groups, and community institutions serving Kenyans in Greater Houston in our{' '}
+          <Link to="/community-groups" className="text-primary font-medium underline-offset-4 hover:underline">
+            Community Groups & Institutions
+          </Link>{' '}
+          directory.
+        </div>
+
         <div className="space-y-3">
           {sections.map((section) => (
             <AccordionItem key={section.title} section={section} />

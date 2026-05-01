@@ -130,6 +130,44 @@ export type ResourceAccessLevel = 'public' | 'members_only' | 'admin_only' | 'ne
 
 export type ResourceStatus = 'draft' | 'published' | 'archived'
 
+export type CommunityGroupCategory =
+  | 'religious_institution'
+  | 'benevolence_group'
+  | 'welfare_group'
+  | 'youth_family_group'
+  | 'cultural_organization'
+  | 'professional_networking_group'
+  | 'other'
+
+export type CommunityGroupStatus = 'pending' | 'approved' | 'published' | 'rejected' | 'archived'
+
+/** Public-safe row from `list_public_community_groups` (no submitter PII or internal notes). */
+export interface CommunityGroupPublic {
+  id: string
+  organization_name: string
+  slug: string
+  category: CommunityGroupCategory
+  description: string | null
+  website_url: string | null
+  public_email: string | null
+  public_phone: string | null
+  meeting_location: string | null
+  service_area: string | null
+  social_url: string | null
+  contact_person: string | null
+  status: CommunityGroupStatus
+  is_verified: boolean
+  created_at: string
+  updated_at: string
+}
+
+/** Full row for admin (includes submitter fields and notes). */
+export interface CommunityGroup extends CommunityGroupPublic {
+  submitter_name: string
+  submitter_email: string
+  notes: string | null
+}
+
 export interface Resource {
   id: string
   title: string
@@ -143,6 +181,13 @@ export interface Resource {
   status: ResourceStatus
   resource_date: string | null
   related_event_id: string | null
+  /** Supabase Storage bucket when file is private (e.g. kigh-private-documents). */
+  storage_bucket?: string | null
+  /** Object path within bucket; admin-only; never show on public routes. */
+  storage_path?: string | null
+  original_filename?: string | null
+  file_size?: number | null
+  mime_type?: string | null
   created_at: string
   updated_at: string
 }

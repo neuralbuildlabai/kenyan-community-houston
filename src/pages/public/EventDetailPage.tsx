@@ -47,7 +47,7 @@ export function EventDetailPage() {
       if (ev?.id) {
         const { data: res } = await supabase
           .from('resources')
-          .select('*')
+          .select('id, title, slug, file_type, file_url, external_url, status, access_level')
           .eq('related_event_id', ev.id)
           .eq('status', 'published')
           .eq('access_level', 'public')
