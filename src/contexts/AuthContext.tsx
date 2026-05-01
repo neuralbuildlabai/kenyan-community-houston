@@ -2,7 +2,22 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import type { AdminUserSecurity, Profile, UserRole } from '@/lib/types'
-import { getAdminPasswordGate } from '@/lib/adminPasswordGate'
+import { getSessionAdminPasswordGate } from '@/lib/adminPasswordGate'
+
+const ADMIN_ROLES: UserRole[] = [
+  'super_admin',
+  'community_admin',
+  'business_admin',
+  'support_admin',
+  'moderator',
+  'viewer',
+]
+
+const ADMIN_SECURITY_FETCH_MS = 12_000
+
+function profileIsAdmin(profile: Profile | null): boolean {
+  return !!profile && ADMIN_ROLES.includes(profile.role)
+}
 
 interface AuthContextValue {
   user: User | null
@@ -13,7 +28,7 @@ interface AuthContextValue {
   isAdmin: boolean
   adminSecurity: AdminUserSecurity | null
   adminGateLoading: boolean
-  adminPasswordGate: ReturnType<typeof getAdminPasswordGate>
+  adminPasswordGate: ReturnType<typeof getSessionAdminPasswordGate>
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
@@ -30,84 +45,152 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [adminGateLoading, setAdminGateLoading] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  const adminRoles: UserRole[] = [
-    'super_admin',
-    'community_admin',
-    'business_admin',
-    'support_admin',
-    'moderator',
-    'viewer',
-  ]
-
-  const isAdmin = profile ? adminRoles.includes(profile.role) : false
+  const isAdmin = profileIsAdmin(profile)
   const role = profile?.role ?? null
 
-  const adminPasswordGate = useMemo(() => getAdminPasswordGate(adminSecurity), [adminSecurity])
+  const adminPasswordGate = useMemo(
+    () => getSessionAdminPasswordGate(isAdmin, adminSecurity),
+    [isAdmin, adminSecurity]
+  )
 
   async function fetchAdminSecurity(userId: string) {
     setAdminGateLoading(true)
-    const { data, error } = await supabase
-      .from('admin_user_profiles')
-      .select('user_id, must_change_password, temporary_password_set_at, password_changed_at, display_name, position_title')
-      .eq('user_id', userId)
-      .maybeSingle()
-    if (error) setAdminSecurity(null)
-    else setAdminSecurity((data as AdminUserSecurity) ?? null)
-    setAdminGateLoading(false)
+    let settled = false
+    const timer = window.setTimeout(() => {
+      if (settled) return
+      settled = true
+      console.warn('[auth] admin_user_profiles query timed out; failing closed until retry')
+      setAdminSecurity(null)
+    }, ADMIN_SECURITY_FETCH_MS)
+
+    try {
+      const { data, error } = await supabase
+        .from('admin_user_profiles')
+        .select(
+          'user_id, must_change_password, temporary_password_set_at, password_changed_at, display_name, position_title'
+        )
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      window.clearTimeout(timer)
+      if (settled) return
+
+      settled = true
+      if (error) {
+        console.warn('[auth] admin_user_profiles query failed:', error.message)
+        setAdminSecurity(null)
+        return
+      }
+      setAdminSecurity((data as AdminUserSecurity) ?? null)
+    } catch (e) {
+      window.clearTimeout(timer)
+      if (!settled) {
+        settled = true
+        console.warn('[auth] fetchAdminSecurity error:', e)
+        setAdminSecurity(null)
+      }
+    } finally {
+      window.clearTimeout(timer)
+      setAdminGateLoading(false)
+    }
   }
 
   async function refreshAdminSecurity() {
-    const { data: sess } = await supabase.auth.getSession()
-    const uid = sess.session?.user?.id
-    if (uid) await fetchAdminSecurity(uid)
-    else setAdminSecurity(null)
+    try {
+      const { data: sess } = await supabase.auth.getSession()
+      const uid = sess.session?.user?.id
+      if (!uid) {
+        setAdminSecurity(null)
+        setAdminGateLoading(false)
+        return
+      }
+      await fetchAdminSecurity(uid)
+    } catch (e) {
+      console.warn('[auth] refreshAdminSecurity error:', e)
+      setAdminSecurity(null)
+      setAdminGateLoading(false)
+    }
   }
 
-  async function fetchProfile(userId: string) {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle()
-    if (!error && data) setProfile(data as Profile)
-    else setProfile(null)
+  async function fetchProfile(userId: string): Promise<Profile | null> {
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
+    if (!error && data) {
+      const p = data as Profile
+      setProfile(p)
+      return p
+    }
+    setProfile(null)
+    return null
   }
 
   async function refreshProfile() {
-    if (user) {
-      await fetchProfile(user.id)
-      await fetchAdminSecurity(user.id)
+    if (!user) return
+    try {
+      const prof = await fetchProfile(user.id)
+      if (profileIsAdmin(prof)) {
+        await fetchAdminSecurity(user.id)
+      } else {
+        setAdminSecurity(null)
+        setAdminGateLoading(false)
+      }
+    } catch (e) {
+      console.warn('[auth] refreshProfile error:', e)
+      setAdminSecurity(null)
+      setAdminGateLoading(false)
+    }
+  }
+
+  async function applySession(next: Session | null) {
+    setSession(next)
+    setUser(next?.user ?? null)
+    try {
+      if (!next?.user) {
+        setProfile(null)
+        setAdminSecurity(null)
+        setAdminGateLoading(false)
+        return
+      }
+      const prof = await fetchProfile(next.user.id)
+      if (profileIsAdmin(prof)) {
+        await fetchAdminSecurity(next.user.id)
+      } else {
+        setAdminSecurity(null)
+        setAdminGateLoading(false)
+      }
+    } catch (e) {
+      console.warn('[auth] applySession error:', e)
+      setProfile(null)
+      setAdminSecurity(null)
+      setAdminGateLoading(false)
     }
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        await fetchProfile(session.user.id)
-        await fetchAdminSecurity(session.user.id)
-      } else {
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const { data: { session: initial } } = await supabase.auth.getSession()
+        if (cancelled) return
+        await applySession(initial)
+      } catch (e) {
+        console.warn('[auth] initial getSession bootstrap error:', e)
+        setProfile(null)
         setAdminSecurity(null)
+        setAdminGateLoading(false)
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      setLoading(false)
+    })()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      void applySession(nextSession)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session)
-        setUser(session?.user ?? null)
-        if (session?.user) {
-          await fetchProfile(session.user.id)
-          await fetchAdminSecurity(session.user.id)
-        } else {
-          setProfile(null)
-          setAdminSecurity(null)
-        }
-      }
-    )
-
-    return () => subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
   }, [])
 
   async function signIn(email: string, password: string) {
@@ -119,6 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut()
     setProfile(null)
     setAdminSecurity(null)
+    setAdminGateLoading(false)
     setUser(null)
     setSession(null)
   }

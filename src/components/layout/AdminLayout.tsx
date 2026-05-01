@@ -11,9 +11,10 @@ const ADMIN_CHANGE_PASSWORD_PATH = '/admin/change-password'
 export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
-  const { loading, adminGateLoading, adminPasswordGate } = useAuth()
+  const { adminGateLoading, adminPasswordGate } = useAuth()
 
-  const gatePending = loading || adminGateLoading
+  /** ProtectedRoute already waits on session `loading`; gate spinner is only for admin security. */
+  const gatePending = adminGateLoading
   const onChangePasswordPage = location.pathname === ADMIN_CHANGE_PASSWORD_PATH
   const mustRedirect = !gatePending && adminPasswordGate.required && !onChangePasswordPage
 

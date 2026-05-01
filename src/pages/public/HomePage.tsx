@@ -33,35 +33,38 @@ export function HomePage() {
 
   useEffect(() => {
     async function load() {
-      const todayYmd = format(new Date(), 'yyyy-MM-dd')
-      const [{ data: ev }, { data: ann }, { data: fund }] = await Promise.all([
-        supabase
-          .from('events')
-          .select('*')
-          .eq('status', 'published')
-          .gte('start_date', todayYmd)
-          .order('start_date', { ascending: true })
-          .limit(3),
-        supabase
-          .from('announcements')
-          .select('*')
-          .eq('status', 'published')
-          .order('is_pinned', { ascending: false })
-          .order('published_at', { ascending: false })
-          .limit(3),
-        supabase
-          .from('fundraisers')
-          .select('*')
-          .eq('status', 'published')
-          .order('published_at', { ascending: false })
-          .limit(3),
-      ])
-      setEvents((ev as Event[]) ?? [])
-      setAnnouncements((ann as Announcement[]) ?? [])
-      setFundraisers((fund as Fundraiser[]) ?? [])
-      setLoading(false)
+      try {
+        const todayYmd = format(new Date(), 'yyyy-MM-dd')
+        const [{ data: ev }, { data: ann }, { data: fund }] = await Promise.all([
+          supabase
+            .from('events')
+            .select('*')
+            .eq('status', 'published')
+            .gte('start_date', todayYmd)
+            .order('start_date', { ascending: true })
+            .limit(3),
+          supabase
+            .from('announcements')
+            .select('*')
+            .eq('status', 'published')
+            .order('is_pinned', { ascending: false })
+            .order('published_at', { ascending: false })
+            .limit(3),
+          supabase
+            .from('fundraisers')
+            .select('*')
+            .eq('status', 'published')
+            .order('published_at', { ascending: false })
+            .limit(3),
+        ])
+        setEvents((ev as Event[]) ?? [])
+        setAnnouncements((ann as Announcement[]) ?? [])
+        setFundraisers((fund as Fundraiser[]) ?? [])
+      } finally {
+        setLoading(false)
+      }
     }
-    load()
+    void load()
   }, [])
 
   if (loading) return <PageLoader />
