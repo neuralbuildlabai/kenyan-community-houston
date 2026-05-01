@@ -142,7 +142,7 @@ export function MembershipPage() {
         <Card className="border-primary/15 shadow-sm bg-muted/25">
           <CardContent className="py-4 px-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              <span className="font-semibold text-foreground">Interested in volunteering?</span> KIGH welcomes help with events, committees, youth programs, and community support — whether you have a little time or a lot.
+              <span className="font-semibold text-foreground">Membership keeps you connected.</span> Service helps move the community forward. If you are willing to help, you can also submit a service interest form.
             </p>
             <Button asChild size="sm" variant="default" className="shrink-0 w-full sm:w-auto">
               <Link to="/serve">Call to Serve</Link>

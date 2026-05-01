@@ -16,26 +16,46 @@ export const SERVICE_STATUS_OPTIONS: { value: ServiceInterestStatus; label: stri
   { value: 'archived', label: 'Archived' },
 ]
 
-/** Role and committee areas featured on the Call to Serve page. */
-export const SERVE_OPPORTUNITY_CARDS: { title: string; hint?: string }[] = [
-  { title: 'Chairperson / President support', hint: 'Strategic support alongside elected leadership' },
-  { title: 'Vice Chairperson support' },
-  { title: 'Secretary / records' },
-  { title: 'Assistant Secretary' },
-  { title: 'Treasurer / finance support' },
-  { title: 'Assistant Treasurer' },
-  { title: 'Facilitator / Operations support' },
-  { title: 'Assistant Facilitator / Operations support' },
-  { title: 'Youth Representative / youth programs' },
-  { title: 'Welfare / community support' },
-  { title: 'Assistant Welfare support' },
-  { title: 'Events committee' },
-  { title: 'Membership committee' },
-  { title: 'Communications / social media' },
-  { title: 'Business and vendor outreach' },
-  { title: 'Cultural programs' },
-  { title: 'Education and career programs' },
-  { title: 'Health and wellness programs' },
-  { title: 'Volunteer coordination' },
-  { title: 'General community helpers' },
+/** Grouped role areas for the Call to Serve page. */
+export const SERVE_OPPORTUNITY_GROUPS: {
+  heading: string
+  items: { title: string; hint?: string }[]
+}[] = [
+  {
+    heading: 'Leadership & Administration',
+    items: [
+      { title: 'Chairperson / President support' },
+      { title: 'Vice Chairperson support' },
+      { title: 'Secretary / records' },
+      { title: 'Assistant Secretary' },
+      { title: 'Facilitator / Operations support' },
+      { title: 'Assistant Facilitator / Operations support' },
+    ],
+  },
+  {
+    heading: 'Finance & Accountability',
+    items: [{ title: 'Treasurer / finance support' }, { title: 'Assistant Treasurer' }],
+  },
+  {
+    heading: 'Community Care & Youth',
+    items: [
+      { title: 'Welfare / community support' },
+      { title: 'Assistant Welfare support' },
+      { title: 'Youth Representative / youth programs' },
+      { title: 'Health and wellness programs' },
+    ],
+  },
+  {
+    heading: 'Programs & Outreach',
+    items: [
+      { title: 'Events committee' },
+      { title: 'Membership committee' },
+      { title: 'Communications / social media' },
+      { title: 'Business and vendor outreach' },
+      { title: 'Cultural programs' },
+      { title: 'Education and career programs' },
+      { title: 'Volunteer coordination' },
+      { title: 'General community helpers' },
+    ],
+  },
 ]

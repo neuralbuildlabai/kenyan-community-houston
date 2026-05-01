@@ -63,7 +63,7 @@ export function ServeApplyPage() {
     <>
       <SEOHead
         title="I Want to Serve — Volunteer interest"
-        description="Tell KIGH how you would like to volunteer with leadership, committees, events, or community support in Greater Houston."
+        description="Share where you feel called to help. A KIGH representative may follow up about volunteer, committee, or leadership opportunities."
       />
 
       <div className="border-b bg-gradient-to-br from-primary/[0.06] via-background to-muted/40">
@@ -81,7 +81,7 @@ export function ServeApplyPage() {
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">I want to serve</h1>
               <p className="mt-2 text-muted-foreground leading-relaxed">
-                Share how you would like to help. A volunteer lead will follow up when there is a good fit.
+                Tell us where you feel called to help. A KIGH representative may follow up about volunteer, committee, or leadership opportunities.
               </p>
             </div>
           </div>

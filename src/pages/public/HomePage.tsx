@@ -13,7 +13,6 @@ import {
   Users,
   Library,
   UsersRound,
-  HeartHandshake,
 } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { EventCard } from '@/components/EventCard'
@@ -216,24 +215,6 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.06] via-background to-kenyan-gold-500/[0.06] p-8 sm:p-10 shadow-md">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="max-w-xl">
-              <div className="flex items-center gap-2 text-primary mb-2">
-                <HeartHandshake className="h-5 w-5" />
-                <span className="text-xs font-semibold uppercase tracking-wide">Volunteer with KIGH</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">A Call to Serve</h2>
-              <p className="text-muted-foreground leading-relaxed">
-                KIGH is looking for community members willing to help with leadership, committees, events, youth programs, welfare support, communications, and community outreach.
-              </p>
-            </div>
-            <Button asChild size="lg" className="font-semibold shrink-0 w-full sm:w-auto">
-              <Link to="/serve">I Want to Serve</Link>
-            </Button>
-          </div>
-        </section>
-
         {/* Single strong membership CTA */}
         <section className="rounded-2xl bg-gradient-to-r from-primary to-kenyan-green-800 p-8 sm:p-10 text-white shadow-lg">
           <div className="max-w-2xl">
@@ -251,6 +232,26 @@ export function HomePage() {
               </Button>
               <Button asChild variant="secondary" className="bg-white/15 text-white hover:bg-white/25 border border-white/30 backdrop-blur-sm">
                 <Link to="/resources">Browse resources</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Secondary pathway: join first, then serve */}
+        <section className="rounded-2xl border border-border/80 bg-card/80 backdrop-blur-sm p-6 sm:p-8 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            <div className="max-w-xl space-y-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">A Call to Serve</h2>
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                KIGH is looking for community members willing to help with events, youth programs, welfare support, communications, membership, and community outreach.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2.5 shrink-0">
+              <Button asChild className="font-semibold">
+                <Link to="/serve">I Want to Serve</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/membership">Learn about membership</Link>
               </Button>
             </div>
           </div>

@@ -186,10 +186,10 @@ export function GovernancePage() {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <HeartHandshake className="h-5 w-5 text-primary shrink-0" />
-              Serve alongside leadership & committees
+              Volunteer with KIGH
             </CardTitle>
             <CardDescription className="text-base text-foreground/85 leading-relaxed">
-              Leadership and committees work best when members contribute in ways that fit their gifts and schedules — not only through elected titles. If you would like to explore volunteering with KIGH, we would be glad to hear from you.
+              Leadership and committee work is voluntary and community-led. If you are interested in helping KIGH serve the community, let us know.
             </CardDescription>
           </CardHeader>
           <CardContent>
