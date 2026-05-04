@@ -5,6 +5,7 @@ import { AdminSidebar } from './AdminSidebar'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
+import { StagingBanner } from '@/components/StagingBanner'
 
 const ADMIN_CHANGE_PASSWORD_PATH = '/admin/change-password'
 
@@ -53,7 +54,9 @@ export function AdminLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden bg-background flex-col">
+      <StagingBanner />
+      <div className="flex flex-1 overflow-hidden">
       {/* Desktop sidebar */}
       <div className="hidden lg:flex lg:shrink-0">
         <AdminSidebar />
@@ -110,6 +113,7 @@ export function AdminLayout() {
             )}
           </div>
         </main>
+      </div>
       </div>
     </div>
   )

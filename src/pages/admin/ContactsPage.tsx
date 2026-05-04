@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Mail, Trash2, CheckCircle } from 'lucide-react'
+import { Mail, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -12,11 +12,22 @@ interface ContactSubmission {
   id: string
   name: string
   email: string
+  phone: string | null
   subject: string
   message: string
   type: string
+  /** Free-text category from the new public form (post migration 018). */
+  inquiry_type: string | null
+  /** Legacy boolean — DB trigger keeps this in sync with `status`. */
   is_read: boolean
+  /** Authoritative status field (post migration 018). */
+  status: 'new' | 'read' | 'in_progress' | 'replied' | 'archived' | 'spam' | null
   created_at: string
+}
+
+function isReadFromStatus(item: { status?: string | null; is_read?: boolean | null }): boolean {
+  if (item.status && item.status !== 'new') return true
+  return !!item.is_read
 }
 
 export function AdminContactsPage() {
@@ -35,9 +46,18 @@ export function AdminContactsPage() {
   useEffect(() => { load() }, [])
 
   async function markRead(id: string) {
-    await supabase.from('contact_submissions').update({ is_read: true }).eq('id', id)
-    setItems((prev) => prev.map((i) => i.id === id ? { ...i, is_read: true } : i))
-    if (selected?.id === id) setSelected((prev) => prev ? { ...prev, is_read: true } : null)
+    // Update both the new authoritative `status` column and (defensively)
+    // the legacy `is_read` boolean. The DB trigger keeps the two in sync,
+    // but writing both makes the UI resilient if the trigger is missing
+    // on a not-yet-migrated environment.
+    await supabase
+      .from('contact_submissions')
+      .update({ status: 'read', is_read: true })
+      .eq('id', id)
+    setItems((prev) => prev.map((i) => i.id === id ? { ...i, is_read: true, status: 'read' } : i))
+    if (selected?.id === id) {
+      setSelected((prev) => (prev ? { ...prev, is_read: true, status: 'read' } : null))
+    }
   }
 
   async function deleteItem() {
@@ -48,7 +68,7 @@ export function AdminContactsPage() {
     setDeleteId(null)
   }
 
-  const unread = items.filter((i) => !i.is_read).length
+  const unread = items.filter((i) => !isReadFromStatus(i)).length
 
   return (
     <div className="space-y-6">
@@ -75,15 +95,17 @@ export function AdminContactsPage() {
                 ))
               ) : items.length === 0 ? (
                 <TableRow><TableCell colSpan={4} className="text-center py-10 text-muted-foreground">No messages</TableCell></TableRow>
-              ) : items.map((item) => (
+              ) : items.map((item) => {
+                const read = isReadFromStatus(item)
+                return (
                 <TableRow
                   key={item.id}
-                  className={`cursor-pointer hover:bg-muted/50 ${!item.is_read ? 'font-medium' : ''} ${selected?.id === item.id ? 'bg-muted' : ''}`}
-                  onClick={() => { setSelected(item); if (!item.is_read) markRead(item.id) }}
+                  className={`cursor-pointer hover:bg-muted/50 ${!read ? 'font-medium' : ''} ${selected?.id === item.id ? 'bg-muted' : ''}`}
+                  onClick={() => { setSelected(item); if (!read) markRead(item.id) }}
                 >
                   <TableCell>
                     <div className="flex items-center gap-1.5">
-                      {!item.is_read && <span className="h-2 w-2 rounded-full bg-primary shrink-0" />}
+                      {!read && <span className="h-2 w-2 rounded-full bg-primary shrink-0" />}
                       <span className="truncate max-w-[120px]">{item.name}</span>
                     </div>
                   </TableCell>
@@ -95,7 +117,8 @@ export function AdminContactsPage() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+                )
+              })}
             </TableBody>
           </Table>
         </div>
@@ -114,7 +137,10 @@ export function AdminContactsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">{selected.type}</Badge>
+                  <Badge variant="outline" className="text-xs">{selected.inquiry_type ?? selected.type}</Badge>
+                  {selected.phone && (
+                    <span className="text-xs text-muted-foreground">{selected.phone}</span>
+                  )}
                   <span className="text-xs text-muted-foreground">{formatDateShort(selected.created_at)}</span>
                 </div>
               </div>

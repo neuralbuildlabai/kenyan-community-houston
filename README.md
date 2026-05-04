@@ -59,18 +59,27 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 
 ### 4. Set up the database
 
-In your [Supabase dashboard](https://app.supabase.com), open the SQL editor and run the migrations in order:
+In your [Supabase dashboard](https://app.supabase.com), open the SQL editor and run **all** numbered migrations in order from `supabase/migrations/001_*.sql` through the highest-numbered file. Each new migration is additive and idempotent.
+
+> ⚠️  **Production seed warning.** `supabase/seed.sql` contains
+> fictional businesses, fundraisers, and named individuals. It is
+> for local development and Playwright tests only. **Do NOT run
+> `seed.sql` against staging or production.** When bootstrapping
+> a production project, apply migrations only and then optionally
+> apply `supabase/seed.production.example.sql` (which only seeds
+> the default KIGH community and governance settings — no demo
+> people or content).
+
+For local development you may seed demo data:
 
 ```
-supabase/migrations/001_initial_schema.sql
-supabase/migrations/002_rls_policies.sql
-supabase/migrations/003_storage.sql
+supabase/seed.sql           # local/demo only — never production
 ```
 
-Then optionally seed sample data:
+For production:
 
 ```
-supabase/seed.sql
+supabase/seed.production.example.sql   # safe bootstrap (community + governance)
 ```
 
 ### 5. Create storage buckets
@@ -85,16 +94,35 @@ In the Supabase dashboard → Storage → Create buckets:
 
 ### 6. Create your first admin user
 
-In the Supabase dashboard → Authentication → Users → Invite user, or use the Admin Users page once you have one admin account.
+The recommended path is the deployed Edge Function `create-admin-user`,
+which uses the service-role key server-side, validates the caller's
+role, and forces a password rotation on first login. From the Supabase
+dashboard, sign in as an existing super_admin and call the function;
+once a single super_admin exists you can manage further admins from
+`/admin/users`.
 
-Alternatively, use the Supabase Auth API directly:
+For the very first admin (chicken-and-egg case), create the auth user
+through the Supabase Dashboard → Authentication → Users → Invite user
+flow, then in the SQL editor `update public.profiles set
+role='super_admin' where id = '<that user id>'`. Force password rotation
+by inserting a row into `admin_user_profiles` with
+`must_change_password = true`.
 
-```bash
-curl -X POST 'https://your-project-id.supabase.co/auth/v1/signup' \
-  -H 'apikey: YOUR_ANON_KEY' \
-  -H 'Content-Type: application/json' \
-  -d '{"email": "admin@example.com", "password": "your-password"}'
-```
+> Do not use the public Auth signup endpoint to create the first
+> admin in production — that path may be disabled in production.
+
+### 7. Production / staging environment separation
+
+This repo enforces environment separation:
+
+- `VITE_APP_ENV` declares the environment (`production` | `staging` | `development`).
+- The frontend renders a top-of-page warning banner when not in production.
+- `src/lib/supabase.ts` enforces a Supabase URL allow-list at boot
+  via `VITE_PRODUCTION_SUPABASE_URLS` and `VITE_STAGING_SUPABASE_URLS`,
+  refusing to start a production build pointed at a non-prod project.
+
+See `.env.staging.example` and `.env.production.example` for the
+exact variables required.
 
 ### 7. Start the development server
 
@@ -206,8 +234,15 @@ supabase/
 
 | Variable | Description |
 |---|---|
+| `VITE_APP_ENV` | `production` \| `staging` \| `development` (defence-in-depth env tag) |
 | `VITE_SUPABASE_URL` | Your Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Your Supabase anon/public key |
+| `VITE_PRODUCTION_SUPABASE_URLS` | Comma-separated allow-list of valid production URLs |
+| `VITE_STAGING_SUPABASE_URLS` | Comma-separated allow-list of valid staging URLs |
+| `VITE_APP_URL` | Canonical site URL for SEO and email links |
+| `VITE_APP_NAME` | Display name |
+| `VITE_SITE_NAME` | Long-form site name |
+| `VITE_CONTACT_EMAIL` | Contact email shown in templates |
 
 ---
 

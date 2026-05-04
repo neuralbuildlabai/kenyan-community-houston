@@ -2,21 +2,13 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import type { AdminUserSecurity, Profile, UserRole } from '@/lib/types'
+import { isElevatedAdminRole } from '@/lib/types'
 import { getSessionAdminPasswordGate } from '@/lib/adminPasswordGate'
-
-const ADMIN_ROLES: UserRole[] = [
-  'super_admin',
-  'community_admin',
-  'business_admin',
-  'support_admin',
-  'moderator',
-  'viewer',
-]
 
 const ADMIN_SECURITY_FETCH_MS = 12_000
 
 function profileIsAdmin(profile: Profile | null): boolean {
-  return !!profile && ADMIN_ROLES.includes(profile.role)
+  return !!profile && isElevatedAdminRole(profile.role)
 }
 
 interface AuthContextValue {

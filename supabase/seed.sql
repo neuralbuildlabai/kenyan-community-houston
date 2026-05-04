@@ -1,5 +1,16 @@
 -- ============================================================
--- Seed Data – Kenyan Community Houston
+-- ⚠️  LOCAL / DEMO SEED DATA ONLY — DO NOT RUN IN PRODUCTION ⚠️
+-- ============================================================
+-- This file contains FICTIONAL businesses, fundraisers, and people.
+-- It exists for local development and Playwright e2e tests. Running
+-- it against any production-facing Supabase project will publish
+-- fake content (including fictitious named individuals) under the
+-- KIGH name. That would be a launch-blocker.
+--
+-- Use `supabase/seed.production.example.sql` as the template for
+-- bootstrapping a real production project.
+-- ============================================================
+-- Seed Data – Kenyan Community Houston (LOCAL/DEMO ONLY)
 -- ============================================================
 
 -- ─── Gallery Album ──────────────────────────────────────────

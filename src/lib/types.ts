@@ -1,10 +1,65 @@
 export type UserRole =
+  // New spec roles (production-ready hierarchy)
   | 'super_admin'
   | 'community_admin'
+  | 'admin'
+  | 'content_manager'
+  | 'membership_manager'
+  | 'treasurer'
+  | 'media_moderator'
+  | 'ads_manager'
+  // Legacy roles preserved for backward compatibility — must stay in
+  // sync with public.kigh_is_elevated_admin() in supabase/migrations.
   | 'business_admin'
   | 'support_admin'
   | 'moderator'
   | 'viewer'
+
+/** Roles that grant elevated admin access — must match
+ *  `public.kigh_is_elevated_admin()` in supabase/migrations/013. */
+export const ELEVATED_ADMIN_ROLES: UserRole[] = [
+  'super_admin',
+  'community_admin',
+  'admin',
+  'content_manager',
+  'membership_manager',
+  'treasurer',
+  'media_moderator',
+  'ads_manager',
+  'business_admin',
+  'support_admin',
+  'moderator',
+]
+
+/** Roles that may manage community ads (sponsorship slots). */
+export const ADS_MANAGER_ROLES: UserRole[] = [
+  'super_admin',
+  'community_admin',
+  'admin',
+  'ads_manager',
+]
+
+/** Roles that may manage memberships. */
+export const MEMBERSHIP_MANAGER_ROLES: UserRole[] = [
+  'super_admin',
+  'community_admin',
+  'admin',
+  'membership_manager',
+]
+
+/** Roles that may approve gallery / media submissions. */
+export const MEDIA_MODERATOR_ROLES: UserRole[] = [
+  'super_admin',
+  'community_admin',
+  'admin',
+  'content_manager',
+  'media_moderator',
+]
+
+export function isElevatedAdminRole(role: string | null | undefined): boolean {
+  if (!role) return false
+  return (ELEVATED_ADMIN_ROLES as string[]).includes(role)
+}
 
 export type ContentStatus =
   | 'draft'

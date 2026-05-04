@@ -11,8 +11,36 @@ import { toast } from 'sonner'
 
 const INQUIRY_TYPES = ['General Inquiry', 'Event Submission', 'Business Listing', 'Fundraiser', 'Report Content', 'Partnership', 'Membership / Join', 'Other']
 
+// Map UI labels to the legacy `contact_submissions.type` enum used by
+// the database. Migration 018 also stores the raw label in
+// `inquiry_type`, but we keep `type` populated so older admin code
+// continues to display sensible badges.
+const INQUIRY_TYPE_TO_DB_TYPE: Record<string, string> = {
+  'General Inquiry': 'general',
+  'Event Submission': 'event_submission',
+  'Business Listing': 'business_inquiry',
+  'Fundraiser': 'fundraiser',
+  'Report Content': 'other',
+  'Partnership': 'other',
+  'Membership / Join': 'other',
+  'Other': 'other',
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export function ContactPage() {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', inquiry_type: '', message: '' })
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    subject: '',
+    inquiry_type: '',
+    message: '',
+    // Honeypot — must remain empty. Real users never fill this; bots
+    // typically auto-fill every input. Combined with the DB-level
+    // `honeypot=''` check this stops most low-effort submissions.
+    company_website: '',
+  })
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
@@ -22,8 +50,35 @@ export function ContactPage() {
       toast.error('Please fill in all required fields')
       return
     }
+    if (!EMAIL_RE.test(form.email.trim())) {
+      toast.error('Please enter a valid email address')
+      return
+    }
+    if (form.message.trim().length < 5) {
+      toast.error('Please write a short message before submitting')
+      return
+    }
+    if (form.company_website.trim() !== '') {
+      // Honeypot tripped — silently mark as "submitted" so bots get no
+      // signal that we rejected them.
+      setSubmitted(true)
+      return
+    }
+
     setLoading(true)
-    const { error } = await supabase.from('contact_submissions').insert([{ ...form, status: 'new' }])
+    const payload = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim() || null,
+      subject: form.subject.trim() || form.inquiry_type || 'Contact form',
+      message: form.message.trim(),
+      inquiry_type: form.inquiry_type || null,
+      type: INQUIRY_TYPE_TO_DB_TYPE[form.inquiry_type] ?? 'general',
+      status: 'new',
+      honeypot: form.company_website,
+    }
+
+    const { error } = await supabase.from('contact_submissions').insert([payload])
     setLoading(false)
     if (error) {
       toast.error('Failed to send message. Please try again.')
@@ -130,6 +185,19 @@ export function ContactPage() {
                     value={form.message}
                     onChange={(e) => setForm({ ...form, message: e.target.value })}
                     placeholder="Tell us how we can help…"
+                  />
+                </div>
+
+                {/* Honeypot field — keep visually hidden but in the DOM. */}
+                <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', height: 0, width: 0, overflow: 'hidden' }}>
+                  <Label htmlFor="company_website">Company website</Label>
+                  <Input
+                    id="company_website"
+                    name="company_website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={form.company_website}
+                    onChange={(e) => setForm({ ...form, company_website: e.target.value })}
                   />
                 </div>
 
