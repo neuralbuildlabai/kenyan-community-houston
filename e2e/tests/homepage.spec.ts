@@ -4,7 +4,7 @@ test.describe('homepage', () => {
   test('hero, CTAs, sections, footer disclaimer', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.getByRole('heading', { level: 1, name: /Where Kenyans in Houston connect/i })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: /Your community hub for life in Houston/i })).toBeVisible()
 
     const join = page.getByRole('link', { name: /Join \/ Membership/i })
     await expect(join).toBeVisible()
@@ -14,14 +14,18 @@ test.describe('homepage', () => {
     await expect(cal).toBeVisible()
     await expect(cal).toHaveAttribute('href', /\/calendar/)
 
-    await expect(page.getByText(/Quick access/i)).toBeVisible()
+    await expect(page.getByText(/Start here/i)).toBeVisible()
     await expect(page.getByRole('link', { name: 'Events' }).first()).toBeVisible()
 
-    await expect(page.getByRole('heading', { name: /Gather with the community|Upcoming events/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Upcoming gatherings/i })).toBeVisible()
 
-    await expect(page.getByRole('heading', { name: /Make this your community home|Are you Kenyan/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /One place to find your people/i })).toBeVisible()
 
-    await expect(page.getByRole('heading', { name: /Help carry the community forward/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Join the community — or lend a hand/i })).toBeVisible()
+
+    const adminLogin = page.getByRole('link', { name: /Admin login/i }).first()
+    await expect(adminLogin).toBeVisible()
+    await expect(adminLogin).toHaveAttribute('href', /\/admin\/login/)
 
     const disclaimer = page.getByRole('contentinfo').getByRole('link', { name: 'Disclaimer' }).first()
     await expect(disclaimer).toBeVisible()

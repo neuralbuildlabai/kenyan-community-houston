@@ -95,6 +95,16 @@ export function Header() {
           <Button asChild size="sm" className="hidden sm:inline-flex shrink-0" variant="default">
             <Link to="/events/submit">Submit event</Link>
           </Button>
+          {(!user || !isAdmin) && (
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="hidden sm:inline-flex shrink-0 border-border/80 text-muted-foreground hover:text-foreground font-medium"
+            >
+              <Link to="/admin/login">Admin login</Link>
+            </Button>
+          )}
 
           {user ? (
             <div className="hidden lg:flex items-center gap-1 shrink-0">
@@ -149,6 +159,11 @@ export function Header() {
                   <Button asChild className="w-full" onClick={() => setMobileOpen(false)}>
                     <Link to="/events/submit">Submit an event</Link>
                   </Button>
+                  {(!user || !isAdmin) && (
+                    <Button asChild variant="outline" className="w-full" onClick={() => setMobileOpen(false)}>
+                      <Link to="/admin/login">Admin login</Link>
+                    </Button>
+                  )}
                   {user ? (
                     <>
                       <Button asChild variant="outline" className="w-full" onClick={() => setMobileOpen(false)}>

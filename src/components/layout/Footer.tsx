@@ -57,14 +57,14 @@ export function Footer() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="relative bg-foreground text-white mt-20">
+    <footer className="relative bg-foreground text-white mt-14 sm:mt-16">
       {/* Top accent stripe */}
       <div
         className="h-1 w-full bg-gradient-to-r from-primary via-kenyan-gold-500 to-primary opacity-70"
         aria-hidden
       />
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
-        <div className="grid grid-cols-1 gap-10 sm:gap-12 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-11 sm:py-14">
+        <div className="grid grid-cols-1 gap-9 sm:gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-3 mb-5">
               <KighLogo withCard className="h-11 w-11 shrink-0 border-white/20 bg-white" imgClassName="max-h-9" />
