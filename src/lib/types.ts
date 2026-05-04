@@ -1,4 +1,7 @@
 export type UserRole =
+  // Non-elevated default for self-registered profiles. Must NOT
+  // appear in ELEVATED_ADMIN_ROLES below. See migration 020.
+  | 'member'
   // New spec roles (production-ready hierarchy)
   | 'super_admin'
   | 'community_admin'
