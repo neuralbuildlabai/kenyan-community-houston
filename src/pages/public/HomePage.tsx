@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/badge'
 import { PageLoader } from '@/components/LoadingSpinner'
 import { supabase } from '@/lib/supabase'
 import type { Event, Announcement, Fundraiser } from '@/lib/types'
+import { dedupeToNextOccurrenceOnly } from '@/lib/eventRecurrencePublic'
 import { KighLogo } from '@/components/KighLogo'
 import { HoustonSkylineBackdrop } from '@/components/HoustonSkylineBackdrop'
 
@@ -43,7 +44,7 @@ export function HomePage() {
             .eq('status', 'published')
             .gte('start_date', todayYmd)
             .order('start_date', { ascending: true })
-            .limit(3),
+            .limit(120),
           supabase
             .from('announcements')
             .select('*')
@@ -58,7 +59,9 @@ export function HomePage() {
             .order('published_at', { ascending: false })
             .limit(2),
         ])
-        setEvents((ev as Event[]) ?? [])
+        const raw = (ev as Event[]) ?? []
+        const deduped = dedupeToNextOccurrenceOnly(raw).slice(0, 3)
+        setEvents(deduped)
         setAnnouncements((ann as Announcement[]) ?? [])
         setFundraisers((fund as Fundraiser[]) ?? [])
       } finally {

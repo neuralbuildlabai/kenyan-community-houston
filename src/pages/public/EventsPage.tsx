@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Calendar, Search } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input'
 import { supabase } from '@/lib/supabase'
 import { EVENT_CATEGORIES, categoryValuesMatchingCanonical } from '@/lib/constants'
 import type { Event } from '@/lib/types'
+import { isEventPast } from '@/lib/eventDate'
+import { dedupeToNextOccurrenceOnly } from '@/lib/eventRecurrencePublic'
 
 export function EventsPage() {
   const [events, setEvents] = useState<Event[]>([])
@@ -35,6 +37,16 @@ export function EventsPage() {
     }
     load()
   }, [search, category])
+
+  const displayedEvents = useMemo(() => {
+    const past = events.filter((e) => isEventPast(e.start_date))
+    const future = dedupeToNextOccurrenceOnly(events.filter((e) => !isEventPast(e.start_date)))
+    return [...past, ...future].sort((a, b) => {
+      const d = a.start_date.localeCompare(b.start_date)
+      if (d !== 0) return d
+      return (a.start_time ?? '').localeCompare(b.start_time ?? '')
+    })
+  }, [events])
 
   return (
     <>
@@ -81,7 +93,7 @@ export function EventsPage() {
 
         <div className="mb-6 flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            {loading ? 'Loading…' : `${events.length} event${events.length !== 1 ? 's' : ''} found`}
+            {loading ? 'Loading…' : `${displayedEvents.length} event${displayedEvents.length !== 1 ? 's' : ''} found`}
           </p>
           <div className="flex flex-wrap gap-2 justify-end">
             <Button asChild size="sm" variant="outline">
@@ -95,7 +107,7 @@ export function EventsPage() {
 
         {loading ? (
           <PageLoader />
-        ) : events.length === 0 ? (
+        ) : displayedEvents.length === 0 ? (
           <EmptyState
             icon={Calendar}
             title="No events found"
@@ -103,7 +115,7 @@ export function EventsPage() {
           />
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {events.map((e) => <EventCard key={e.id} event={e} />)}
+            {displayedEvents.map((e) => <EventCard key={e.id} event={e} />)}
           </div>
         )}
       </div>

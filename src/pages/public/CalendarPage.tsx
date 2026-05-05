@@ -14,6 +14,7 @@ import { buildEventIcs, googleCalendarUrl } from '@/lib/calendarLinks'
 import type { Event } from '@/lib/types'
 import { PageLoader } from '@/components/LoadingSpinner'
 import { isEventPast } from '@/lib/eventDate'
+import { dedupeToNextOccurrenceOnly } from '@/lib/eventRecurrencePublic'
 
 export function CalendarPage() {
   const [events, setEvents] = useState<Event[]>([])
@@ -40,11 +41,14 @@ export function CalendarPage() {
     if (category) list = list.filter((e) => canonicalCategory(e.category) === category)
     if (tab === 'upcoming') {
       list = list.filter((e) => !isEventPast(e.start_date))
+      list = dedupeToNextOccurrenceOnly(list)
     } else if (tab === 'past') {
       list = list.filter((e) => isEventPast(e.start_date))
       list = [...list].sort((a, b) => parseISO(b.start_date).getTime() - parseISO(a.start_date).getTime())
     } else {
-      list = [...list].sort((a, b) => parseISO(a.start_date).getTime() - parseISO(b.start_date).getTime())
+      const past = list.filter((e) => isEventPast(e.start_date))
+      const future = dedupeToNextOccurrenceOnly(list.filter((e) => !isEventPast(e.start_date)))
+      list = [...past, ...future].sort((a, b) => parseISO(a.start_date).getTime() - parseISO(b.start_date).getTime())
     }
     return list
   }, [events, category, tab])
