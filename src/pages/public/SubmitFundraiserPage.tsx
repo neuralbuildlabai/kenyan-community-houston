@@ -69,53 +69,53 @@ export function SubmitFundraiserPage() {
           <AlertTriangle className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-amber-800 text-sm">{FUNDRAISER_DISCLAIMER}</AlertDescription>
         </Alert>
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2 space-y-1.5">
+        <form onSubmit={handleSubmit} className="form-page-card space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label htmlFor="title">Fundraiser Title <span className="text-destructive">*</span></Label>
               <Input id="title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label>Category <span className="text-destructive">*</span></Label>
               <Select onValueChange={(v) => setForm({ ...form, category: v })}>
                 <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                 <SelectContent>{FUNDRAISER_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="beneficiary_name">Beneficiary Name <span className="text-destructive">*</span></Label>
               <Input id="beneficiary_name" value={form.beneficiary_name} onChange={(e) => setForm({ ...form, beneficiary_name: e.target.value })} placeholder="Who is this for?" />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="organizer_name">Organizer Name</Label>
               <Input id="organizer_name" value={form.organizer_name} onChange={(e) => setForm({ ...form, organizer_name: e.target.value })} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="organizer_contact">Organizer Contact (private)</Label>
               <Input id="organizer_contact" value={form.organizer_contact} onChange={(e) => setForm({ ...form, organizer_contact: e.target.value })} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="goal_amount">Goal Amount ($)</Label>
               <Input id="goal_amount" type="number" min="0" step="1" value={form.goal_amount} onChange={(e) => setForm({ ...form, goal_amount: e.target.value })} placeholder="5000" />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="deadline">Deadline (optional)</Label>
               <Input id="deadline" type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label htmlFor="donation_url">Donation / GoFundMe Link</Label>
               <Input id="donation_url" type="url" value={form.donation_url} onChange={(e) => setForm({ ...form, donation_url: e.target.value })} placeholder="https://gofundme.com/…" />
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label htmlFor="summary">Short Summary</Label>
               <Input id="summary" value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} placeholder="One sentence about this fundraiser" />
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label htmlFor="body">Full Details</Label>
               <Textarea id="body" rows={6} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} placeholder="Provide full details about the situation and how funds will be used…" />
             </div>
           </div>
-          <Button type="submit" disabled={loading}>{loading ? 'Submitting…' : 'Submit for Review'}</Button>
+          <Button type="submit" size="lg" className="w-full sm:w-auto min-w-[12rem]" disabled={loading}>{loading ? 'Submitting…' : 'Submit for Review'}</Button>
         </form>
       </div>
     </>

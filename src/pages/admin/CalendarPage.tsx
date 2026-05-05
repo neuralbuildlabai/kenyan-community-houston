@@ -353,16 +353,16 @@ export function AdminCalendarPage() {
           <DialogHeader>
             <DialogTitle>{form.id ? 'Edit event' : 'New event'}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 sm:grid-cols-2 py-2">
-            <div className="sm:col-span-2 space-y-1.5">
+          <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2 py-2">
+            <div className="sm:col-span-2 form-field-stack">
               <Label>Title *</Label>
               <Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label>Slug</Label>
               <Input value={form.slug} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))} placeholder="auto from title if empty" />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label>Status *</Label>
               <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as EventStatus }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -373,15 +373,15 @@ export function AdminCalendarPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label>Short description</Label>
               <Input value={form.short_description} onChange={(e) => setForm((f) => ({ ...f, short_description: e.target.value }))} />
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label>Full description</Label>
               <Textarea rows={4} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label>Category *</Label>
               <Select value={form.category} onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -392,23 +392,23 @@ export function AdminCalendarPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label>Timezone</Label>
               <Input value={form.timezone} onChange={(e) => setForm((f) => ({ ...f, timezone: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label>Start date *</Label>
               <Input type="date" value={form.start_date} onChange={(e) => setForm((f) => ({ ...f, start_date: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label>End date</Label>
               <Input type="date" value={form.end_date} onChange={(e) => setForm((f) => ({ ...f, end_date: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label>Start time</Label>
               <Input type="time" value={form.start_time} onChange={(e) => setForm((f) => ({ ...f, start_time: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label>End time</Label>
               <Input type="time" value={form.end_time} onChange={(e) => setForm((f) => ({ ...f, end_time: e.target.value }))} />
             </div>
@@ -416,35 +416,35 @@ export function AdminCalendarPage() {
               <Switch checked={form.is_virtual} onCheckedChange={(v) => setForm((f) => ({ ...f, is_virtual: v }))} id="virt" />
               <Label htmlFor="virt">Virtual / online event</Label>
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label>Location label *</Label>
               <Input value={form.location} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))} placeholder={form.is_virtual ? 'Zoom / platform name' : 'Venue name'} />
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label>Address</Label>
               <Input value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} disabled={form.is_virtual} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label>City</Label>
               <Input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label>State</Label>
               <Input value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} />
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label>Virtual join URL</Label>
               <Input value={form.virtual_url} onChange={(e) => setForm((f) => ({ ...f, virtual_url: e.target.value }))} placeholder="https://…" disabled={!form.is_virtual} />
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label>Registration / RSVP URL</Label>
               <Input value={form.registration_url} onChange={(e) => setForm((f) => ({ ...f, registration_url: e.target.value }))} />
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label>Image URL</Label>
               <Input value={form.image_url} onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))} />
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label>Flyer URL (legacy)</Label>
               <Input value={form.flyer_url} onChange={(e) => setForm((f) => ({ ...f, flyer_url: e.target.value }))} />
             </div>
@@ -457,32 +457,32 @@ export function AdminCalendarPage() {
               <Label htmlFor="free">Free event</Label>
             </div>
             {!form.is_free && (
-              <div className="space-y-1.5">
+              <div className="form-field-stack">
                 <Label>Ticket price ($)</Label>
                 <Input value={form.ticket_price} onChange={(e) => setForm((f) => ({ ...f, ticket_price: e.target.value }))} type="number" step="0.01" />
               </div>
             )}
-            <div className="space-y-1.5 sm:col-span-2">
+            <div className="form-field-stack sm:col-span-2">
               <Label>Ticket / payment link</Label>
               <Input value={form.ticket_url} onChange={(e) => setForm((f) => ({ ...f, ticket_url: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label>Organizer name</Label>
               <Input value={form.organizer_name} onChange={(e) => setForm((f) => ({ ...f, organizer_name: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label>Organizer email</Label>
               <Input type="email" value={form.organizer_email} onChange={(e) => setForm((f) => ({ ...f, organizer_email: e.target.value }))} />
             </div>
-            <div className="space-y-1.5 sm:col-span-2">
+            <div className="form-field-stack sm:col-span-2">
               <Label>Organizer contact (phone / other)</Label>
               <Input value={form.organizer_contact} onChange={(e) => setForm((f) => ({ ...f, organizer_contact: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label>Capacity</Label>
               <Input value={form.capacity} onChange={(e) => setForm((f) => ({ ...f, capacity: e.target.value }))} type="number" min={0} />
             </div>
-            <div className="space-y-1.5 sm:col-span-2">
+            <div className="form-field-stack sm:col-span-2">
               <Label>Tags (comma separated)</Label>
               <Input value={form.tags_raw} onChange={(e) => setForm((f) => ({ ...f, tags_raw: e.target.value }))} />
             </div>

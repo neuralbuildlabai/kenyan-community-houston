@@ -66,6 +66,17 @@
   }
 }
 
+@layer components {
+  /** Public / admin long-form surfaces — warm card without adding vertical field count */
+  .form-page-card {
+    @apply rounded-2xl border border-border/65 bg-gradient-to-b from-card via-card to-secondary/25 p-5 sm:p-7 shadow-[0_2px_28px_-14px_hsl(220_15%_13%/0.14)];
+  }
+
+  .form-field-stack {
+    @apply space-y-2;
+  }
+}
+
 @layer utilities {
   .animate-fade-in {
     animation: fade-in 0.35s ease-out;

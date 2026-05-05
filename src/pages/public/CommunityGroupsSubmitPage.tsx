@@ -109,9 +109,9 @@ export function CommunityGroupsSubmitPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2 space-y-1.5">
+        <form onSubmit={handleSubmit} className="form-page-card space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label htmlFor="organization_name">Organization name *</Label>
               <Input
                 id="organization_name"
@@ -120,7 +120,7 @@ export function CommunityGroupsSubmitPage() {
                 required
               />
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label>Category *</Label>
               <Select value={form.category} onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}>
                 <SelectTrigger>
@@ -136,52 +136,52 @@ export function CommunityGroupsSubmitPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label htmlFor="description">Description *</Label>
               <Textarea id="description" rows={4} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} required />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="website_url">Website URL</Label>
               <Input id="website_url" type="url" placeholder="https://…" value={form.website_url} onChange={(e) => setForm((f) => ({ ...f, website_url: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="social_url">Social media URL</Label>
               <Input id="social_url" type="url" placeholder="https://…" value={form.social_url} onChange={(e) => setForm((f) => ({ ...f, social_url: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="public_email">Public email</Label>
               <Input id="public_email" type="email" value={form.public_email} onChange={(e) => setForm((f) => ({ ...f, public_email: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="public_phone">Public phone</Label>
               <Input id="public_phone" type="tel" value={form.public_phone} onChange={(e) => setForm((f) => ({ ...f, public_phone: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="meeting_location">Meeting location</Label>
               <Input id="meeting_location" value={form.meeting_location} onChange={(e) => setForm((f) => ({ ...f, meeting_location: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="service_area">Service area</Label>
               <Input id="service_area" placeholder="e.g. Southwest Houston, Katy, Fort Bend" value={form.service_area} onChange={(e) => setForm((f) => ({ ...f, service_area: e.target.value }))} />
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label htmlFor="contact_person">Contact person (optional)</Label>
               <Input id="contact_person" value={form.contact_person} onChange={(e) => setForm((f) => ({ ...f, contact_person: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="submitter_name">Your name *</Label>
               <Input id="submitter_name" value={form.submitter_name} onChange={(e) => setForm((f) => ({ ...f, submitter_name: e.target.value }))} required />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="submitter_email">Your email *</Label>
               <Input id="submitter_email" type="email" value={form.submitter_email} onChange={(e) => setForm((f) => ({ ...f, submitter_email: e.target.value }))} required />
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label htmlFor="notes">Notes for reviewers (optional)</Label>
               <Textarea id="notes" rows={3} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Internal context only — not shown on the public directory." />
             </div>
           </div>
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" size="lg" className="w-full sm:w-auto min-w-[12rem]" disabled={loading}>
             {loading ? 'Submitting…' : 'Submit for review'}
           </Button>
         </form>

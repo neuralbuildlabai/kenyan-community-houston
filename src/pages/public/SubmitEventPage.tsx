@@ -75,44 +75,44 @@ export function SubmitEventPage() {
           <h1 className="text-3xl font-bold mb-2">Submit an Event</h1>
           <p className="text-muted-foreground">All submissions are reviewed before publication.</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2 space-y-1.5">
+        <form onSubmit={handleSubmit} className="form-page-card space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label htmlFor="title">Event Title <span className="text-destructive">*</span></Label>
               <Input id="title" value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="Community Picnic 2025" />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label>Category <span className="text-destructive">*</span></Label>
               <Select onValueChange={(v) => set('category', v)}>
                 <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                 <SelectContent>{EVENT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="location">Venue / Location <span className="text-destructive">*</span></Label>
               <Input id="location" value={form.location} onChange={(e) => set('location', e.target.value)} placeholder="Sugar Land Town Square" />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="address">Full Address</Label>
               <Input id="address" value={form.address} onChange={(e) => set('address', e.target.value)} placeholder="2277 Lone Star Dr, Sugar Land, TX" />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="start_date">Start Date <span className="text-destructive">*</span></Label>
               <Input id="start_date" type="date" value={form.start_date} onChange={(e) => set('start_date', e.target.value)} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="end_date">End Date</Label>
               <Input id="end_date" type="date" value={form.end_date} onChange={(e) => set('end_date', e.target.value)} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="start_time">Start Time</Label>
               <Input id="start_time" type="time" value={form.start_time} onChange={(e) => set('start_time', e.target.value)} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="end_time">End Time</Label>
               <Input id="end_time" type="time" value={form.end_time} onChange={(e) => set('end_time', e.target.value)} />
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label htmlFor="description">Event Description</Label>
               <Textarea id="description" rows={5} value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="Describe your event…" />
             </div>
@@ -121,29 +121,29 @@ export function SubmitEventPage() {
               <Label htmlFor="is_free">Free Event</Label>
             </div>
             {!form.is_free && (
-              <div className="space-y-1.5">
+              <div className="form-field-stack">
                 <Label htmlFor="ticket_price">Ticket Price ($)</Label>
                 <Input id="ticket_price" type="number" min="0" step="0.01" value={form.ticket_price} onChange={(e) => set('ticket_price', e.target.value)} placeholder="25.00" />
               </div>
             )}
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="ticket_url">Ticket / RSVP Link</Label>
               <Input id="ticket_url" type="url" value={form.ticket_url} onChange={(e) => set('ticket_url', e.target.value)} placeholder="https://eventbrite.com/…" />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="organizer_name">Your Name / Organization</Label>
               <Input id="organizer_name" value={form.organizer_name} onChange={(e) => set('organizer_name', e.target.value)} />
             </div>
-            <div className="space-y-1.5">
+            <div className="form-field-stack">
               <Label htmlFor="organizer_contact">Contact (phone/email)</Label>
               <Input id="organizer_contact" value={form.organizer_contact} onChange={(e) => set('organizer_contact', e.target.value)} />
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 form-field-stack">
               <Label htmlFor="tags_raw">Tags (comma separated)</Label>
               <Input id="tags_raw" value={form.tags_raw} onChange={(e) => set('tags_raw', e.target.value)} placeholder="family, outdoor, food" />
             </div>
           </div>
-          <Button type="submit" className="w-full sm:w-auto px-10" disabled={loading}>
+          <Button type="submit" size="lg" className="w-full sm:w-auto min-w-[14rem]" disabled={loading}>
             {loading ? 'Submitting…' : 'Submit Event for Review'}
           </Button>
         </form>
