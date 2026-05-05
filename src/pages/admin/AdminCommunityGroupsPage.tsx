@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch'
 import { supabase } from '@/lib/supabase'
 import { COMMUNITY_GROUP_CATEGORIES } from '@/lib/constants'
 import { generateSlug } from '@/lib/utils'
+import { normalizeExternalUrl } from '@/lib/externalUrl'
 import { toast } from 'sonner'
 import { isoNow } from '@/lib/publishLifecycle'
 import type { CommunityGroup, CommunityGroupCategory, CommunityGroupStatus } from '@/lib/types'
@@ -131,17 +132,33 @@ export function AdminCommunityGroupsPage() {
     const { data: clash } = await supabase.from('community_groups').select('id').eq('slug', slug).neq('id', form.id).maybeSingle()
     if (clash?.id) slug = `${slug}-${Date.now().toString(36)}`
 
+    // Defensive URL normalization: admin inputs can be raw paste,
+    // so coerce to absolute https:// and reject obviously-unsafe
+    // protocols. See `src/lib/externalUrl.ts`.
+    const normalizedWebsite =
+      form.website_url.trim() === '' ? null : normalizeExternalUrl(form.website_url)
+    const normalizedSocial =
+      form.social_url.trim() === '' ? null : normalizeExternalUrl(form.social_url)
+    if (form.website_url.trim() !== '' && normalizedWebsite === null) {
+      toast.error('Website URL is not a valid http(s) link.')
+      return
+    }
+    if (form.social_url.trim() !== '' && normalizedSocial === null) {
+      toast.error('Social URL is not a valid http(s) link.')
+      return
+    }
+
     const payload = {
       organization_name: form.organization_name.trim(),
       slug,
       category: form.category as CommunityGroupCategory,
       description: form.description.trim() || null,
-      website_url: form.website_url.trim() || null,
+      website_url: normalizedWebsite,
       public_email: form.public_email.trim() || null,
       public_phone: form.public_phone.trim() || null,
       meeting_location: form.meeting_location.trim() || null,
       service_area: form.service_area.trim() || null,
-      social_url: form.social_url.trim() || null,
+      social_url: normalizedSocial,
       contact_person: form.contact_person.trim() || null,
       submitter_name: form.submitter_name.trim(),
       submitter_email: form.submitter_email.trim(),

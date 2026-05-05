@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase'
 import { COMMUNITY_GROUP_CATEGORIES } from '@/lib/constants'
 import type { CommunityGroupCategory } from '@/lib/types'
 import { generateSlug } from '@/lib/utils'
+import { normalizeExternalUrl } from '@/lib/externalUrl'
 import { toast } from 'sonner'
 
 const CATEGORY_NONE = '__none__'
@@ -46,6 +47,22 @@ export function CommunityGroupsSubmitPage() {
     }
     const slug = `${generateSlug(form.organization_name)}-${Date.now().toString(36)}`
 
+    // Reject obviously unsafe / unparseable URLs before they ever
+    // hit the DB. `normalizeExternalUrl` returns null for bad
+    // input and prepends `https://` to bare hostnames.
+    const normalizedWebsite =
+      form.website_url.trim() === '' ? null : normalizeExternalUrl(form.website_url)
+    const normalizedSocial =
+      form.social_url.trim() === '' ? null : normalizeExternalUrl(form.social_url)
+    if (form.website_url.trim() !== '' && normalizedWebsite === null) {
+      toast.error('Please enter a valid website URL (e.g. https://example.org).')
+      return
+    }
+    if (form.social_url.trim() !== '' && normalizedSocial === null) {
+      toast.error('Please enter a valid social media URL (e.g. https://facebook.com/your-group).')
+      return
+    }
+
     setLoading(true)
     const { error } = await supabase.from('community_groups').insert([
       {
@@ -53,12 +70,12 @@ export function CommunityGroupsSubmitPage() {
         slug,
         category: form.category as CommunityGroupCategory,
         description: form.description.trim() || null,
-        website_url: form.website_url.trim() || null,
+        website_url: normalizedWebsite,
         public_email: form.public_email.trim() || null,
         public_phone: form.public_phone.trim() || null,
         meeting_location: form.meeting_location.trim() || null,
         service_area: form.service_area.trim() || null,
-        social_url: form.social_url.trim() || null,
+        social_url: normalizedSocial,
         contact_person: form.contact_person.trim() || null,
         submitter_name: form.submitter_name.trim(),
         submitter_email: form.submitter_email.trim(),
@@ -142,11 +159,30 @@ export function CommunityGroupsSubmitPage() {
             </div>
             <div className="form-field-stack">
               <Label htmlFor="website_url">Website URL</Label>
-              <Input id="website_url" type="url" placeholder="https://…" value={form.website_url} onChange={(e) => setForm((f) => ({ ...f, website_url: e.target.value }))} />
+              <Input
+                id="website_url"
+                type="text"
+                inputMode="url"
+                autoComplete="url"
+                placeholder="kighsacc.org or https://example.org"
+                value={form.website_url}
+                onChange={(e) => setForm((f) => ({ ...f, website_url: e.target.value }))}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                We'll add <code>https://</code> automatically if you leave it off.
+              </p>
             </div>
             <div className="form-field-stack">
               <Label htmlFor="social_url">Social media URL</Label>
-              <Input id="social_url" type="url" placeholder="https://…" value={form.social_url} onChange={(e) => setForm((f) => ({ ...f, social_url: e.target.value }))} />
+              <Input
+                id="social_url"
+                type="text"
+                inputMode="url"
+                autoComplete="url"
+                placeholder="facebook.com/your-group"
+                value={form.social_url}
+                onChange={(e) => setForm((f) => ({ ...f, social_url: e.target.value }))}
+              />
             </div>
             <div className="form-field-stack">
               <Label htmlFor="public_email">Public email</Label>
