@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { supabase } from '@/lib/supabase'
+import { trackSubmissionCreated } from '@/lib/analytics'
 import { FUNDRAISER_CATEGORIES, FUNDRAISER_DISCLAIMER } from '@/lib/constants'
 import { generateSlug } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -46,7 +47,10 @@ export function SubmitFundraiserPage() {
     }])
     setLoading(false)
     if (error) toast.error('Submission failed. Please try again.')
-    else setSubmitted(true)
+    else {
+      void trackSubmissionCreated('fundraiser')
+      setSubmitted(true)
+    }
   }
 
   if (submitted) return (

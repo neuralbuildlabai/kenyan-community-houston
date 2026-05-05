@@ -30,6 +30,8 @@ const ADMIN_PROTECTED = [
   '/admin/media-submissions',
   '/admin/settings',
   '/admin/users',
+  '/admin/analytics',
+  '/admin/system-health',
 ] as const
 
 for (const route of ADMIN_PROTECTED) {

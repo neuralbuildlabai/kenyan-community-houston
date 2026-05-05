@@ -11,6 +11,7 @@ import { SubmissionMediaUploadField } from '@/components/public/SubmissionMediaU
 import { supabase } from '@/lib/supabase'
 import { ANNOUNCEMENT_CATEGORIES } from '@/lib/constants'
 import { uploadSubmissionMedia } from '@/lib/submissionMediaUpload'
+import { trackSubmissionCreated } from '@/lib/analytics'
 import { generateSlug } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -120,7 +121,10 @@ export function SubmitAnnouncementPage() {
     const { error } = await supabase.from('announcements').insert([payload])
     setLoading(false)
     if (error) toast.error(error.message || 'Submission failed. Please try again.')
-    else setSubmitted(true)
+    else {
+      void trackSubmissionCreated('announcement')
+      setSubmitted(true)
+    }
   }
 
   const setCal = (k: keyof CalendarFields, v: string) => setCalendar((c) => ({ ...c, [k]: v }))

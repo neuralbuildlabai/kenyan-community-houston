@@ -11,6 +11,7 @@ import { SubmissionMediaUploadField } from '@/components/public/SubmissionMediaU
 import { supabase } from '@/lib/supabase'
 import { EVENT_CATEGORIES } from '@/lib/constants'
 import { uploadSubmissionMedia } from '@/lib/submissionMediaUpload'
+import { trackSubmissionCreated } from '@/lib/analytics'
 import { generateSlug } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -65,7 +66,10 @@ export function SubmitEventPage() {
     }])
     setLoading(false)
     if (error) { toast.error('Submission failed. Please try again.') }
-    else { setSubmitted(true) }
+    else {
+      void trackSubmissionCreated('event')
+      setSubmitted(true)
+    }
   }
 
   const set = (k: string, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }))

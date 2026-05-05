@@ -11,6 +11,8 @@ const ADMIN_PATHS = [
   '/admin/gallery',
   '/admin/users',
   '/admin/media-submissions',
+  '/admin/analytics',
+  '/admin/dashboard',
 ] as const
 
 test.describe('admin pages', () => {

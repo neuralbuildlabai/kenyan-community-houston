@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/lib/supabase'
+import { trackSubmissionCreated } from '@/lib/analytics'
 import { BUSINESS_CATEGORIES } from '@/lib/constants'
 import { generateSlug } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -35,7 +36,10 @@ export function SubmitBusinessPage() {
     }])
     setLoading(false)
     if (error) toast.error('Submission failed. Please try again.')
-    else setSubmitted(true)
+    else {
+      void trackSubmissionCreated('business')
+      setSubmitted(true)
+    }
   }
 
   if (submitted) return (
