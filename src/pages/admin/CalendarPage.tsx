@@ -320,7 +320,14 @@ export function AdminCalendarPage() {
                 <TableRow key={e.id}>
                   <TableCell className="font-medium max-w-[220px]">
                     <div className="truncate">{e.title}</div>
-                    {e.is_featured && <Badge variant="gold" className="mt-1 text-[10px]">Featured</Badge>}
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {e.is_featured ? <Badge variant="gold" className="text-[10px]">Featured</Badge> : null}
+                      {e.is_recurring ? (
+                        <Badge variant="outline" className="text-[10px] border-primary/35 text-primary">
+                          Recurring
+                        </Badge>
+                      ) : null}
+                    </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{formatDateShort(e.start_date)}</TableCell>
                   <TableCell className="hidden lg:table-cell text-sm">{formatCategoryLabel(e.category)}</TableCell>

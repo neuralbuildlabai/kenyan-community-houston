@@ -208,6 +208,16 @@ export interface Event {
   published_at: string | null
   created_at: string
   updated_at: string
+  /** Recurrence (022+): populated for generated series rows. */
+  is_recurring?: boolean | null
+  recurrence_group_id?: string | null
+  recurrence_master_id?: string | null
+  recurrence_frequency?: string | null
+  recurrence_interval?: number | null
+  recurrence_until?: string | null
+  source_announcement_id?: string | null
+  recurrence_position?: number | null
+  community_id?: string | null
 }
 
 export type MembershipType = 'individual' | 'family_household' | 'associate'
@@ -347,6 +357,10 @@ export interface Announcement {
   calendar_address?: string | null
   calendar_flyer_url?: string | null
   calendar_registration_url?: string | null
+  calendar_is_recurring?: boolean | null
+  calendar_recurrence_frequency?: string | null
+  calendar_recurrence_until?: string | null
+  calendar_recurrence_count?: number | null
   created_at: string
   updated_at: string
 }

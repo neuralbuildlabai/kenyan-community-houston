@@ -1,27 +1,27 @@
 import type { Event } from '@/lib/types'
 
 /**
- * Public calendar deduplication for recurring series stored as many published rows
- * (e.g. slug `swahili-sunday-service-2026-05-04`, `…-2026-05-11`, …).
+ * Public calendar deduplication for recurring series stored as many published rows.
  *
- * Groups rows whose slug ends with `-YYYY-MM-DD` by stem (prefix before that date).
- * Rows whose slug does **not** end with that pattern are treated as unique (`slug:…`)
- * so they never merge with stem-based rows (avoids false merges like `big-event` vs `big-event-2027-03-15`).
+ * **Primary:** `recurrence_group_id` from the database (022 migration).
  *
- * For each group, the earliest occurrence by (start_date, start_time) is kept — on the
- * upcoming view that is the next occurrence once earlier dates have passed.
- *
- * Optional DB column (e.g. recurrence_group_key) was not added; see SQL hints in project notes / report.
+ * **Fallback (legacy):** slug stem `-YYYY-MM-DD` when recurrence metadata is absent.
  */
 
 const SLUG_ISO_DATE_SUFFIX = /^(.+)-(\d{4}-\d{2}-\d{2})$/
 
-/** Stable key for grouping occurrences of the same generated series. */
+/** Stable key for grouping occurrences of the same generated series (slug fallback). */
 export function publicRecurrenceGroupKeyFromSlug(slug: string): string {
   const s = slug.trim()
   const m = s.match(SLUG_ISO_DATE_SUFFIX)
   if (m) return `stem:${m[1]}`
   return `slug:${s}`
+}
+
+/** Prefer DB recurrence grouping; fall back to slug stem for legacy rows. */
+export function publicRecurrenceGroupKey(event: Pick<Event, 'slug' | 'recurrence_group_id'>): string {
+  if (event.recurrence_group_id) return `gid:${event.recurrence_group_id}`
+  return publicRecurrenceGroupKeyFromSlug(event.slug)
 }
 
 function compareOccurrence(a: Event, b: Event): number {
@@ -37,7 +37,7 @@ function compareOccurrence(a: Event, b: Event): number {
 export function dedupeToNextOccurrenceOnly(events: Event[]): Event[] {
   const groups = new Map<string, Event[]>()
   for (const e of events) {
-    const k = publicRecurrenceGroupKeyFromSlug(e.slug)
+    const k = publicRecurrenceGroupKey(e)
     const list = groups.get(k) ?? []
     list.push(e)
     groups.set(k, list)

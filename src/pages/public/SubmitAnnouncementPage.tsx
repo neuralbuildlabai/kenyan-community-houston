@@ -44,7 +44,9 @@ export function SubmitAnnouncementPage() {
     external_url: '',
   })
   const [includeInCalendar, setIncludeInCalendar] = useState(false)
-  const [calendar, setCalendar] = useState<CalendarFields>(emptyCalendar)
+  const [calendarIsRecurring, setCalendarIsRecurring] = useState(false)
+  const [calendarRecurrenceUntil, setCalendarRecurrenceUntil] = useState('')
+  const [calendar, setCalendar] = useState<CalendarFields>(() => emptyCalendar())
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
@@ -62,6 +64,12 @@ export function SubmitAnnouncementPage() {
       if (!calendar.calendar_location?.trim()) {
         toast.error('Please add a location / venue for the calendar.')
         return
+      }
+      if (calendarIsRecurring && calendarRecurrenceUntil.trim()) {
+        if (calendarRecurrenceUntil <= calendar.calendar_start_date) {
+          toast.error('Recurrence end date must be after the first event date.')
+          return
+        }
       }
     }
 
@@ -83,6 +91,12 @@ export function SubmitAnnouncementPage() {
       calendar_address: includeInCalendar ? calendar.calendar_address.trim() || null : null,
       calendar_flyer_url: includeInCalendar ? calendar.calendar_flyer_url.trim() || null : null,
       calendar_registration_url: includeInCalendar ? calendar.calendar_registration_url.trim() || null : null,
+      calendar_is_recurring: includeInCalendar && calendarIsRecurring,
+      calendar_recurrence_frequency: includeInCalendar && calendarIsRecurring ? 'weekly' : null,
+      calendar_recurrence_until: includeInCalendar && calendarIsRecurring && calendarRecurrenceUntil.trim()
+        ? calendarRecurrenceUntil
+        : null,
+      calendar_recurrence_count: null,
     }
 
     const { error } = await supabase.from('announcements').insert([payload])
@@ -163,7 +177,11 @@ export function SubmitAnnouncementPage() {
                 onCheckedChange={(v) => {
                   const on = v === true
                   setIncludeInCalendar(on)
-                  if (!on) setCalendar(emptyCalendar())
+                  if (!on) {
+                    setCalendar(emptyCalendar())
+                    setCalendarIsRecurring(false)
+                    setCalendarRecurrenceUntil('')
+                  }
                 }}
                 className="mt-1"
               />
@@ -236,6 +254,39 @@ export function SubmitAnnouncementPage() {
                     placeholder="https://…"
                   />
                   <p className="text-[11px] text-muted-foreground mt-1">If blank, your general external link above may be used when the event is published.</p>
+                </div>
+
+                <div className="sm:col-span-2 flex items-start gap-3 pt-1 border-t border-border/35">
+                  <Checkbox
+                    id="cal_repeat"
+                    checked={calendarIsRecurring}
+                    onCheckedChange={(v) => {
+                      const on = v === true
+                      setCalendarIsRecurring(on)
+                      if (!on) setCalendarRecurrenceUntil('')
+                    }}
+                    className="mt-1"
+                  />
+                  <div className="space-y-3 min-w-0 flex-1">
+                    <Label htmlFor="cal_repeat" className="text-base font-semibold cursor-pointer leading-snug">
+                      Does this repeat weekly?
+                    </Label>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      When checked, reviewers can publish a weekly series after approval. If you leave &quot;Repeat until&quot; empty,
+                      upcoming occurrences are generated for about the next six months.
+                    </p>
+                    {calendarIsRecurring && (
+                      <div className="form-field-stack max-w-md">
+                        <Label htmlFor="calendar_recurrence_until">Repeat until (optional)</Label>
+                        <Input
+                          id="calendar_recurrence_until"
+                          type="date"
+                          value={calendarRecurrenceUntil}
+                          onChange={(e) => setCalendarRecurrenceUntil(e.target.value)}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
