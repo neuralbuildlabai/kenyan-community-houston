@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { supabase } from '@/lib/supabase'
+import { publishAnnouncementRow, type AnnouncementCalendarRow } from '@/lib/announcementCalendarPublish'
 import { moderationStatusPatch } from '@/lib/publishLifecycle'
 import { formatDateShort } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -20,6 +21,8 @@ interface Announcement {
   author_name: string | null
   published_at: string | null
   created_at: string
+  include_in_calendar?: boolean | null
+  linked_event_id?: string | null
 }
 
 const STATUS_OPTIONS = ['all', 'published', 'pending', 'draft', 'archived']
@@ -33,7 +36,10 @@ export function AdminAnnouncementsPage() {
 
   async function load() {
     setLoading(true)
-    let q = supabase.from('announcements').select('id, title, category, status, is_pinned, author_name, published_at, created_at').order('created_at', { ascending: false })
+    let q = supabase
+      .from('announcements')
+      .select('id, title, category, status, is_pinned, author_name, published_at, created_at, include_in_calendar, linked_event_id')
+      .order('created_at', { ascending: false })
     if (statusFilter !== 'all') q = q.eq('status', statusFilter)
     const { data } = await q
     setItems((data ?? []).filter((a) => !search || a.title.toLowerCase().includes(search.toLowerCase())))
@@ -43,6 +49,23 @@ export function AdminAnnouncementsPage() {
   useEffect(() => { load() }, [statusFilter])
 
   async function updateStatus(id: string, status: string) {
+    if (status === 'published') {
+      const { data: row } = await supabase.from('announcements').select('*').eq('id', id).single()
+      if (row?.status === 'pending') {
+        const result = await publishAnnouncementRow(supabase, row as AnnouncementCalendarRow & { status: string })
+        if (!result.ok) {
+          toast.error(result.errorMessage ?? 'Publish failed')
+          return
+        }
+        toast.success(
+          (row as { include_in_calendar?: boolean }).include_in_calendar
+            ? 'Published announcement and calendar event'
+            : 'Announcement published'
+        )
+        load()
+        return
+      }
+    }
     const { error } = await supabase.from('announcements').update(moderationStatusPatch(status)).eq('id', id)
     if (error) toast.error(error.message || 'Update failed')
     else {
@@ -108,9 +131,17 @@ export function AdminAnnouncementsPage() {
             ) : displayed.map((item) => (
               <TableRow key={item.id}>
                 <TableCell className="font-medium max-w-[200px]">
-                  <div className="flex items-center gap-1.5 truncate">
-                    {item.is_pinned && <Pin className="h-3 w-3 text-amber-500 shrink-0" />}
-                    <span className="truncate">{item.title}</span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5 truncate">
+                      {item.is_pinned && <Pin className="h-3 w-3 text-amber-500 shrink-0" />}
+                      <span className="truncate">{item.title}</span>
+                    </div>
+                    {item.include_in_calendar && (
+                      <span className="text-[10px] font-medium text-primary">Also publishes to calendar when approved</span>
+                    )}
+                    {item.linked_event_id && (
+                      <span className="text-[10px] text-muted-foreground">Linked event</span>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{item.category}</TableCell>

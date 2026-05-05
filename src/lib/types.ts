@@ -336,6 +336,17 @@ export interface Announcement {
   submitted_by: string | null
   approved_by: string | null
   published_at: string | null
+  /** When true, approval also publishes a calendar event (see calendar_* fields). */
+  include_in_calendar?: boolean | null
+  linked_event_id?: string | null
+  calendar_start_date?: string | null
+  calendar_end_date?: string | null
+  calendar_start_time?: string | null
+  calendar_end_time?: string | null
+  calendar_location?: string | null
+  calendar_address?: string | null
+  calendar_flyer_url?: string | null
+  calendar_registration_url?: string | null
   created_at: string
   updated_at: string
 }

@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle, XCircle, Eye } from 'lucide-react'
+import { CheckCircle, XCircle, CalendarDays } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { supabase } from '@/lib/supabase'
+import {
+  publishAnnouncementRow,
+  type AnnouncementCalendarRow,
+} from '@/lib/announcementCalendarPublish'
 import { pendingQueuePublishPayload, pendingQueueRejectPayload } from '@/lib/publishLifecycle'
 import { formatDateShort } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -18,10 +22,23 @@ interface PendingItem {
   category: string
   created_at: string
   status: string
+  include_in_calendar?: boolean | null
+  calendar_start_date?: string | null
+  calendar_start_time?: string | null
+  calendar_location?: string | null
 }
 
 function getTitle(item: PendingItem) {
   return item.title ?? item.name ?? '—'
+}
+
+function calendarPreview(item: PendingItem): string | null {
+  if (!item.include_in_calendar) return null
+  const bits: string[] = []
+  if (item.calendar_start_date) bits.push(formatDateShort(item.calendar_start_date))
+  if (item.calendar_start_time) bits.push(item.calendar_start_time.slice(0, 5))
+  if (item.calendar_location) bits.push(item.calendar_location)
+  return bits.length ? bits.join(' · ') : 'Calendar fields incomplete'
 }
 
 export function AdminSubmissionsPage() {
@@ -43,19 +60,44 @@ export function AdminSubmissionsPage() {
   async function load(type: ContentType) {
     setLoading(true)
     const col = type === 'businesses' ? 'name' : 'title'
-    const { data } = await supabase
-      .from(type)
-      .select(`id, ${col}, category, created_at, status`)
-      .eq('status', 'pending')
-      .order('created_at', { ascending: true })
+    const sel =
+      type === 'announcements'
+        ? `id, ${col}, category, created_at, status, include_in_calendar, calendar_start_date, calendar_start_time, calendar_location`
+        : `id, ${col}, category, created_at, status`
+    const { data } = await supabase.from(type).select(sel).eq('status', 'pending').order('created_at', { ascending: true })
     setItems((data ?? []) as PendingItem[])
     setLoading(false)
   }
 
-  useEffect(() => { loadCounts() }, [])
-  useEffect(() => { load(activeTab) }, [activeTab])
+  useEffect(() => {
+    loadCounts()
+  }, [])
+  useEffect(() => {
+    load(activeTab)
+  }, [activeTab])
 
   async function approve(id: string) {
+    if (activeTab === 'announcements') {
+      const { data: row, error: fetchErr } = await supabase.from('announcements').select('*').eq('id', id).single()
+      if (fetchErr || !row) {
+        toast.error(fetchErr?.message ?? 'Could not load announcement')
+        return
+      }
+      const result = await publishAnnouncementRow(supabase, row as AnnouncementCalendarRow & { status: string })
+      if (!result.ok) {
+        toast.error(result.errorMessage ?? 'Approve failed')
+        return
+      }
+      toast.success(
+        (row as { include_in_calendar?: boolean }).include_in_calendar
+          ? 'Published announcement and calendar event'
+          : 'Approved and published'
+      )
+      load(activeTab)
+      loadCounts()
+      return
+    }
+
     const { data, error } = await supabase
       .from(activeTab)
       .update(pendingQueuePublishPayload())
@@ -86,6 +128,8 @@ export function AdminSubmissionsPage() {
     return `${type.charAt(0).toUpperCase() + type.slice(1)}${n > 0 ? ` (${n})` : ''}`
   }
 
+  const colCount = (type: ContentType) => (type === 'announcements' ? 5 : 4)
+
   return (
     <div className="space-y-6">
       <div>
@@ -108,6 +152,11 @@ export function AdminSubmissionsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Title</TableHead>
+                    {type === 'announcements' && (
+                      <TableHead className="hidden lg:table-cell min-w-[11rem]">
+                        Event details
+                      </TableHead>
+                    )}
                     <TableHead className="hidden md:table-cell">Category</TableHead>
                     <TableHead className="hidden lg:table-cell">Submitted</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -116,30 +165,74 @@ export function AdminSubmissionsPage() {
                 <TableBody>
                   {loading ? (
                     Array.from({ length: 4 }).map((_, i) => (
-                      <TableRow key={i}><TableCell colSpan={4}><div className="h-8 bg-muted animate-pulse rounded" /></TableCell></TableRow>
+                      <TableRow key={i}>
+                        <TableCell colSpan={colCount(type)}>
+                          <div className="h-8 bg-muted animate-pulse rounded" />
+                        </TableCell>
+                      </TableRow>
                     ))
                   ) : items.length === 0 ? (
-                    <TableRow><TableCell colSpan={4} className="text-center py-12">
-                      <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                      <p className="text-muted-foreground">No pending {type}</p>
-                    </TableCell></TableRow>
-                  ) : items.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium max-w-[220px] truncate">{getTitle(item)}</TableCell>
-                      <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{item.category}</TableCell>
-                      <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{formatDateShort(item.created_at)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button size="sm" variant="outline" className="h-7 border-green-300 text-green-700 hover:bg-green-50" onClick={() => approve(item.id)}>
-                            <CheckCircle className="h-3.5 w-3.5 mr-1" /> Approve
-                          </Button>
-                          <Button size="sm" variant="outline" className="h-7 border-red-300 text-red-700 hover:bg-red-50" onClick={() => reject(item.id)}>
-                            <XCircle className="h-3.5 w-3.5 mr-1" /> Reject
-                          </Button>
-                        </div>
+                    <TableRow>
+                      <TableCell colSpan={colCount(type)} className="text-center py-12">
+                        <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                        <p className="text-muted-foreground">No pending {type}</p>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    items.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium max-w-[220px]">
+                          <div className="space-y-1">
+                            <span className="line-clamp-2">{getTitle(item)}</span>
+                            {type === 'announcements' && item.include_in_calendar && (
+                              <Badge variant="outline" className="text-[10px] gap-1 lg:hidden">
+                                <CalendarDays className="h-3 w-3" />
+                                Also calendar
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        {type === 'announcements' && (
+                          <TableCell className="hidden lg:table-cell align-top text-xs text-muted-foreground">
+                            {item.include_in_calendar ? (
+                              <div className="space-y-1 max-w-[14rem]">
+                                <Badge variant="secondary" className="text-[10px]">
+                                  Calendar after approval
+                                </Badge>
+                                <p className="leading-snug">{calendarPreview(item)}</p>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">Announcement only</span>
+                            )}
+                          </TableCell>
+                        )}
+                        <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{item.category}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
+                          {formatDateShort(item.created_at)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 border-green-300 text-green-700 hover:bg-green-50"
+                              onClick={() => approve(item.id)}
+                            >
+                              <CheckCircle className="h-3.5 w-3.5 mr-1" /> Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 border-red-300 text-red-700 hover:bg-red-50"
+                              onClick={() => reject(item.id)}
+                            >
+                              <XCircle className="h-3.5 w-3.5 mr-1" /> Reject
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
