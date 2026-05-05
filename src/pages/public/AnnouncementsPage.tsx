@@ -8,7 +8,7 @@ import { PageLoader } from '@/components/LoadingSpinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { supabase } from '@/lib/supabase'
-import { ANNOUNCEMENT_CATEGORIES } from '@/lib/constants'
+import { ANNOUNCEMENT_CATEGORIES, categoryValuesMatchingCanonical } from '@/lib/constants'
 import type { Announcement } from '@/lib/types'
 
 export function AnnouncementsPage() {
@@ -27,7 +27,7 @@ export function AnnouncementsPage() {
         .order('is_pinned', { ascending: false })
         .order('published_at', { ascending: false })
 
-      if (category) query = query.eq('category', category)
+      if (category) query = query.in('category', categoryValuesMatchingCanonical(category))
       if (search) query = query.ilike('title', `%${search}%`)
 
       const { data } = await query

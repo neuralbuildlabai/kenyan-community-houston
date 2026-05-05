@@ -5,6 +5,7 @@ import { SEOHead } from '@/components/SEOHead'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PageLoader } from '@/components/LoadingSpinner'
+import { formatCategoryLabel } from '@/lib/communityCategories'
 import { formatDate } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import type { Announcement } from '@/lib/types'
@@ -55,7 +56,7 @@ export function AnnouncementDetailPage() {
         )}
 
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">{item.category}</Badge>
+          <Badge variant="secondary">{formatCategoryLabel(item.category)}</Badge>
           {item.is_pinned && <Badge variant="green" className="gap-1"><Pin className="h-3 w-3" /> Pinned</Badge>}
           {item.is_featured && <Badge variant="gold">Featured</Badge>}
         </div>

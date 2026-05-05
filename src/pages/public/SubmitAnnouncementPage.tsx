@@ -180,7 +180,7 @@ export function SubmitAnnouncementPage() {
             {includeInCalendar && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border/50">
                 <p className="sm:col-span-2 text-xs text-muted-foreground leading-relaxed">
-                  For recurring events, submit the <strong>next</strong> occurrence and describe the pattern in your announcement text. Advanced recurrence is not required here.
+                  For recurring events, submit the next date and mention the recurrence in the announcement.
                 </p>
                 <div className="space-y-1.5">
                   <Label htmlFor="calendar_start_date">

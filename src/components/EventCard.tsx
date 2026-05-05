@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
 import { isEventPast } from '@/lib/eventDate'
+import { formatCategoryLabel } from '@/lib/communityCategories'
 import type { Event } from '@/lib/types'
 
 interface EventCardProps {
@@ -45,7 +46,7 @@ export function EventCard({ event }: EventCardProps) {
 
         <CardContent className="p-4">
           <div className="mb-1.5 flex flex-wrap items-center gap-2">
-            <Badge variant="secondary" className="text-xs">{event.category}</Badge>
+            <Badge variant="secondary" className="text-xs">{formatCategoryLabel(event.category)}</Badge>
             {past ? (
               <Badge variant="muted" className="text-xs">Past event</Badge>
             ) : null}

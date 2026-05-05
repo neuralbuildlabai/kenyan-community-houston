@@ -18,6 +18,7 @@ import {
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { supabase } from '@/lib/supabase'
 import { CALENDAR_FILTER_CATEGORIES } from '@/lib/constants'
+import { canonicalCategory, formatCategoryLabel, COMMUNITY_SUBMISSION_CATEGORIES } from '@/lib/communityCategories'
 import { generateSlug } from '@/lib/utils'
 import { formatDateShort } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -42,7 +43,7 @@ const defaultForm = () => ({
   slug: '',
   short_description: '',
   description: '',
-  category: 'Community',
+  category: COMMUNITY_SUBMISSION_CATEGORIES[0],
   start_date: '',
   end_date: '',
   start_time: '',
@@ -96,7 +97,7 @@ export function AdminCalendarPage() {
 
   const displayed = events.filter((e) => {
     if (statusFilter !== 'all' && e.status !== statusFilter) return false
-    if (categoryFilter !== 'all' && e.category !== categoryFilter) return false
+    if (categoryFilter !== 'all' && canonicalCategory(e.category) !== categoryFilter) return false
     if (search && !e.title.toLowerCase().includes(search.toLowerCase())) return false
     if (timeFilter !== 'all') {
       const d = new Date(e.start_date + 'T12:00:00')
@@ -120,7 +121,7 @@ export function AdminCalendarPage() {
       slug: e.slug,
       short_description: e.short_description ?? '',
       description: e.description ?? '',
-      category: e.category,
+      category: canonicalCategory(e.category),
       start_date: e.start_date,
       end_date: e.end_date ?? '',
       start_time: e.start_time ?? '',
@@ -322,7 +323,7 @@ export function AdminCalendarPage() {
                     {e.is_featured && <Badge variant="gold" className="mt-1 text-[10px]">Featured</Badge>}
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{formatDateShort(e.start_date)}</TableCell>
-                  <TableCell className="hidden lg:table-cell text-sm">{e.category}</TableCell>
+                  <TableCell className="hidden lg:table-cell text-sm">{formatCategoryLabel(e.category)}</TableCell>
                   <TableCell>{statusBadge(e.status)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1 flex-wrap">

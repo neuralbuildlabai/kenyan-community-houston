@@ -3,6 +3,7 @@ import { Clock, Megaphone, Star, Pin } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { timeAgo } from '@/lib/utils'
+import { formatCategoryLabel } from '@/lib/communityCategories'
 import type { Announcement } from '@/lib/types'
 
 interface AnnouncementCardProps {
@@ -43,7 +44,7 @@ export function AnnouncementCard({ announcement }: AnnouncementCardProps) {
 
         <CardContent className="p-4">
           <div className="mb-1.5">
-            <Badge variant="secondary" className="text-xs">{announcement.category}</Badge>
+            <Badge variant="secondary" className="text-xs">{formatCategoryLabel(announcement.category)}</Badge>
           </div>
           <h3 className="font-semibold text-base leading-snug mb-2 group-hover:text-primary transition-colors line-clamp-2">
             {announcement.title}

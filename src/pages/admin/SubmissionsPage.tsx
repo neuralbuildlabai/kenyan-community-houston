@@ -10,6 +10,7 @@ import {
   type AnnouncementCalendarRow,
 } from '@/lib/announcementCalendarPublish'
 import { pendingQueuePublishPayload, pendingQueueRejectPayload } from '@/lib/publishLifecycle'
+import { formatCategoryLabel } from '@/lib/communityCategories'
 import { formatDateShort } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -206,7 +207,11 @@ export function AdminSubmissionsPage() {
                             )}
                           </TableCell>
                         )}
-                        <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{item.category}</TableCell>
+                        <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                          {type === 'events' || type === 'announcements'
+                            ? formatCategoryLabel(item.category)
+                            : item.category}
+                        </TableCell>
                         <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
                           {formatDateShort(item.created_at)}
                         </TableCell>

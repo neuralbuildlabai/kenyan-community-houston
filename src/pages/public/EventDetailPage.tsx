@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PageLoader } from '@/components/LoadingSpinner'
 import { formatDate, formatCurrency } from '@/lib/utils'
+import { formatCategoryLabel } from '@/lib/communityCategories'
 import { supabase } from '@/lib/supabase'
 import type { Event, Resource } from '@/lib/types'
 import { isEventPast } from '@/lib/eventDate'
@@ -102,7 +103,7 @@ export function EventDetailPage() {
           {/* Main content */}
           <div className="lg:col-span-2">
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">{event.category}</Badge>
+              <Badge variant="secondary">{formatCategoryLabel(event.category)}</Badge>
               {past ? <Badge variant="muted">Past event</Badge> : null}
               {event.is_virtual ? (
                 <Badge variant="outline" className="gap-1 border-primary/40">

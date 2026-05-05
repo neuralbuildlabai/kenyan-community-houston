@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 import { CALENDAR_FILTER_CATEGORIES } from '@/lib/constants'
+import { canonicalCategory, formatCategoryLabel } from '@/lib/communityCategories'
 import { formatDate, formatDateShort } from '@/lib/utils'
 import { buildEventIcs, googleCalendarUrl } from '@/lib/calendarLinks'
 import type { Event } from '@/lib/types'
@@ -36,7 +37,7 @@ export function CalendarPage() {
 
   const filtered = useMemo(() => {
     let list = events
-    if (category) list = list.filter((e) => e.category === category)
+    if (category) list = list.filter((e) => canonicalCategory(e.category) === category)
     if (tab === 'upcoming') {
       list = list.filter((e) => !isEventPast(e.start_date))
     } else if (tab === 'past') {
@@ -147,7 +148,7 @@ export function CalendarPage() {
                     </div>
                     <div className="p-5 sm:p-6 flex-1 space-y-3 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">{ev.category}</Badge>
+                        <Badge variant="secondary">{formatCategoryLabel(ev.category)}</Badge>
                         {isEventPast(ev.start_date) ? (
                           <Badge variant="muted">Past event</Badge>
                         ) : null}

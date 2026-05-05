@@ -8,7 +8,7 @@ import { PageLoader } from '@/components/LoadingSpinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { supabase } from '@/lib/supabase'
-import { EVENT_CATEGORIES } from '@/lib/constants'
+import { EVENT_CATEGORIES, categoryValuesMatchingCanonical } from '@/lib/constants'
 import type { Event } from '@/lib/types'
 
 export function EventsPage() {
@@ -26,7 +26,7 @@ export function EventsPage() {
         .eq('status', 'published')
         .order('start_date', { ascending: true })
 
-      if (category) query = query.eq('category', category)
+      if (category) query = query.in('category', categoryValuesMatchingCanonical(category))
       if (search) query = query.ilike('title', `%${search}%`)
 
       const { data } = await query

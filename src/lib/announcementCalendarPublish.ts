@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@/lib/supabase'
+import { canonicalCategory } from '@/lib/communityCategories'
 import { generateSlug } from '@/lib/utils'
 import { isoNow, pendingQueuePublishPayload } from '@/lib/publishLifecycle'
 
@@ -26,19 +27,7 @@ export type AnnouncementCalendarRow = {
 }
 
 export function eventCategoryFromAnnouncement(category: string): string {
-  const map: Record<string, string> = {
-    Religious: 'Religious',
-    Sports: 'Sports',
-    'Youth & Education': 'Youth',
-    'Events Notice': 'Community Meeting',
-    'Community News': 'Community Meeting',
-    'Government & Civic': 'Community Meeting',
-    'Health & Safety': 'Health & Wellness',
-    Memorial: 'Community',
-    Celebration: 'Community',
-    Other: 'Community',
-  }
-  return map[category] ?? 'Community'
+  return canonicalCategory(category)
 }
 
 /** Minimum fields to publish a calendar row alongside an announcement. */

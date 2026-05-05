@@ -1,44 +1,25 @@
+import {
+  COMMUNITY_SUBMISSION_CATEGORIES,
+  canonicalCategory,
+  formatCategoryLabel,
+  categoryValuesMatchingCanonical,
+} from './communityCategories'
+
+export { COMMUNITY_SUBMISSION_CATEGORIES, canonicalCategory, formatCategoryLabel, categoryValuesMatchingCanonical }
+
 export const APP_NAME = 'Kenyan Community Houston'
 export const APP_TAGLINE = 'Your trusted home away from home in Houston, Texas.'
 export const APP_DESCRIPTION =
   'The trusted digital hub for Kenyans in Houston and surrounding areas. Discover events, businesses, community news, and more.'
 
-export const EVENT_CATEGORIES = [
-  'Cultural',
-  'Religious',
-  'Sports',
-  'Networking',
-  'Education',
-  'Music & Entertainment',
-  'Food & Dining',
-  'Community Meeting',
-  'Fundraiser',
-  'Youth',
-  'Family',
-  'Health & Wellness',
-  'Other',
-] as const
+/** @deprecated prefer COMMUNITY_SUBMISSION_CATEGORIES — same reference */
+export const EVENT_CATEGORIES = COMMUNITY_SUBMISSION_CATEGORIES
 
-/** Calendar filters + admin options (includes legacy event labels where useful). */
-export const CALENDAR_FILTER_CATEGORIES = [
-  'Community',
-  'Cultural',
-  'Youth',
-  'Sports',
-  'Education',
-  'Career',
-  'Health & Wellness',
-  'Fundraiser',
-  'Volunteer',
-  'Vendor/Business',
-  'Meeting',
-  'Networking',
-  'Religious',
-  'Music & Entertainment',
-  'Food & Dining',
-  'Family',
-  'Other',
-] as const
+/** Public calendar + admin event category pickers (aligned with submissions). */
+export const CALENDAR_FILTER_CATEGORIES = COMMUNITY_SUBMISSION_CATEGORIES
+
+/** @deprecated prefer COMMUNITY_SUBMISSION_CATEGORIES — same reference */
+export const ANNOUNCEMENT_CATEGORIES = COMMUNITY_SUBMISSION_CATEGORIES
 
 export const MEMBERSHIP_INTEREST_OPTIONS = [
   'Events',
@@ -105,19 +86,6 @@ export const BUSINESS_CATEGORIES = [
   'Retail & Grocery',
   'Travel & Tourism',
   'Auto Services',
-  'Other',
-] as const
-
-export const ANNOUNCEMENT_CATEGORIES = [
-  'Community News',
-  'Government & Civic',
-  'Health & Safety',
-  'Events Notice',
-  'Religious',
-  'Sports',
-  'Youth & Education',
-  'Memorial',
-  'Celebration',
   'Other',
 ] as const
 
