@@ -16,7 +16,7 @@ export function SubmitEventPage() {
   const [form, setForm] = useState({
     title: '', category: '', description: '', start_date: '', end_date: '',
     start_time: '', end_time: '', location: '', address: '',
-    is_free: true, ticket_price: '', ticket_url: '',
+    is_free: true, ticket_price: '', ticket_url: '', flyer_url: '',
     organizer_name: '', organizer_contact: '', organizer_website: '',
     tags_raw: '',
   })
@@ -46,6 +46,7 @@ export function SubmitEventPage() {
       is_free: form.is_free,
       ticket_price: !form.is_free && form.ticket_price ? parseFloat(form.ticket_price) : null,
       ticket_url: form.ticket_url || null,
+      flyer_url: form.flyer_url.trim() || null,
       organizer_name: form.organizer_name || null,
       organizer_contact: form.organizer_contact || null,
       organizer_website: form.organizer_website || null,
@@ -129,6 +130,19 @@ export function SubmitEventPage() {
             <div className="form-field-stack">
               <Label htmlFor="ticket_url">Ticket / RSVP Link</Label>
               <Input id="ticket_url" type="url" value={form.ticket_url} onChange={(e) => set('ticket_url', e.target.value)} placeholder="https://eventbrite.com/…" />
+            </div>
+            <div className="sm:col-span-2 form-field-stack">
+              <Label htmlFor="flyer_url">Flyer / Poster Link</Label>
+              <Input
+                id="flyer_url"
+                type="url"
+                value={form.flyer_url}
+                onChange={(e) => set('flyer_url', e.target.value)}
+                placeholder="https://…"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                Paste a public image or flyer link. Upload support will be added after review.
+              </p>
             </div>
             <div className="form-field-stack">
               <Label htmlFor="organizer_name">Your Name / Organization</Label>

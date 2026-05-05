@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle, XCircle, CalendarDays } from 'lucide-react'
+import { CheckCircle, XCircle, CalendarDays, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -27,6 +27,9 @@ interface PendingItem {
   calendar_start_date?: string | null
   calendar_start_time?: string | null
   calendar_location?: string | null
+  flyer_url?: string | null
+  image_url?: string | null
+  calendar_flyer_url?: string | null
 }
 
 function getTitle(item: PendingItem) {
@@ -63,8 +66,10 @@ export function AdminSubmissionsPage() {
     const col = type === 'businesses' ? 'name' : 'title'
     const sel =
       type === 'announcements'
-        ? `id, ${col}, category, created_at, status, include_in_calendar, calendar_start_date, calendar_start_time, calendar_location`
-        : `id, ${col}, category, created_at, status`
+        ? `id, ${col}, category, created_at, status, include_in_calendar, calendar_start_date, calendar_start_time, calendar_location, calendar_flyer_url`
+        : type === 'events'
+          ? `id, ${col}, category, created_at, status, flyer_url, image_url`
+          : `id, ${col}, category, created_at, status`
     const { data } = await supabase.from(type).select(sel).eq('status', 'pending').order('created_at', { ascending: true })
     setItems((data ?? []) as PendingItem[])
     setLoading(false)
@@ -185,6 +190,17 @@ export function AdminSubmissionsPage() {
                         <TableCell className="font-medium max-w-[220px]">
                           <div className="space-y-1">
                             <span className="line-clamp-2">{getTitle(item)}</span>
+                            {type === 'events' && (item.flyer_url || item.image_url) && (
+                              <a
+                                href={(item.flyer_url || item.image_url)!.trim()}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline"
+                              >
+                                <ExternalLink className="h-3 w-3 shrink-0" />
+                                Flyer / poster
+                              </a>
+                            )}
                             {type === 'announcements' && item.include_in_calendar && (
                               <Badge variant="outline" className="text-[10px] gap-1 lg:hidden">
                                 <CalendarDays className="h-3 w-3" />
@@ -201,6 +217,17 @@ export function AdminSubmissionsPage() {
                                   Calendar after approval
                                 </Badge>
                                 <p className="leading-snug">{calendarPreview(item)}</p>
+                                {item.calendar_flyer_url?.trim() ? (
+                                  <a
+                                    href={item.calendar_flyer_url.trim()}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-primary font-medium hover:underline"
+                                  >
+                                    <ExternalLink className="h-3 w-3 shrink-0" />
+                                    Flyer / poster link
+                                  </a>
+                                ) : null}
                               </div>
                             ) : (
                               <span className="text-muted-foreground">Announcement only</span>

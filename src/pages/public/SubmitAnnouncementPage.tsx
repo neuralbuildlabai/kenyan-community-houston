@@ -234,15 +234,17 @@ export function SubmitAnnouncementPage() {
                   <Input id="calendar_address" value={calendar.calendar_address} onChange={(e) => setCal('calendar_address', e.target.value)} placeholder="Street, city, TX" />
                 </div>
                 <div className="sm:col-span-2 form-field-stack">
-                  <Label htmlFor="calendar_flyer_url">Flyer or image URL (optional)</Label>
+                  <Label htmlFor="calendar_flyer_url">Flyer / Poster Link</Label>
                   <Input
                     id="calendar_flyer_url"
                     type="url"
                     value={calendar.calendar_flyer_url}
                     onChange={(e) => setCal('calendar_flyer_url', e.target.value)}
-                    placeholder="https://… link to a public image or PDF"
+                    placeholder="https://…"
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1">Paste a link you already host publicly. Direct file upload may follow in a later release.</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                    Paste a public image or flyer link. Upload support will be added after review.
+                  </p>
                 </div>
                 <div className="sm:col-span-2 form-field-stack">
                   <Label htmlFor="calendar_registration_url">Registration / RSVP link (optional)</Label>
