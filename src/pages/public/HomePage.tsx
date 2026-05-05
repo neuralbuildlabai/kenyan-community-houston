@@ -77,10 +77,10 @@ export function HomePage() {
     <>
       <SEOHead
         title="Home"
-        description="KIGH is the community home for Kenyans in Greater Houston — events, culture, support, businesses, and belonging in one place. Join, attend, serve, and stay connected."
+        description="KIGH is the community home for Kenyans in Greater Houston — events, culture, support, businesses, and belonging in one place."
       />
 
-      {/* Hero */}
+      {/* 1. Hero — focused on who this is for and the two main actions. */}
       <section className="relative overflow-hidden text-white">
         <div className="absolute inset-0 bg-gradient-to-br from-foreground via-kenyan-green-900 to-kenyan-green-800" />
         <HoustonSkylineBackdrop />
@@ -128,12 +128,12 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* Start here — quick links */}
+      {/* 2. Quick access — the only shortcut row. Nothing duplicated below. */}
       <section className="border-b bg-gradient-to-b from-muted/30 via-background to-muted/25 py-6 sm:py-7">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em] mb-1">Start here</p>
           <p className="text-sm text-muted-foreground max-w-2xl mb-4">
-            Jump to what you need — no scrolling required.
+            Jump straight to what you need.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
             {[
@@ -162,24 +162,26 @@ export function HomePage() {
       </section>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-14 space-y-14 sm:space-y-16">
-        {/* Why this hub */}
-        <section className="rounded-2xl border border-border/60 bg-muted/20 px-5 py-8 sm:px-8 sm:py-9">
-          <p className="text-xs font-semibold text-primary/85 uppercase tracking-[0.14em] mb-2">Why we are here</p>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight mb-3 max-w-2xl">
-            One place to find your people
-          </h2>
-          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-2xl mb-8">
-            KIGH makes it easier to discover events, share culture, support neighbors, and grow together — online and in person across Greater Houston.
-          </p>
+        {/* 3. Why this hub matters — short, three quick proof points. */}
+        <section>
+          <div className="max-w-2xl mb-6">
+            <p className="text-xs font-semibold text-primary/85 uppercase tracking-[0.14em] mb-2">Why we are here</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
+              One place to find your people
+            </h2>
+            <p className="text-sm text-muted-foreground leading-relaxed mt-3 max-w-2xl">
+              Connect around culture, support neighbors when it matters, and discover what is happening across Greater Houston — together.
+            </p>
+          </div>
           <div className="grid gap-4 sm:grid-cols-3 sm:gap-5">
             {[
-              { title: 'Belonging', Icon: Users, body: 'Meet families and stay close to Kenyan culture here in Houston.' },
+              { title: 'Belonging', Icon: Users, body: 'Meet families and stay close to Kenyan culture in Houston.' },
               { title: 'Support', Icon: Heart, body: 'Fundraisers, welfare, and newcomer help when the community rallies.' },
               { title: 'Opportunity', Icon: Compass, body: 'Events, businesses, youth programs, and resources in one hub.' },
             ].map(({ title, Icon, body }) => (
               <div
                 key={title}
-                className="rounded-xl border border-border/50 bg-background/80 px-4 py-4 shadow-sm"
+                className="rounded-xl border border-border/60 bg-background px-4 py-4 shadow-sm"
               >
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary mb-2.5">
                   <Icon className="h-4 w-4" />
@@ -191,7 +193,7 @@ export function HomePage() {
           </div>
         </section>
 
-        {/* Upcoming events */}
+        {/* 4. Upcoming gatherings — calendar preview. */}
         <section>
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
             <div>
@@ -250,7 +252,7 @@ export function HomePage() {
           )}
         </section>
 
-        {/* Community updates & support */}
+        {/* 5. Updates & ways to help — announcements + fundraisers, side by side. */}
         <section>
           <div className="mb-6 max-w-2xl">
             <p className="text-xs font-semibold text-primary/80 uppercase tracking-[0.14em] mb-1">Stay in the loop</p>
@@ -316,43 +318,29 @@ export function HomePage() {
           </div>
         </section>
 
-        {/* New to Houston */}
-        <section className="rounded-2xl border border-primary/15 bg-muted/20 px-5 py-5 sm:px-6 sm:py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="min-w-0">
-            <h2 className="text-lg font-bold text-foreground tracking-tight">New to Houston?</h2>
-            <p className="text-sm text-muted-foreground mt-1 leading-relaxed max-w-xl">
-              Groups, Kenyan-owned businesses, events, and practical tips to help you settle in.
-            </p>
-          </div>
-          <Button asChild variant="default" className="shrink-0 font-semibold w-full sm:w-auto">
-            <Link to="/new-to-houston">Newcomer resources</Link>
-          </Button>
-        </section>
-
-        {/* Membership + serve (single band) */}
+        {/* 6. Newcomer / help — a single warm closing block (replaces the
+            previously duplicated "Newcomer band" + "Membership + serve"
+            band; membership already lives in the hero CTA + quick access). */}
         <section className="rounded-2xl border border-border/70 bg-gradient-to-br from-primary/[0.06] via-background to-kenyan-gold-500/[0.06] px-5 py-6 sm:px-8 sm:py-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="max-w-xl space-y-2">
               <div className="flex items-center gap-2 text-primary/85">
-                <Users className="h-4 w-4" />
-                <span className="text-xs font-semibold uppercase tracking-[0.12em]">Stay involved</span>
+                <HeartHandshake className="h-4 w-4" />
+                <span className="text-xs font-semibold uppercase tracking-[0.12em]">New here? Need help?</span>
               </div>
-              <h2 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">Join the community — or lend a hand</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">
+                New to Houston, or just looking for support?
+              </h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Membership keeps you close to events and resources. Volunteers power everything you see here.
+                Practical tips for settling in, Kenyan-owned businesses, community groups, and friendly faces ready to help.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row flex-wrap gap-2 shrink-0">
               <Button asChild className="font-semibold">
-                <Link to="/membership">Membership</Link>
+                <Link to="/new-to-houston">Newcomer resources</Link>
               </Button>
               <Button asChild variant="outline" className="font-medium">
-                <Link to="/serve">Volunteer / serve</Link>
-              </Button>
-              <Button asChild variant="ghost" className="text-primary sm:px-3">
-                <Link to="/about" className="inline-flex items-center gap-1">
-                  About KIGH <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
+                <Link to="/contact">Contact us</Link>
               </Button>
             </div>
           </div>

@@ -14,14 +14,19 @@ test.describe('homepage', () => {
     await expect(cal).toBeVisible()
     await expect(cal).toHaveAttribute('href', /\/calendar/)
 
-    await expect(page.getByText(/Start here/i)).toBeVisible()
+    await expect(page.getByText('Start here')).toBeVisible()
     await expect(page.getByRole('link', { name: 'Events' }).first()).toBeVisible()
+
+    await expect(page.getByText('Why we are here')).toBeVisible()
+    await expect(page.getByRole('heading', { name: /One place to find your people/i })).toBeVisible()
 
     await expect(page.getByRole('heading', { name: /Upcoming gatherings/i })).toBeVisible()
 
-    await expect(page.getByRole('heading', { name: /One place to find your people/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Updates & ways to help/i })).toBeVisible()
 
-    await expect(page.getByRole('heading', { name: /Join the community — or lend a hand/i })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: /New to Houston, or just looking for support\?/i })
+    ).toBeVisible()
 
     const adminLogin = page.getByRole('link', { name: /Admin login/i }).first()
     await expect(adminLogin).toBeVisible()

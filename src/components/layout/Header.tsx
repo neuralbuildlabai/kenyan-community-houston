@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Menu, ChevronDown, LogOut, LayoutDashboard, UserCircle } from 'lucide-react'
+import { Menu, ChevronDown, LogOut, LayoutDashboard, UserCircle, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import {
@@ -14,6 +14,8 @@ import { cn } from '@/lib/utils'
 import { KighLogo } from '@/components/KighLogo'
 import { postLogoutPath } from '@/lib/logoutRedirect'
 
+// Primary public top-nav. Kept short and intentional — anything not
+// here lives behind the "More" dropdown or in the footer.
 const navLinks = [
   { to: '/events', label: 'Events' },
   { to: '/calendar', label: 'Calendar' },
@@ -23,14 +25,16 @@ const navLinks = [
   { to: '/gallery', label: 'Gallery' },
 ]
 
+// Secondary destinations. Reachable from the More menu (desktop) and
+// the full mobile menu.
 const moreLinks = [
   { to: '/membership', label: 'Membership' },
-  { to: '/serve', label: 'Call to Serve' },
-  { to: '/support', label: 'Support KIGH' },
   { to: '/resources', label: 'Resources' },
   { to: '/community-groups', label: 'Community Groups' },
-  { to: '/governance', label: 'Governance' },
   { to: '/new-to-houston', label: 'New to Houston' },
+  { to: '/serve', label: 'Call to Serve' },
+  { to: '/support', label: 'Support KIGH' },
+  { to: '/governance', label: 'Governance' },
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },
 ]
@@ -58,7 +62,9 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="hidden xl:flex items-center gap-0.5">
+        {/* Desktop nav: appears on standard laptops (lg: 1024px+) so most
+            visitors see it without opening the mobile menu. */}
+        <nav className="hidden lg:flex items-center gap-0.5">
           {navLinks.map((link) => (
             <NavLink
               key={link.to}
@@ -81,7 +87,7 @@ export function Header() {
                 More <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[11rem]">
+            <DropdownMenuContent align="end" className="min-w-[12rem]">
               {moreLinks.map((link) => (
                 <DropdownMenuItem key={link.to} asChild>
                   <Link to={link.to}>{link.label}</Link>
@@ -92,17 +98,26 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
-          <Button asChild size="sm" className="hidden sm:inline-flex shrink-0" variant="default">
+          {/* Primary public CTA — public visitors are encouraged to
+              contribute events. Hidden below md to keep the bar tidy on
+              small screens (still available in the mobile menu). */}
+          <Button asChild size="sm" className="hidden md:inline-flex shrink-0" variant="default">
             <Link to="/events/submit">Submit event</Link>
           </Button>
+          {/* Admin login — visible on md+ so testers/staff can find it
+              from any tablet or laptop without hunting in the footer.
+              Styled secondary so it never competes with public CTAs. */}
           {(!user || !isAdmin) && (
             <Button
               asChild
               size="sm"
               variant="outline"
-              className="hidden sm:inline-flex shrink-0 border-border/80 text-muted-foreground hover:text-foreground font-medium"
+              className="hidden md:inline-flex shrink-0 border-border/80 text-muted-foreground hover:text-foreground font-medium gap-1.5"
             >
-              <Link to="/admin/login">Admin login</Link>
+              <Link to="/admin/login">
+                <Lock className="h-3.5 w-3.5" aria-hidden />
+                Admin login
+              </Link>
             </Button>
           )}
 
@@ -131,14 +146,17 @@ export function Header() {
 
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="xl:hidden shrink-0">
+              <Button variant="ghost" size="icon" className="lg:hidden shrink-0">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Open menu</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-80 pt-10 flex flex-col">
               <nav className="flex flex-col gap-1 flex-1 overflow-y-auto">
-                {[...navLinks, ...moreLinks].map((link) => (
+                <p className="px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Explore
+                </p>
+                {navLinks.map((link) => (
                   <NavLink
                     key={link.to}
                     to={link.to}
@@ -155,13 +173,36 @@ export function Header() {
                     {link.label}
                   </NavLink>
                 ))}
+                <p className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  More
+                </p>
+                {moreLinks.map((link) => (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    onClick={() => setMobileOpen(false)}
+                    className={({ isActive }) =>
+                      cn(
+                        'px-4 py-2.5 text-[15px] font-medium rounded-md transition-colors',
+                        isActive
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+                      )
+                    }
+                  >
+                    {link.label}
+                  </NavLink>
+                ))}
                 <div className="mt-4 border-t pt-4 flex flex-col gap-2">
                   <Button asChild className="w-full" onClick={() => setMobileOpen(false)}>
                     <Link to="/events/submit">Submit an event</Link>
                   </Button>
                   {(!user || !isAdmin) && (
-                    <Button asChild variant="outline" className="w-full" onClick={() => setMobileOpen(false)}>
-                      <Link to="/admin/login">Admin login</Link>
+                    <Button asChild variant="outline" className="w-full gap-2" onClick={() => setMobileOpen(false)}>
+                      <Link to="/admin/login">
+                        <Lock className="h-4 w-4" />
+                        Admin login
+                      </Link>
                     </Button>
                   )}
                   {user ? (
@@ -186,7 +227,7 @@ export function Header() {
                       </Button>
                     </>
                   ) : (
-                    <Button asChild variant="outline" className="w-full" onClick={() => setMobileOpen(false)}>
+                    <Button asChild variant="ghost" className="w-full" onClick={() => setMobileOpen(false)}>
                       <Link to="/login">Member login</Link>
                     </Button>
                   )}

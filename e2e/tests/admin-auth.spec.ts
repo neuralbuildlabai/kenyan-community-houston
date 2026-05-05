@@ -15,10 +15,11 @@ test.describe('admin auth', () => {
     await expect(page.getByRole('link', { name: /Contact messages/i })).toBeVisible()
   })
 
-  test('logout is visible and returns to admin login', async ({ page }) => {
+  test('logout is visible and returns to public homepage', async ({ page }) => {
     await loginAsAdmin(page)
     await expect(page.getByRole('button', { name: 'Logout' }).first()).toBeVisible()
     await page.getByRole('button', { name: 'Logout' }).first().click()
-    await expect(page).toHaveURL(/\/admin\/login/)
+    await expect(page).not.toHaveURL(/\/admin/)
+    await expect(page.getByRole('heading', { level: 1, name: /Your community hub for life in Houston/i })).toBeVisible()
   })
 })

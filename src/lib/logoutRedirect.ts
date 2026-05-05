@@ -1,7 +1,4 @@
-/** Where to send the browser after sign-out, based on the current route. */
-export function postLogoutPath(pathname: string): string {
-  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
-    return '/admin/login'
-  }
+/** Where to send the browser after sign-out — always the public homepage. */
+export function postLogoutPath(_pathname: string): string {
   return '/'
 }

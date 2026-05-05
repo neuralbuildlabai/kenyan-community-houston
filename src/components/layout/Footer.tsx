@@ -1,36 +1,43 @@
 import { Link } from 'react-router-dom'
-import { MapPin, Mail, Facebook, Twitter, Instagram, Youtube } from 'lucide-react'
+import { MapPin, Mail, Facebook, Twitter, Instagram, Youtube, Lock } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { APP_NAME } from '@/lib/constants'
 import { KighLogo } from '@/components/KighLogo'
 
+// Top-level community destinations.
 const community = [
   { to: '/events', label: 'Events' },
   { to: '/calendar', label: 'Calendar' },
   { to: '/announcements', label: 'Announcements' },
+  { to: '/community-support', label: 'Community Support' },
   { to: '/sports-youth', label: 'Sports & Youth' },
   { to: '/gallery', label: 'Gallery' },
-  { to: '/community-support', label: 'Community Support' },
 ]
 
+// Directory + member resources.
 const directoryResources = [
   { to: '/businesses', label: 'Business Directory' },
   { to: '/community-groups', label: 'Community Groups' },
-  { to: '/serve', label: 'Call to Serve' },
   { to: '/membership', label: 'Membership' },
+  { to: '/serve', label: 'Call to Serve' },
   { to: '/support', label: 'Support KIGH' },
   { to: '/resources', label: 'Resources' },
   { to: '/governance', label: 'Governance' },
   { to: '/new-to-houston', label: 'New to Houston' },
 ]
 
-const submitAdminLegal = [
-  { to: '/events/submit', label: 'Submit an Event' },
-  { to: '/community-groups/submit', label: 'Submit Community Group' },
-  { to: '/businesses/submit', label: 'List Your Business' },
-  { to: '/announcements/submit', label: 'Submit Announcement' },
-  { to: '/community-support/submit', label: 'Submit Fundraiser' },
-  { to: '/admin/login', label: 'Admin Login' },
+// Public contribution forms — collapsed into a single tidier column.
+const contribute = [
+  { to: '/events/submit', label: 'Submit an event' },
+  { to: '/announcements/submit', label: 'Submit an announcement' },
+  { to: '/businesses/submit', label: 'List your business' },
+  { to: '/community-support/submit', label: 'Submit a fundraiser' },
+  { to: '/community-groups/submit', label: 'Submit a community group' },
+  { to: '/contact', label: 'Contact us' },
+]
+
+// Legal / policy links.
+const legal = [
   { to: '/terms', label: 'Terms' },
   { to: '/privacy', label: 'Privacy' },
   { to: '/disclaimer', label: 'Disclaimer' },
@@ -118,22 +125,41 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-kenyan-gold-400/90 mb-4">Submit · admin · legal</h4>
-            <LinkList items={submitAdminLegal} />
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-kenyan-gold-400/90 mb-4">Contribute</h4>
+            <LinkList items={contribute} />
           </div>
         </div>
 
-        <Separator className="mt-14 mb-7 bg-white/12" />
+        <Separator className="mt-12 mb-6 bg-white/12" />
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/55">
+        {/* Bottom bar: copyright + legal + secondary admin link.
+            Admin login also lives in the public header; we keep it
+            here too so testers can always find it from any page. */}
+        <div className="flex flex-col gap-3 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-white/55">© {year} {APP_NAME}. All rights reserved.</p>
-          <p className="text-center sm:text-right text-white/55">
-            Content moderated by community volunteers ·{' '}
-            <Link to="/disclaimer" className="underline-offset-2 hover:text-white hover:underline transition-colors">
-              Disclaimer
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            {legal.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                className="hover:text-white hover:underline underline-offset-2 transition-colors"
+              >
+                {l.label}
+              </Link>
+            ))}
+            <span aria-hidden className="text-white/25">·</span>
+            <Link
+              to="/admin/login"
+              className="inline-flex items-center gap-1.5 hover:text-white hover:underline underline-offset-2 transition-colors"
+            >
+              <Lock className="h-3 w-3" aria-hidden />
+              Admin login
             </Link>
-          </p>
+          </div>
         </div>
+        <p className="mt-3 text-[11px] text-white/45">
+          Content moderated by community volunteers.
+        </p>
       </div>
     </footer>
   )

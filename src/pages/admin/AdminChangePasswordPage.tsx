@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { newAdminPasswordChecklist, validateNewAdminPassword } from '@/lib/adminPasswordPolicy'
 import { toast } from 'sonner'
 import type { AdminPasswordGateReason } from '@/lib/adminPasswordGate'
+import { postLogoutPath } from '@/lib/logoutRedirect'
 
 export function AdminChangePasswordPage() {
   const navigate = useNavigate()
@@ -104,7 +105,7 @@ export function AdminChangePasswordPage() {
           </Button>
         </form>
 
-        <Button type="button" variant="outline" className="w-full gap-2" onClick={() => void signOut().then(() => navigate('/admin/login'))}>
+        <Button type="button" variant="outline" className="w-full gap-2" onClick={() => void signOut().then(() => navigate(postLogoutPath(location.pathname)))}>
           <LogOut className="h-4 w-4" /> Sign out
         </Button>
       </div>
