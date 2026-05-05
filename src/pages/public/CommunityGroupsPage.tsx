@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import type { CommunityGroupPublic } from '@/lib/types'
 import { COMMUNITY_GROUP_CATEGORIES } from '@/lib/constants'
 import { PageLoader } from '@/components/LoadingSpinner'
+import { MapLink } from '@/components/MapLink'
 
 const FILTER_ALL = 'all'
 
@@ -139,10 +140,13 @@ export function CommunityGroupsPage() {
                   {g.description ? <p className="text-sm text-muted-foreground line-clamp-4 leading-relaxed">{g.description}</p> : null}
                   <div className="text-sm text-muted-foreground space-y-1.5">
                     {g.meeting_location ? (
-                      <p className="flex items-start gap-2">
-                        <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-primary/60" />
-                        <span>{g.meeting_location}</span>
-                      </p>
+                      <div className="space-y-1">
+                        <p className="flex items-start gap-2">
+                          <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-primary/60" />
+                          <span>{g.meeting_location}</span>
+                        </p>
+                        <MapLink address={g.meeting_location} location={g.organization_name} className="text-xs pl-6" />
+                      </div>
                     ) : null}
                     {g.service_area ? (
                       <p className="flex items-start gap-2">

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabase'
+import { trackLogin } from '@/lib/analytics'
 import { toast } from 'sonner'
 import { APP_NAME } from '@/lib/constants'
 import { KighLogo } from '@/components/KighLogo'
@@ -25,6 +26,8 @@ export function AdminLoginPage() {
     if (error) {
       toast.error(error.message)
     } else {
+      const { data: sess } = await supabase.auth.getSession()
+      await trackLogin('admin_login', sess.session?.user?.id ?? null)
       navigate('/admin/dashboard')
     }
   }

@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
    * Optional fine-grained gate. If supplied, the user must hold one
    * of these roles in addition to passing the elevated-admin check.
    */
-  requiredRoles?: UserRole[]
+  requiredRoles?: readonly UserRole[]
 }
 
 /**

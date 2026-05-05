@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { StagingBanner } from '@/components/StagingBanner'
+import { AnalyticsRouteListener } from '@/components/AnalyticsRouteListener'
 
 const ADMIN_CHANGE_PASSWORD_PATH = '/admin/change-password'
 
@@ -25,6 +26,8 @@ const ROUTE_LABELS: Record<string, string> = {
   '/admin/media-submissions': 'Media submissions',
   '/admin/settings': 'Site settings',
   '/admin/users': 'Admin users',
+  '/admin/analytics': 'Analytics',
+  '/admin/system-health': 'System Health',
   '/admin/change-password': 'Change password',
 }
 
@@ -55,6 +58,7 @@ export function AdminLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background flex-col">
+      <AnalyticsRouteListener />
       <StagingBanner />
       <div className="flex flex-1 overflow-hidden">
       {/* Desktop sidebar */}

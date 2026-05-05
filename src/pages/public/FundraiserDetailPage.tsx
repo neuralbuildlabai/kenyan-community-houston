@@ -12,6 +12,7 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { FUNDRAISER_DISCLAIMER } from '@/lib/constants'
 import { supabase } from '@/lib/supabase'
 import type { Fundraiser } from '@/lib/types'
+import { trackClick, trackEntityView } from '@/lib/analytics'
 
 export function FundraiserDetailPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -20,6 +21,8 @@ export function FundraiserDetailPage() {
 
   useEffect(() => {
     async function load() {
+      setLoading(true)
+      setItem(null)
       const { data } = await supabase
         .from('fundraisers')
         .select('*')
@@ -31,6 +34,11 @@ export function FundraiserDetailPage() {
     }
     load()
   }, [slug])
+
+  useEffect(() => {
+    if (!item?.id) return
+    void trackEntityView('fundraisers', item.id, item.title, `/community-support/${item.slug}`)
+  }, [item?.id, item?.slug, item?.title])
 
   if (loading) return <PageLoader />
 
@@ -113,7 +121,12 @@ export function FundraiserDetailPage() {
 
             {item.donation_url && (
               <Button asChild className="w-full gap-2">
-                <a href={item.donation_url} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={item.donation_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => void trackClick('fundraiser_donate', `/community-support/${item.slug}`, { fundraiser_id: item.id })}
+                >
                   <ExternalLink className="h-4 w-4" /> Donate / Support
                 </a>
               </Button>

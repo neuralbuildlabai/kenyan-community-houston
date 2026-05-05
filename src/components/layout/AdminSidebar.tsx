@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
+import { useMemo } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -19,60 +20,71 @@ import {
   Clapperboard,
   LogOut,
   UserCircle,
+  BarChart3,
+  Activity,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { APP_NAME } from '@/lib/constants'
 import { postLogoutPath } from '@/lib/logoutRedirect'
 import { Button } from '@/components/ui/button'
+import { isSystemHealthAdminRole } from '@/lib/platformAdmin'
 
 type NavItem = { to: string; label: string; Icon: LucideIcon }
+type NavGroup = { heading: string; items: NavItem[] }
 
-const navGroups: { heading: string; items: NavItem[] }[] = [
-  {
-    heading: 'Overview',
-    items: [{ to: '/admin/dashboard', label: 'Dashboard', Icon: LayoutDashboard }],
-  },
-  {
-    heading: 'KIGH',
-    items: [
-      { to: '/admin/calendar', label: 'Calendar', Icon: CalendarDays },
-      { to: '/admin/resources', label: 'Resources', Icon: FolderOpen },
-      { to: '/admin/members', label: 'Members', Icon: UserPlus },
-    ],
-  },
-  {
-    heading: 'Content',
-    items: [
-      { to: '/admin/announcements', label: 'Announcements', Icon: Megaphone },
-      { to: '/admin/businesses', label: 'Businesses', Icon: Building2 },
-      { to: '/admin/community-groups', label: 'Community groups', Icon: UsersRound },
-      { to: '/admin/fundraisers', label: 'Fundraisers', Icon: Heart },
-      { to: '/admin/gallery', label: 'Gallery', Icon: Image },
-    ],
-  },
-  {
-    heading: 'Inbox',
-    items: [
-      { to: '/admin/submissions', label: 'Public submissions', Icon: Inbox },
-      { to: '/admin/contacts', label: 'Contact messages', Icon: MessageSquare },
-      { to: '/admin/service-interests', label: 'Call to Serve', Icon: HeartHandshake },
-      { to: '/admin/media-submissions', label: 'Media submissions', Icon: Clapperboard },
-    ],
-  },
-  {
-    heading: 'System',
-    items: [
-      { to: '/admin/settings', label: 'Site settings', Icon: Settings },
-      { to: '/admin/users', label: 'Admin users', Icon: Users },
-    ],
-  },
-]
+function buildNavGroups(profileRole: string | null | undefined): NavGroup[] {
+  const systemHealth: NavItem[] = isSystemHealthAdminRole(profileRole)
+    ? [{ to: '/admin/system-health', label: 'System Health', Icon: Activity }]
+    : []
+
+  return [
+    {
+      heading: 'Overview',
+      items: [
+        { to: '/admin/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
+        { to: '/admin/analytics', label: 'Analytics', Icon: BarChart3 },
+      ],
+    },
+    {
+      heading: 'KIGH',
+      items: [
+        { to: '/admin/calendar', label: 'Calendar', Icon: CalendarDays },
+        { to: '/admin/resources', label: 'Resources', Icon: FolderOpen },
+        { to: '/admin/members', label: 'Members', Icon: UserPlus },
+      ],
+    },
+    {
+      heading: 'Content',
+      items: [
+        { to: '/admin/announcements', label: 'Announcements', Icon: Megaphone },
+        { to: '/admin/businesses', label: 'Businesses', Icon: Building2 },
+        { to: '/admin/community-groups', label: 'Community groups', Icon: UsersRound },
+        { to: '/admin/fundraisers', label: 'Fundraisers', Icon: Heart },
+        { to: '/admin/gallery', label: 'Gallery', Icon: Image },
+      ],
+    },
+    {
+      heading: 'Inbox',
+      items: [
+        { to: '/admin/submissions', label: 'Public submissions', Icon: Inbox },
+        { to: '/admin/contacts', label: 'Contact messages', Icon: MessageSquare },
+        { to: '/admin/service-interests', label: 'Call to Serve', Icon: HeartHandshake },
+        { to: '/admin/media-submissions', label: 'Media submissions', Icon: Clapperboard },
+      ],
+    },
+    {
+      heading: 'System',
+      items: [...systemHealth, { to: '/admin/settings', label: 'Site settings', Icon: Settings }, { to: '/admin/users', label: 'Admin users', Icon: Users }],
+    },
+  ]
+}
 
 export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const navGroups = useMemo(() => buildNavGroups(profile?.role), [profile?.role])
 
   async function handleLogout() {
     await signOut()

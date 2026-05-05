@@ -59,6 +59,9 @@ import { AdminMembersPage } from '@/pages/admin/AdminMembersPage'
 import { AdminCommunityGroupsPage } from '@/pages/admin/AdminCommunityGroupsPage'
 import { AdminServiceInterestsPage } from '@/pages/admin/AdminServiceInterestsPage'
 import { AdminMediaSubmissionsPage } from '@/pages/admin/AdminMediaSubmissionsPage'
+import { AdminAnalyticsPage } from '@/pages/admin/AdminAnalyticsPage'
+import { AdminSystemHealthPage } from '@/pages/admin/AdminSystemHealthPage'
+import { SYSTEM_HEALTH_ADMIN_ROLES } from '@/lib/platformAdmin'
 
 import { RequireAuth } from '@/components/RequireAuth'
 import { MemberLoginPage } from '@/pages/member/MemberLoginPage'
@@ -147,6 +150,15 @@ export default function App() {
               <Route path="change-password" element={<AdminChangePasswordPage />} />
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<AdminDashboardPage />} />
+              <Route path="analytics" element={<AdminAnalyticsPage />} />
+              <Route
+                path="system-health"
+                element={
+                  <ProtectedRoute requiredRoles={SYSTEM_HEALTH_ADMIN_ROLES}>
+                    <AdminSystemHealthPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="events" element={<Navigate to="/admin/calendar" replace />} />
               <Route path="calendar" element={<AdminCalendarPage />} />
               <Route path="resources" element={<AdminResourcesPage />} />

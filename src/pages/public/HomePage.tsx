@@ -26,6 +26,7 @@ import type { Event, Announcement, Fundraiser } from '@/lib/types'
 import { dedupeToNextOccurrenceOnly } from '@/lib/eventRecurrencePublic'
 import { KighLogo } from '@/components/KighLogo'
 import { HoustonSkylineBackdrop } from '@/components/HoustonSkylineBackdrop'
+import { trackClick } from '@/lib/analytics'
 
 export function HomePage() {
   const [events, setEvents] = useState<Event[]>([])
@@ -117,7 +118,9 @@ export function HomePage() {
                 size="lg"
                 className="bg-kenyan-gold-500 hover:bg-kenyan-gold-600 text-white border-0 shadow-lg shadow-black/15 font-semibold ring-1 ring-white/10"
               >
-                <Link to="/membership">Join / Membership</Link>
+                <Link to="/membership" onClick={() => void trackClick('hero_join_membership', '/membership')}>
+                  Join / Membership
+                </Link>
               </Button>
               <Button
                 asChild
@@ -125,7 +128,9 @@ export function HomePage() {
                 variant="secondary"
                 className="bg-white text-primary hover:bg-white/95 border-0 shadow-lg shadow-black/10 font-semibold"
               >
-                <Link to="/calendar">View Calendar</Link>
+                <Link to="/calendar" onClick={() => void trackClick('hero_view_calendar', '/calendar')}>
+                  View Calendar
+                </Link>
               </Button>
             </div>
             <p className="mt-8 text-sm text-white/75 inline-flex items-center gap-2">
@@ -157,6 +162,7 @@ export function HomePage() {
               <Link
                 key={to}
                 to={to}
+                onClick={() => void trackClick(`quick_${label.replace(/\s+/g, '_').toLowerCase()}`, to)}
                 className="group flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-border/45 bg-card/95 px-2 py-3 text-center text-xs sm:text-sm font-medium text-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card hover:shadow-md min-h-[4.25rem] sm:min-h-0 sm:py-3.5"
               >
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/[0.11] text-primary transition-all duration-200 group-hover:bg-primary group-hover:text-white group-hover:shadow-sm">
@@ -230,7 +236,9 @@ export function HomePage() {
                   <Link to="/calendar">Open calendar</Link>
                 </Button>
                 <Button asChild variant="outline" size="sm">
-                  <Link to="/events/submit">Suggest an event</Link>
+                  <Link to="/events/submit" onClick={() => void trackClick('home_suggest_event', '/events/submit')}>
+                    Suggest an event
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -245,7 +253,9 @@ export function HomePage() {
                   <Link to="/calendar">More dates</Link>
                 </Button>
                 <Button asChild size="sm" variant="ghost" className="text-primary">
-                  <Link to="/events/submit">Suggest an event</Link>
+                  <Link to="/events/submit" onClick={() => void trackClick('home_suggest_event', '/events/submit')}>
+                    Suggest an event
+                  </Link>
                 </Button>
               </div>
             </div>

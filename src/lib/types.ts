@@ -4,6 +4,7 @@ export type UserRole =
   | 'member'
   // New spec roles (production-ready hierarchy)
   | 'super_admin'
+  | 'platform_admin'
   | 'community_admin'
   | 'admin'
   | 'content_manager'
@@ -22,6 +23,7 @@ export type UserRole =
  *  `public.kigh_is_elevated_admin()` in supabase/migrations/013. */
 export const ELEVATED_ADMIN_ROLES: UserRole[] = [
   'super_admin',
+  'platform_admin',
   'community_admin',
   'admin',
   'content_manager',

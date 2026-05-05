@@ -6,6 +6,7 @@ import { formatDate } from '@/lib/utils'
 import { isEventPast } from '@/lib/eventDate'
 import { formatCategoryLabel } from '@/lib/communityCategories'
 import type { Event } from '@/lib/types'
+import { MapLink } from '@/components/MapLink'
 
 interface EventCardProps {
   event: Event
@@ -15,7 +16,7 @@ export function EventCard({ event }: EventCardProps) {
   const past = isEventPast(event.start_date)
   return (
     <Card className="group overflow-hidden transition-shadow hover:shadow-md">
-      <Link to={`/events/${event.slug}`}>
+      <Link to={`/events/${event.slug}`} className="block">
         {/* Image */}
         <div className="relative h-44 bg-muted overflow-hidden">
           {(event.image_url || event.flyer_url) ? (
@@ -69,23 +70,30 @@ export function EventCard({ event }: EventCardProps) {
           <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
             {event.short_description || event.description}
           </p>
-
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{event.location}</span>
-          </div>
-
-          {event.tags?.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1">
-              {event.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                  <Tag className="h-2.5 w-2.5" />{tag}
-                </span>
-              ))}
-            </div>
-          )}
         </CardContent>
       </Link>
+
+      <CardContent className="px-4 pb-4 pt-0 space-y-3">
+        {!event.is_virtual && (
+          <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{event.location}</span>
+            </div>
+            <MapLink address={event.address} location={event.location} className="text-xs w-fit" />
+          </div>
+        )}
+
+        {event.tags?.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {event.tags.slice(0, 3).map((tag) => (
+              <span key={tag} className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <Tag className="h-2.5 w-2.5" />{tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </CardContent>
     </Card>
   )
 }

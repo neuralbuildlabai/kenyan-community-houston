@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { PageLoader } from '@/components/LoadingSpinner'
 import { supabase } from '@/lib/supabase'
 import type { Business } from '@/lib/types'
+import { MapLink } from '@/components/MapLink'
+import { trackClick, trackEntityView } from '@/lib/analytics'
 
 export function BusinessDetailPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -16,6 +18,8 @@ export function BusinessDetailPage() {
 
   useEffect(() => {
     async function load() {
+      setLoading(true)
+      setItem(null)
       const { data } = await supabase
         .from('businesses')
         .select('*')
@@ -27,6 +31,11 @@ export function BusinessDetailPage() {
     }
     load()
   }, [slug])
+
+  useEffect(() => {
+    if (!item?.id) return
+    void trackEntityView('businesses', item.id, item.name, `/businesses/${item.slug}`)
+  }, [item?.id, item?.slug, item?.name])
 
   if (loading) return <PageLoader />
 
@@ -82,9 +91,14 @@ export function BusinessDetailPage() {
               {(item.address || item.city) && (
                 <div className="flex items-start gap-3">
                   <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground space-y-1.5">
                     {item.address && <div>{item.address}</div>}
                     <div>{[item.city, item.state, item.zip].filter(Boolean).join(', ')}</div>
+                    <MapLink
+                      address={[item.address, item.city, item.state, item.zip].filter(Boolean).join(', ')}
+                      location={item.name}
+                      className="text-xs"
+                    />
                   </div>
                 </div>
               )}
@@ -103,7 +117,13 @@ export function BusinessDetailPage() {
               {item.website && (
                 <div className="flex items-center gap-3">
                   <Globe className="h-4 w-4 text-primary shrink-0" />
-                  <a href={item.website} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline truncate">
+                  <a
+                    href={item.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:underline truncate"
+                    onClick={() => void trackClick('business_website', `/businesses/${item.slug}`, { business_id: item.id })}
+                  >
                     {item.website.replace(/^https?:\/\//, '')}
                   </a>
                 </div>

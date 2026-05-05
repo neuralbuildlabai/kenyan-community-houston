@@ -122,6 +122,7 @@ export const CONTACT_CATEGORIES = [
 
 export const USER_ROLES = [
   'super_admin',
+  'platform_admin',
   'community_admin',
   'business_admin',
   'support_admin',

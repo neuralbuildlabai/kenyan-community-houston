@@ -10,6 +10,8 @@ import { formatCategoryLabel } from '@/lib/communityCategories'
 import { supabase } from '@/lib/supabase'
 import type { Event, Resource } from '@/lib/types'
 import { isEventPast } from '@/lib/eventDate'
+import { MapLink } from '@/components/MapLink'
+import { trackEntityView } from '@/lib/analytics'
 
 function resourceHref(r: Resource): string | null {
   if (r.external_url) return r.external_url
@@ -37,6 +39,7 @@ export function EventDetailPage() {
   useEffect(() => {
     async function load() {
       setLoading(true)
+      setEvent(null)
       const { data } = await supabase
         .from('events')
         .select('*')
@@ -60,6 +63,11 @@ export function EventDetailPage() {
     }
     load()
   }, [slug])
+
+  useEffect(() => {
+    if (!event?.id) return
+    void trackEntityView('events', event.id, event.title, `/events/${event.slug}`)
+  }, [event?.id, event?.slug, event?.title])
 
   if (loading) return <PageLoader />
 
@@ -186,13 +194,16 @@ export function EventDetailPage() {
 
               <div className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <div>
+                <div className="space-y-1.5">
                   <div className="font-medium text-sm">{event.is_virtual ? 'Format' : 'Location'}</div>
                   <div className="text-sm text-muted-foreground">
                     {event.is_virtual ? 'Virtual / Online' : event.location}
                   </div>
                   {!event.is_virtual && event.address && (
                     <div className="text-xs text-muted-foreground">{event.address}</div>
+                  )}
+                  {!event.is_virtual && (
+                    <MapLink address={event.address} location={event.location} className="text-xs" />
                   )}
                   {event.timezone && (
                     <div className="text-xs text-muted-foreground mt-1">Timezone: {event.timezone}</div>

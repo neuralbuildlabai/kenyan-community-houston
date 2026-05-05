@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { MapLink } from '@/components/MapLink'
 import { supabase } from '@/lib/supabase'
 import { CALENDAR_FILTER_CATEGORIES } from '@/lib/constants'
 import { canonicalCategory, formatCategoryLabel, COMMUNITY_SUBMISSION_CATEGORIES } from '@/lib/communityCategories'
@@ -320,6 +321,9 @@ export function AdminCalendarPage() {
                 <TableRow key={e.id}>
                   <TableCell className="font-medium max-w-[220px]">
                     <div className="truncate">{e.title}</div>
+                    {!e.is_virtual && (e.address || e.location) ? (
+                      <MapLink address={e.address} location={e.location} className="text-[11px] mt-1 font-normal" />
+                    ) : null}
                     <div className="flex flex-wrap gap-1 mt-1">
                       {e.is_featured ? <Badge variant="gold" className="text-[10px]">Featured</Badge> : null}
                       {e.is_recurring ? (

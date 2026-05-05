@@ -15,6 +15,8 @@ import type { Event } from '@/lib/types'
 import { PageLoader } from '@/components/LoadingSpinner'
 import { isEventPast } from '@/lib/eventDate'
 import { dedupeToNextOccurrenceOnly } from '@/lib/eventRecurrencePublic'
+import { MapLink } from '@/components/MapLink'
+import { trackClick } from '@/lib/analytics'
 
 export function CalendarPage() {
   const [events, setEvents] = useState<Event[]>([])
@@ -182,6 +184,9 @@ export function CalendarPage() {
                           </span>
                         )}
                       </div>
+                      {!ev.is_virtual && (ev.address || ev.location) ? (
+                        <MapLink address={ev.address} location={ev.location} className="text-xs w-fit" />
+                      ) : null}
                       <div className="flex flex-wrap gap-2 pt-1">
                         <Button asChild size="sm" variant="outline" className="gap-1.5">
                           <a
@@ -195,6 +200,7 @@ export function CalendarPage() {
                             })}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={() => void trackClick('calendar_google_link', `/calendar`, { event_id: ev.id })}
                           >
                             <ExternalLink className="h-3.5 w-3.5" /> Google Calendar
                           </a>
@@ -203,7 +209,12 @@ export function CalendarPage() {
                           <Download className="h-3.5 w-3.5" /> Download .ics
                         </Button>
                         <Button asChild size="sm" className="font-medium">
-                          <Link to={`/events/${ev.slug}`}>Event details</Link>
+                          <Link
+                            to={`/events/${ev.slug}`}
+                            onClick={() => void trackClick('calendar_event_details', `/events/${ev.slug}`, { event_id: ev.id })}
+                          >
+                            Event details
+                          </Link>
                         </Button>
                       </div>
                     </div>
