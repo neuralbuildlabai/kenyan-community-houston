@@ -9,6 +9,7 @@ import { formatCategoryLabel } from '@/lib/communityCategories'
 import { formatDate } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import type { Announcement } from '@/lib/types'
+import { safeExternalHref } from '@/lib/externalUrl'
 
 export function AnnouncementDetailPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -78,10 +79,10 @@ export function AnnouncementDetailPage() {
           {item.body}
         </div>
 
-        {item.external_url && (
+        {safeExternalHref(item.external_url) && (
           <div className="mt-8">
             <a
-              href={item.external_url}
+              href={safeExternalHref(item.external_url)!}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-primary hover:underline font-medium"

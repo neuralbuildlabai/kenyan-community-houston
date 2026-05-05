@@ -12,9 +12,13 @@ import type { Event, Resource } from '@/lib/types'
 import { isEventPast } from '@/lib/eventDate'
 import { MapLink } from '@/components/MapLink'
 import { trackEntityView } from '@/lib/analytics'
+import { safeExternalHref } from '@/lib/externalUrl'
 
 function resourceHref(r: Resource): string | null {
-  if (r.external_url) return r.external_url
+  // External URLs run through the safe normaliser so unsafe protocols
+  // (`javascript:`, `data:`) collapse to null and the link is hidden,
+  // even if a row was stored with one before admin review.
+  if (r.external_url) return safeExternalHref(r.external_url)
   if (r.file_url) return encodeURI(r.file_url)
   return null
 }
@@ -223,30 +227,34 @@ export function EventDetailPage() {
             </div>
 
             <div className="space-y-2">
-              {event.is_virtual && event.virtual_url && (
+              {/* Defence-in-depth: every external URL is normalised
+                  through `safeExternalHref` at render time so unsafe
+                  protocols never reach the DOM, even if an admin
+                  approved a row that contained one. */}
+              {event.is_virtual && safeExternalHref(event.virtual_url) && (
                 <Button asChild className="w-full gap-2">
-                  <a href={event.virtual_url} target="_blank" rel="noopener noreferrer">
+                  <a href={safeExternalHref(event.virtual_url)!} target="_blank" rel="noopener noreferrer">
                     <Video className="h-4 w-4" /> Join online
                   </a>
                 </Button>
               )}
-              {event.registration_url && (
+              {safeExternalHref(event.registration_url) && (
                 <Button asChild variant="secondary" className="w-full gap-2">
-                  <a href={event.registration_url} target="_blank" rel="noopener noreferrer">
+                  <a href={safeExternalHref(event.registration_url)!} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4" /> Register / RSVP
                   </a>
                 </Button>
               )}
-              {event.ticket_url && (
+              {safeExternalHref(event.ticket_url) && (
                 <Button asChild className="w-full gap-2">
-                  <a href={event.ticket_url} target="_blank" rel="noopener noreferrer">
+                  <a href={safeExternalHref(event.ticket_url)!} target="_blank" rel="noopener noreferrer">
                     <Ticket className="h-4 w-4" /> Get Tickets
                   </a>
                 </Button>
               )}
-              {event.organizer_website && (
+              {safeExternalHref(event.organizer_website) && (
                 <Button asChild variant="outline" className="w-full gap-2">
-                  <a href={event.organizer_website} target="_blank" rel="noopener noreferrer">
+                  <a href={safeExternalHref(event.organizer_website)!} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4" /> Organizer Website
                   </a>
                 </Button>

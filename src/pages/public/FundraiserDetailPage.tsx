@@ -13,6 +13,7 @@ import { FUNDRAISER_DISCLAIMER } from '@/lib/constants'
 import { supabase } from '@/lib/supabase'
 import type { Fundraiser } from '@/lib/types'
 import { trackClick, trackEntityView } from '@/lib/analytics'
+import { safeExternalHref } from '@/lib/externalUrl'
 
 export function FundraiserDetailPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -119,10 +120,10 @@ export function FundraiserDetailPage() {
               )}
             </div>
 
-            {item.donation_url && (
+            {safeExternalHref(item.donation_url) && (
               <Button asChild className="w-full gap-2">
                 <a
-                  href={item.donation_url}
+                  href={safeExternalHref(item.donation_url)!}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => void trackClick('fundraiser_donate', `/community-support/${item.slug}`, { fundraiser_id: item.id })}

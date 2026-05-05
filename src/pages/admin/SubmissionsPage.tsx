@@ -13,6 +13,7 @@ import { pendingQueuePublishPayload, pendingQueueRejectPayload } from '@/lib/pub
 import { formatCategoryLabel } from '@/lib/communityCategories'
 import { formatDateShort } from '@/lib/utils'
 import { toast } from 'sonner'
+import { safeExternalHref } from '@/lib/externalUrl'
 
 type ContentType = 'events' | 'announcements' | 'businesses' | 'fundraisers'
 
@@ -37,16 +38,29 @@ function getTitle(item: PendingItem) {
 }
 
 function SubmissionFlyerPreview({ url, label }: { url: string; label?: string }) {
-  const u = url.trim()
+  // Normalise the user-supplied URL through `safeExternalHref` so an
+  // admin reviewer can never accidentally trigger a `javascript:` /
+  // `data:` link from the moderation queue. If the value is unsafe
+  // we surface that to the reviewer instead of rendering a link.
+  const safe = safeExternalHref(url)
+  const u = (safe ?? url).trim()
   const base = (u.split('?')[0] ?? u).toLowerCase()
   const ext = base.includes('.') ? base.split('.').pop() : ''
   const isImg = ext ? ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext) : false
   const linkLabel = label ?? 'Open link'
 
+  if (!safe) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-destructive mt-1" title={url}>
+        Unsafe URL — review the raw value before approving.
+      </span>
+    )
+  }
+
   if (!isImg) {
     return (
       <a
-        href={u}
+        href={safe}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline mt-1"
@@ -59,9 +73,9 @@ function SubmissionFlyerPreview({ url, label }: { url: string; label?: string })
 
   return (
     <div className="flex items-start gap-2 mt-1 max-w-[14rem]">
-      <img src={u} alt="" className="h-12 w-12 rounded object-cover border shrink-0 bg-muted" loading="lazy" />
+      <img src={safe} alt="" className="h-12 w-12 rounded object-cover border shrink-0 bg-muted" loading="lazy" />
       <a
-        href={u}
+        href={safe}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline break-all"

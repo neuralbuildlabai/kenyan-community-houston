@@ -43,8 +43,16 @@ Deno.serve(async (req) => {
 
   const callerId = userData.user.id
 
-  const { data: profile } = await adminClient.from('profiles').select('role').eq('id', callerId).maybeSingle()
-  const role = (profile?.role as string | undefined) ?? (userData.user.user_metadata?.role as string | undefined) ?? ''
+  // Read the caller role from the trusted `profiles` table only.
+  // `user_metadata` is self-writable in Supabase auth, so falling back
+  // to it would re-open the same privilege-escalation primitive that
+  // migration 020 closed. Match `create-admin-user` exactly.
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', callerId)
+    .maybeSingle()
+  const role = ((profile?.role as string | undefined) ?? '').trim()
   if (role !== 'super_admin') {
     return json(403, { ok: false, message: 'Forbidden' })
   }

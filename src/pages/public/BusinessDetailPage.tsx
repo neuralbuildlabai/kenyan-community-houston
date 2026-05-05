@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import type { Business } from '@/lib/types'
 import { MapLink } from '@/components/MapLink'
 import { trackClick, trackEntityView } from '@/lib/analytics'
+import { safeExternalHref, prettyExternalLabel } from '@/lib/externalUrl'
 
 export function BusinessDetailPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -114,25 +115,25 @@ export function BusinessDetailPage() {
                   <a href={`mailto:${item.email}`} className="text-sm text-muted-foreground hover:text-foreground">{item.email}</a>
                 </div>
               )}
-              {item.website && (
+              {safeExternalHref(item.website) && (
                 <div className="flex items-center gap-3">
                   <Globe className="h-4 w-4 text-primary shrink-0" />
                   <a
-                    href={item.website}
+                    href={safeExternalHref(item.website)!}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-primary hover:underline truncate"
                     onClick={() => void trackClick('business_website', `/businesses/${item.slug}`, { business_id: item.id })}
                   >
-                    {item.website.replace(/^https?:\/\//, '')}
+                    {prettyExternalLabel(item.website)}
                   </a>
                 </div>
               )}
             </div>
 
-            {item.website && (
+            {safeExternalHref(item.website) && (
               <Button asChild className="w-full gap-2">
-                <a href={item.website} target="_blank" rel="noopener noreferrer">
+                <a href={safeExternalHref(item.website)!} target="_blank" rel="noopener noreferrer">
                   <Globe className="h-4 w-4" /> Visit Website
                 </a>
               </Button>
