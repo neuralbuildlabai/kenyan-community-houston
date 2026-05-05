@@ -7,8 +7,10 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { SubmissionMediaUploadField } from '@/components/public/SubmissionMediaUploadField'
 import { supabase } from '@/lib/supabase'
 import { EVENT_CATEGORIES } from '@/lib/constants'
+import { uploadSubmissionMedia } from '@/lib/submissionMediaUpload'
 import { generateSlug } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -22,11 +24,19 @@ export function SubmitEventPage() {
   })
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [flyerUploadUrl, setFlyerUploadUrl] = useState<string | null>(null)
+  const [flyerFileName, setFlyerFileName] = useState<string | null>(null)
+  const [flyerUploading, setFlyerUploading] = useState(false)
+  const [flyerUploadError, setFlyerUploadError] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.title || !form.category || !form.start_date || !form.location) {
       toast.error('Please fill in all required fields')
+      return
+    }
+    if (flyerUploading) {
+      toast.error('Wait for the flyer upload to finish.')
       return
     }
     setLoading(true)
@@ -46,7 +56,7 @@ export function SubmitEventPage() {
       is_free: form.is_free,
       ticket_price: !form.is_free && form.ticket_price ? parseFloat(form.ticket_price) : null,
       ticket_url: form.ticket_url || null,
-      flyer_url: form.flyer_url.trim() || null,
+      flyer_url: flyerUploadUrl?.trim() || form.flyer_url.trim() || null,
       organizer_name: form.organizer_name || null,
       organizer_contact: form.organizer_contact || null,
       organizer_website: form.organizer_website || null,
@@ -59,6 +69,27 @@ export function SubmitEventPage() {
   }
 
   const set = (k: string, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }))
+
+  async function handleFlyerFile(file: File) {
+    setFlyerUploadError(null)
+    setFlyerUploading(true)
+    const result = await uploadSubmissionMedia(supabase, file)
+    setFlyerUploading(false)
+    if ('error' in result) {
+      setFlyerUploadUrl(null)
+      setFlyerFileName(null)
+      setFlyerUploadError(result.error)
+      return
+    }
+    setFlyerUploadUrl(result.publicUrl)
+    setFlyerFileName(file.name)
+  }
+
+  function clearFlyerUpload() {
+    setFlyerUploadUrl(null)
+    setFlyerFileName(null)
+    setFlyerUploadError(null)
+  }
 
   if (submitted) return (
     <div className="mx-auto max-w-2xl px-4 py-20 text-center">
@@ -131,6 +162,19 @@ export function SubmitEventPage() {
               <Label htmlFor="ticket_url">Ticket / RSVP Link</Label>
               <Input id="ticket_url" type="url" value={form.ticket_url} onChange={(e) => set('ticket_url', e.target.value)} placeholder="https://eventbrite.com/…" />
             </div>
+            <div className="sm:col-span-2">
+              <SubmissionMediaUploadField
+                inputId="flyer_file"
+                label="Upload flyer / poster"
+                selectedFileName={flyerFileName}
+                uploadedUrl={flyerUploadUrl}
+                uploading={flyerUploading}
+                error={flyerUploadError}
+                onPickFile={handleFlyerFile}
+                onClear={clearFlyerUpload}
+                disabled={loading}
+              />
+            </div>
             <div className="sm:col-span-2 form-field-stack">
               <Label htmlFor="flyer_url">Flyer / Poster Link</Label>
               <Input
@@ -140,10 +184,10 @@ export function SubmitEventPage() {
                 onChange={(e) => set('flyer_url', e.target.value)}
                 placeholder="https://…"
               />
-              <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
-                Paste a public image or flyer link. Upload support will be added after review.
-              </p>
             </div>
+            <p className="sm:col-span-2 text-[11px] text-muted-foreground leading-relaxed">
+              Upload a flyer image or paste a public flyer link. Submissions are reviewed before publication.
+            </p>
             <div className="form-field-stack">
               <Label htmlFor="organizer_name">Your Name / Organization</Label>
               <Input id="organizer_name" value={form.organizer_name} onChange={(e) => set('organizer_name', e.target.value)} />
@@ -157,7 +201,7 @@ export function SubmitEventPage() {
               <Input id="tags_raw" value={form.tags_raw} onChange={(e) => set('tags_raw', e.target.value)} placeholder="family, outdoor, food" />
             </div>
           </div>
-          <Button type="submit" size="lg" className="w-full sm:w-auto min-w-[14rem]" disabled={loading}>
+          <Button type="submit" size="lg" className="w-full sm:w-auto min-w-[14rem]" disabled={loading || flyerUploading}>
             {loading ? 'Submitting…' : 'Submit Event for Review'}
           </Button>
         </form>

@@ -36,6 +36,43 @@ function getTitle(item: PendingItem) {
   return item.title ?? item.name ?? '—'
 }
 
+function SubmissionFlyerPreview({ url, label }: { url: string; label?: string }) {
+  const u = url.trim()
+  const base = (u.split('?')[0] ?? u).toLowerCase()
+  const ext = base.includes('.') ? base.split('.').pop() : ''
+  const isImg = ext ? ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext) : false
+  const linkLabel = label ?? 'Open link'
+
+  if (!isImg) {
+    return (
+      <a
+        href={u}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline mt-1"
+      >
+        <ExternalLink className="h-3 w-3 shrink-0" />
+        {linkLabel}
+      </a>
+    )
+  }
+
+  return (
+    <div className="flex items-start gap-2 mt-1 max-w-[14rem]">
+      <img src={u} alt="" className="h-12 w-12 rounded object-cover border shrink-0 bg-muted" loading="lazy" />
+      <a
+        href={u}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline break-all"
+      >
+        <ExternalLink className="h-3 w-3 shrink-0" />
+        {linkLabel}
+      </a>
+    </div>
+  )
+}
+
 function calendarPreview(item: PendingItem): string | null {
   if (!item.include_in_calendar) return null
   const bits: string[] = []
@@ -66,7 +103,7 @@ export function AdminSubmissionsPage() {
     const col = type === 'businesses' ? 'name' : 'title'
     const sel =
       type === 'announcements'
-        ? `id, ${col}, category, created_at, status, include_in_calendar, calendar_start_date, calendar_start_time, calendar_location, calendar_flyer_url`
+        ? `id, ${col}, category, created_at, status, include_in_calendar, calendar_start_date, calendar_start_time, calendar_location, calendar_flyer_url, image_url`
         : type === 'events'
           ? `id, ${col}, category, created_at, status, flyer_url, image_url`
           : `id, ${col}, category, created_at, status`
@@ -191,15 +228,10 @@ export function AdminSubmissionsPage() {
                           <div className="space-y-1">
                             <span className="line-clamp-2">{getTitle(item)}</span>
                             {type === 'events' && (item.flyer_url || item.image_url) && (
-                              <a
-                                href={(item.flyer_url || item.image_url)!.trim()}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline"
-                              >
-                                <ExternalLink className="h-3 w-3 shrink-0" />
-                                Flyer / poster
-                              </a>
+                              <SubmissionFlyerPreview url={(item.flyer_url || item.image_url)!} label="Flyer / poster" />
+                            )}
+                            {type === 'announcements' && item.image_url?.trim() && (
+                              <SubmissionFlyerPreview url={item.image_url.trim()} label="Announcement image" />
                             )}
                             {type === 'announcements' && item.include_in_calendar && (
                               <Badge variant="outline" className="text-[10px] gap-1 lg:hidden">
@@ -218,15 +250,7 @@ export function AdminSubmissionsPage() {
                                 </Badge>
                                 <p className="leading-snug">{calendarPreview(item)}</p>
                                 {item.calendar_flyer_url?.trim() ? (
-                                  <a
-                                    href={item.calendar_flyer_url.trim()}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 text-primary font-medium hover:underline"
-                                  >
-                                    <ExternalLink className="h-3 w-3 shrink-0" />
-                                    Flyer / poster link
-                                  </a>
+                                  <SubmissionFlyerPreview url={item.calendar_flyer_url.trim()} label="Calendar flyer / poster" />
                                 ) : null}
                               </div>
                             ) : (

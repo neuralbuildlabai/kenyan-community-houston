@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SubmissionMediaUploadField } from '@/components/public/SubmissionMediaUploadField'
 import { supabase } from '@/lib/supabase'
 import { ANNOUNCEMENT_CATEGORIES } from '@/lib/constants'
+import { uploadSubmissionMedia } from '@/lib/submissionMediaUpload'
 import { generateSlug } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -42,6 +44,7 @@ export function SubmitAnnouncementPage() {
     body: '',
     author_name: '',
     external_url: '',
+    image_url: '',
   })
   const [includeInCalendar, setIncludeInCalendar] = useState(false)
   const [calendarIsRecurring, setCalendarIsRecurring] = useState(false)
@@ -49,11 +52,23 @@ export function SubmitAnnouncementPage() {
   const [calendar, setCalendar] = useState<CalendarFields>(() => emptyCalendar())
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [announcementImageUploadUrl, setAnnouncementImageUploadUrl] = useState<string | null>(null)
+  const [announcementImageFileName, setAnnouncementImageFileName] = useState<string | null>(null)
+  const [announcementImageUploading, setAnnouncementImageUploading] = useState(false)
+  const [announcementImageError, setAnnouncementImageError] = useState<string | null>(null)
+  const [calendarFlyerUploadUrl, setCalendarFlyerUploadUrl] = useState<string | null>(null)
+  const [calendarFlyerFileName, setCalendarFlyerFileName] = useState<string | null>(null)
+  const [calendarFlyerUploading, setCalendarFlyerUploading] = useState(false)
+  const [calendarFlyerError, setCalendarFlyerError] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.title || !form.category || !form.body) {
       toast.error('Please fill in all required fields')
+      return
+    }
+    if (announcementImageUploading || calendarFlyerUploading) {
+      toast.error('Wait for uploads to finish.')
       return
     }
     if (includeInCalendar) {
@@ -79,6 +94,7 @@ export function SubmitAnnouncementPage() {
       ...form,
       slug,
       external_url: form.external_url || null,
+      image_url: announcementImageUploadUrl?.trim() || form.image_url.trim() || null,
       summary: form.summary || '',
       status: 'pending',
       tags: [],
@@ -89,7 +105,9 @@ export function SubmitAnnouncementPage() {
       calendar_end_time: includeInCalendar ? calendar.calendar_end_time || null : null,
       calendar_location: includeInCalendar ? calendar.calendar_location.trim() : null,
       calendar_address: includeInCalendar ? calendar.calendar_address.trim() || null : null,
-      calendar_flyer_url: includeInCalendar ? calendar.calendar_flyer_url.trim() || null : null,
+      calendar_flyer_url: includeInCalendar
+        ? calendarFlyerUploadUrl?.trim() || calendar.calendar_flyer_url.trim() || null
+        : null,
       calendar_registration_url: includeInCalendar ? calendar.calendar_registration_url.trim() || null : null,
       calendar_is_recurring: includeInCalendar && calendarIsRecurring,
       calendar_recurrence_frequency: includeInCalendar && calendarIsRecurring ? 'weekly' : null,
@@ -106,6 +124,50 @@ export function SubmitAnnouncementPage() {
   }
 
   const setCal = (k: keyof CalendarFields, v: string) => setCalendar((c) => ({ ...c, [k]: v }))
+
+  async function handleAnnouncementImageFile(file: File) {
+    setAnnouncementImageError(null)
+    setAnnouncementImageUploading(true)
+    const result = await uploadSubmissionMedia(supabase, file)
+    setAnnouncementImageUploading(false)
+    if ('error' in result) {
+      setAnnouncementImageUploadUrl(null)
+      setAnnouncementImageFileName(null)
+      setAnnouncementImageError(result.error)
+      return
+    }
+    setAnnouncementImageUploadUrl(result.publicUrl)
+    setAnnouncementImageFileName(file.name)
+  }
+
+  function clearAnnouncementImageUpload() {
+    setAnnouncementImageUploadUrl(null)
+    setAnnouncementImageFileName(null)
+    setAnnouncementImageError(null)
+  }
+
+  async function handleCalendarFlyerFile(file: File) {
+    setCalendarFlyerError(null)
+    setCalendarFlyerUploading(true)
+    const result = await uploadSubmissionMedia(supabase, file)
+    setCalendarFlyerUploading(false)
+    if ('error' in result) {
+      setCalendarFlyerUploadUrl(null)
+      setCalendarFlyerFileName(null)
+      setCalendarFlyerError(result.error)
+      return
+    }
+    setCalendarFlyerUploadUrl(result.publicUrl)
+    setCalendarFlyerFileName(file.name)
+  }
+
+  function clearCalendarFlyerUpload() {
+    setCalendarFlyerUploadUrl(null)
+    setCalendarFlyerFileName(null)
+    setCalendarFlyerError(null)
+  }
+
+  const uploadsBusy = announcementImageUploading || calendarFlyerUploading
 
   if (submitted)
     return (
@@ -167,6 +229,32 @@ export function SubmitAnnouncementPage() {
               <Label htmlFor="external_url">External Link (optional)</Label>
               <Input id="external_url" type="url" value={form.external_url} onChange={(e) => setForm({ ...form, external_url: e.target.value })} placeholder="https://…" />
             </div>
+            <div className="sm:col-span-2">
+              <SubmissionMediaUploadField
+                inputId="announcement_image_file"
+                label="Announcement image (optional)"
+                selectedFileName={announcementImageFileName}
+                uploadedUrl={announcementImageUploadUrl}
+                uploading={announcementImageUploading}
+                error={announcementImageError}
+                onPickFile={handleAnnouncementImageFile}
+                onClear={clearAnnouncementImageUpload}
+                disabled={loading}
+              />
+            </div>
+            <div className="sm:col-span-2 form-field-stack">
+              <Label htmlFor="image_url">Image link (optional)</Label>
+              <Input
+                id="image_url"
+                type="url"
+                value={form.image_url}
+                onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                placeholder="https://…"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                Paste a public image URL if you are not uploading a file. Uploaded file takes precedence.
+              </p>
+            </div>
           </div>
 
           <div className="rounded-2xl border border-primary/15 bg-gradient-to-br from-secondary/40 via-muted/25 to-background/80 px-5 py-5 space-y-4 shadow-inner">
@@ -181,6 +269,7 @@ export function SubmitAnnouncementPage() {
                     setCalendar(emptyCalendar())
                     setCalendarIsRecurring(false)
                     setCalendarRecurrenceUntil('')
+                    clearCalendarFlyerUpload()
                   }
                 }}
                 className="mt-1"
@@ -233,6 +322,19 @@ export function SubmitAnnouncementPage() {
                   <Label htmlFor="calendar_address">Street address (optional)</Label>
                   <Input id="calendar_address" value={calendar.calendar_address} onChange={(e) => setCal('calendar_address', e.target.value)} placeholder="Street, city, TX" />
                 </div>
+                <div className="sm:col-span-2">
+                  <SubmissionMediaUploadField
+                    inputId="calendar_flyer_file"
+                    label="Upload flyer / poster (calendar)"
+                    selectedFileName={calendarFlyerFileName}
+                    uploadedUrl={calendarFlyerUploadUrl}
+                    uploading={calendarFlyerUploading}
+                    error={calendarFlyerError}
+                    onPickFile={handleCalendarFlyerFile}
+                    onClear={clearCalendarFlyerUpload}
+                    disabled={loading}
+                  />
+                </div>
                 <div className="sm:col-span-2 form-field-stack">
                   <Label htmlFor="calendar_flyer_url">Flyer / Poster Link</Label>
                   <Input
@@ -243,7 +345,7 @@ export function SubmitAnnouncementPage() {
                     placeholder="https://…"
                   />
                   <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
-                    Paste a public image or flyer link. Upload support will be added after review.
+                    Upload a flyer or paste a public link for the calendar event. Submissions are reviewed before publication.
                   </p>
                 </div>
                 <div className="sm:col-span-2 form-field-stack">
@@ -294,7 +396,7 @@ export function SubmitAnnouncementPage() {
             )}
           </div>
 
-          <Button type="submit" size="lg" className="w-full sm:w-auto min-w-[12rem]" disabled={loading}>
+          <Button type="submit" size="lg" className="w-full sm:w-auto min-w-[12rem]" disabled={loading || uploadsBusy}>
             {loading ? 'Submitting…' : 'Submit for Review'}
           </Button>
         </form>
