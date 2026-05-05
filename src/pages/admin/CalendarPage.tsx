@@ -21,6 +21,7 @@ import { CALENDAR_FILTER_CATEGORIES } from '@/lib/constants'
 import { generateSlug } from '@/lib/utils'
 import { formatDateShort } from '@/lib/utils'
 import { toast } from 'sonner'
+import { isoNow } from '@/lib/publishLifecycle'
 import type { Event, EventStatus } from '@/lib/types'
 
 type EventRow = Event
@@ -66,6 +67,8 @@ const defaultForm = () => ({
   status: 'draft' as EventStatus,
   is_featured: false,
   tags_raw: '',
+  /** Preserve first publication time when editing published events */
+  published_at_prev: null as string | null,
 })
 
 export function AdminCalendarPage() {
@@ -142,6 +145,7 @@ export function AdminCalendarPage() {
       status: e.status,
       is_featured: !!e.is_featured,
       tags_raw: (e.tags ?? []).join(', '),
+      published_at_prev: e.published_at ?? null,
     })
     setDialogOpen(true)
   }
@@ -159,6 +163,9 @@ export function AdminCalendarPage() {
     }
 
     const tags = form.tags_raw.split(',').map((t) => t.trim()).filter(Boolean)
+    const now = isoNow()
+    const published_at =
+      form.status === 'published' ? (form.published_at_prev ?? now) : null
     const row = {
       title: form.title.trim(),
       slug,
@@ -189,7 +196,8 @@ export function AdminCalendarPage() {
       capacity: form.capacity ? parseInt(form.capacity, 10) : null,
       status: form.status,
       is_featured: form.is_featured,
-      published_at: form.status === 'published' ? new Date().toISOString() : null,
+      published_at,
+      updated_at: now,
       organizer_website: null,
     }
 
@@ -217,7 +225,7 @@ export function AdminCalendarPage() {
   async function archiveEvent(id: string) {
     const { error } = await supabase
       .from('events')
-      .update({ status: 'archived', published_at: null })
+      .update({ status: 'archived', published_at: null, updated_at: isoNow() })
       .eq('id', id)
     if (error) toast.error('Failed to archive')
     else {

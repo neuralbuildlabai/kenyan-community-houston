@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { supabase } from '@/lib/supabase'
+import { moderationStatusPatch } from '@/lib/publishLifecycle'
 import { formatCurrency, formatDateShort } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -44,9 +45,12 @@ export function AdminFundraisersPage() {
   useEffect(() => { load() }, [statusFilter])
 
   async function updateStatus(id: string, status: string) {
-    const { error } = await supabase.from('fundraisers').update({ status, published_at: status === 'published' ? new Date().toISOString() : null }).eq('id', id)
-    if (error) toast.error('Update failed')
-    else { toast.success(`Fundraiser ${status}`); load() }
+    const { error } = await supabase.from('fundraisers').update(moderationStatusPatch(status)).eq('id', id)
+    if (error) toast.error(error.message || 'Update failed')
+    else {
+      toast.success(`Fundraiser ${status}`)
+      load()
+    }
   }
 
   async function updateVerification(id: string, verification_status: string) {

@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase'
 import { COMMUNITY_GROUP_CATEGORIES } from '@/lib/constants'
 import { generateSlug } from '@/lib/utils'
 import { toast } from 'sonner'
+import { isoNow } from '@/lib/publishLifecycle'
 import type { CommunityGroup, CommunityGroupCategory, CommunityGroupStatus } from '@/lib/types'
 
 const STATUS_FILTER = ['all', 'pending', 'approved', 'published', 'rejected', 'archived'] as const
@@ -160,7 +161,10 @@ export function AdminCommunityGroupsPage() {
   }
 
   async function quickStatus(id: string, status: CommunityGroupStatus) {
-    const { error } = await supabase.from('community_groups').update({ status }).eq('id', id)
+    const { error } = await supabase
+      .from('community_groups')
+      .update({ status, updated_at: isoNow() })
+      .eq('id', id)
     if (error) toast.error(error.message)
     else {
       toast.success(`Status → ${status}`)

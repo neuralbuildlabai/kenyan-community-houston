@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { supabase } from '@/lib/supabase'
+import { moderationStatusPatch } from '@/lib/publishLifecycle'
 import { formatDateShort } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -42,9 +43,12 @@ export function AdminBusinessesPage() {
   useEffect(() => { load() }, [statusFilter])
 
   async function updateStatus(id: string, status: string) {
-    const { error } = await supabase.from('businesses').update({ status }).eq('id', id)
-    if (error) toast.error('Update failed')
-    else { toast.success(`Business ${status}`); load() }
+    const { error } = await supabase.from('businesses').update(moderationStatusPatch(status)).eq('id', id)
+    if (error) toast.error(error.message || 'Update failed')
+    else {
+      toast.success(`Business ${status}`)
+      load()
+    }
   }
 
   async function updateTier(id: string, tier: string) {

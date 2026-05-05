@@ -83,6 +83,11 @@ export function HomePage() {
       {/* 1. Hero — focused on who this is for and the two main actions. */}
       <section className="relative overflow-hidden text-white">
         <div className="absolute inset-0 bg-gradient-to-br from-foreground via-kenyan-green-900 to-kenyan-green-800" />
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_60%_at_100%_-10%,rgba(212,175,55,0.18),transparent_55%)]"
+          aria-hidden
+        />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_0%_100%,rgba(255,255,255,0.06),transparent_50%)]" aria-hidden />
         <HoustonSkylineBackdrop />
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24">
@@ -90,24 +95,24 @@ export function HomePage() {
             <div className="flex items-center gap-3 mb-6">
               <KighLogo
                 withCard
-                className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 border-white/30 bg-white/95 shadow-lg ring-1 ring-white/10"
+                className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 border-white/35 bg-white/98 shadow-xl ring-1 ring-white/15"
                 imgClassName="max-h-12 sm:max-h-14"
               />
-              <Badge className="bg-kenyan-gold-500 text-white border-0 text-xs font-semibold tracking-wide px-3 py-1 shadow-md">
+              <Badge className="bg-kenyan-gold-500 text-white border-0 text-xs font-semibold tracking-wide px-3 py-1 shadow-lg shadow-black/10">
                 Kenyans in Greater Houston
               </Badge>
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-[2.65rem] font-bold leading-[1.1] tracking-tight mb-5 drop-shadow-sm">
+            <h1 className="text-3xl sm:text-4xl lg:text-[2.65rem] font-bold leading-[1.08] tracking-tight mb-5 drop-shadow-md [text-shadow:0_1px_24px_rgba(0,0,0,0.18)]">
               Your community hub for life in Houston — events, support, and connection.
             </h1>
-            <p className="text-base sm:text-lg text-white/88 leading-relaxed mb-8 max-w-xl">
+            <p className="text-base sm:text-lg text-white/[0.92] leading-relaxed mb-8 max-w-xl font-medium">
               Find gatherings, resources, businesses, and ways to belong. Built by neighbors for families, newcomers, and everyone in between.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button
                 asChild
                 size="lg"
-                className="bg-kenyan-gold-500 hover:bg-kenyan-gold-600 text-white border-0 shadow-lg font-semibold"
+                className="bg-kenyan-gold-500 hover:bg-kenyan-gold-600 text-white border-0 shadow-lg shadow-black/15 font-semibold ring-1 ring-white/10"
               >
                 <Link to="/membership">Join / Membership</Link>
               </Button>
@@ -115,7 +120,7 @@ export function HomePage() {
                 asChild
                 size="lg"
                 variant="secondary"
-                className="bg-white/95 text-primary hover:bg-white border-0 shadow-md font-semibold"
+                className="bg-white text-primary hover:bg-white/95 border-0 shadow-lg shadow-black/10 font-semibold"
               >
                 <Link to="/calendar">View Calendar</Link>
               </Button>
@@ -129,13 +134,13 @@ export function HomePage() {
       </section>
 
       {/* 2. Quick access — the only shortcut row. Nothing duplicated below. */}
-      <section className="border-b bg-gradient-to-b from-muted/30 via-background to-muted/25 py-6 sm:py-7">
+      <section className="border-b border-border/50 bg-gradient-to-b from-[hsl(48_32%_97%)]/90 via-background to-muted/20 py-7 sm:py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em] mb-1">Start here</p>
-          <p className="text-sm text-muted-foreground max-w-2xl mb-4">
+          <p className="text-sm text-muted-foreground max-w-2xl mb-5">
             Jump straight to what you need.
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
             {[
               { to: '/events', Icon: Calendar, label: 'Events' },
               { to: '/calendar', Icon: CalendarDays, label: 'Calendar' },
@@ -149,9 +154,9 @@ export function HomePage() {
               <Link
                 key={to}
                 to={to}
-                className="group flex flex-col items-center justify-center gap-1.5 rounded-xl border border-border/70 bg-background px-2 py-3 text-center text-xs sm:text-sm font-medium text-foreground shadow-sm hover:border-primary/35 hover:bg-primary/[0.04] transition-colors min-h-[4.25rem] sm:min-h-0 sm:py-3.5"
+                className="group flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-border/45 bg-card/95 px-2 py-3 text-center text-xs sm:text-sm font-medium text-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card hover:shadow-md min-h-[4.25rem] sm:min-h-0 sm:py-3.5"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/[0.11] text-primary transition-all duration-200 group-hover:bg-primary group-hover:text-white group-hover:shadow-sm">
                   <Icon className="h-3.5 w-3.5" />
                 </span>
                 <span className="leading-tight px-0.5">{label}</span>
@@ -161,7 +166,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-14 space-y-14 sm:space-y-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-14 space-y-14 sm:space-y-[4.25rem]">
         {/* 3. Why this hub matters — short, three quick proof points. */}
         <section>
           <div className="max-w-2xl mb-6">
@@ -181,7 +186,7 @@ export function HomePage() {
             ].map(({ title, Icon, body }) => (
               <div
                 key={title}
-                className="rounded-xl border border-border/60 bg-background px-4 py-4 shadow-sm"
+                className="rounded-2xl border-0 bg-card px-4 py-5 shadow-sm ring-1 ring-border/35"
               >
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary mb-2.5">
                   <Icon className="h-4 w-4" />
@@ -211,11 +216,11 @@ export function HomePage() {
           </div>
 
           {events.length === 0 ? (
-            <div className="rounded-2xl border bg-muted/25 px-5 py-8 sm:px-8 sm:py-10 text-center">
-              <CalendarDays className="mx-auto h-9 w-9 text-primary/40 mb-2" />
-              <p className="text-sm font-medium text-foreground">Nothing scheduled yet</p>
+            <div className="rounded-2xl border border-dashed border-border/60 bg-gradient-to-br from-muted/35 via-muted/15 to-background px-5 py-8 sm:px-8 sm:py-10 text-center shadow-inner">
+              <CalendarDays className="mx-auto h-10 w-10 text-primary/45 mb-3" />
+              <p className="text-sm font-semibold text-foreground">Nothing scheduled yet</p>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto mt-2 leading-relaxed">
-                New events will show here when published. Browse the calendar or suggest something for the community.
+                Events appear here once published. Browse the full calendar or suggest one for the community.
               </p>
               <div className="flex flex-wrap justify-center gap-2 mt-5">
                 <Button asChild variant="default" size="sm">
@@ -278,9 +283,9 @@ export function HomePage() {
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-dashed bg-muted/25 px-4 py-6 text-center">
+                <div className="rounded-2xl border border-dashed border-border/55 bg-muted/20 px-4 py-7 text-center">
                   <p className="text-sm font-medium text-foreground">No announcements right now</p>
-                  <p className="text-xs text-muted-foreground mt-1">Check back soon.</p>
+                  <p className="text-xs text-muted-foreground mt-1.5">We will post updates here when there is news to share.</p>
                 </div>
               )}
             </div>
@@ -301,12 +306,12 @@ export function HomePage() {
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-dashed bg-muted/25 px-4 py-6 text-center">
+                <div className="rounded-2xl border border-dashed border-border/55 bg-muted/20 px-4 py-7 text-center">
                   <p className="text-sm font-medium text-foreground">No active fundraisers</p>
-                  <p className="text-xs text-muted-foreground mt-1">When the community rallies, it will show here.</p>
+                  <p className="text-xs text-muted-foreground mt-1.5">When neighbors rally together, you will see it here.</p>
                 </div>
               )}
-              <div className="rounded-xl border border-primary/15 bg-primary/[0.03] px-4 py-4">
+              <div className="rounded-2xl border border-primary/12 bg-gradient-to-br from-primary/[0.04] to-transparent px-4 py-4 shadow-sm">
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mb-3">
                   Support programs, cultural events, and newcomer resources through official channels.
                 </p>
@@ -321,7 +326,7 @@ export function HomePage() {
         {/* 6. Newcomer / help — a single warm closing block (replaces the
             previously duplicated "Newcomer band" + "Membership + serve"
             band; membership already lives in the hero CTA + quick access). */}
-        <section className="rounded-2xl border border-border/70 bg-gradient-to-br from-primary/[0.06] via-background to-kenyan-gold-500/[0.06] px-5 py-6 sm:px-8 sm:py-8">
+        <section className="rounded-2xl border border-border/50 bg-gradient-to-br from-primary/[0.05] via-card to-amber-500/[0.06] px-5 py-6 sm:px-8 sm:py-9 shadow-sm ring-1 ring-border/30">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="max-w-xl space-y-2">
               <div className="flex items-center gap-2 text-primary/85">

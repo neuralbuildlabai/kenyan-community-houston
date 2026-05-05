@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { supabase } from '@/lib/supabase'
+import { pendingQueuePublishPayload, pendingQueueRejectPayload } from '@/lib/publishLifecycle'
 import { formatDateShort } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -55,15 +56,29 @@ export function AdminSubmissionsPage() {
   useEffect(() => { load(activeTab) }, [activeTab])
 
   async function approve(id: string) {
-    const { error } = await supabase.from(activeTab).update({ status: 'published', published_at: new Date().toISOString() }).eq('id', id)
-    if (error) toast.error('Failed to approve')
-    else { toast.success('Approved and published'); load(activeTab); loadCounts() }
+    const { data, error } = await supabase
+      .from(activeTab)
+      .update(pendingQueuePublishPayload())
+      .eq('id', id)
+      .select('id')
+    if (error) toast.error(error.message || 'Failed to approve')
+    else if (!data?.length) toast.error('Could not update — no matching row (check permissions).')
+    else {
+      toast.success('Approved and published')
+      load(activeTab)
+      loadCounts()
+    }
   }
 
   async function reject(id: string) {
-    const { error } = await supabase.from(activeTab).update({ status: 'rejected' }).eq('id', id)
-    if (error) toast.error('Failed to reject')
-    else { toast.success('Submission rejected'); load(activeTab); loadCounts() }
+    const { data, error } = await supabase.from(activeTab).update(pendingQueueRejectPayload()).eq('id', id).select('id')
+    if (error) toast.error(error.message || 'Failed to reject')
+    else if (!data?.length) toast.error('Could not update — no matching row (check permissions).')
+    else {
+      toast.success('Submission rejected')
+      load(activeTab)
+      loadCounts()
+    }
   }
 
   const tabLabel = (type: ContentType) => {

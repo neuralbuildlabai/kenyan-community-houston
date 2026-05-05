@@ -50,7 +50,7 @@ function LinkList({ items }: { items: { to: string; label: string }[] }) {
         <li key={link.to}>
           <Link
             to={link.to}
-            className="text-sm text-white/70 hover:text-white transition-colors leading-snug"
+            className="text-sm text-white/72 hover:text-white/95 transition-colors leading-snug"
           >
             {link.label}
           </Link>

@@ -52,7 +52,7 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+    <header className="sticky top-0 z-40 w-full border-b border-border/50 bg-white/[0.97] backdrop-blur-md supports-[backdrop-filter]:bg-white/88 shadow-[0_1px_3px_rgba(15,40,25,0.06)]">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-2.5 shrink-0 min-w-0">
           <KighLogo withCard className="h-10 w-10 sm:h-11 sm:w-11 shrink-0" imgClassName="max-h-9 sm:max-h-10" />
