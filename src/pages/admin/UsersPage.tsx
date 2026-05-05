@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { UserPlus, Trash2, ShieldCheck, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,13 +10,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { supabase } from '@/lib/supabase'
 import { formatDateShort } from '@/lib/utils'
-import { USER_ROLES } from '@/lib/constants'
 import { adminPasswordAgeDays } from '@/lib/adminPasswordPolicy'
 import { getAdminPasswordGate } from '@/lib/adminPasswordGate'
 import type { AdminUserSecurity } from '@/lib/types'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import type { UserRole } from '@/lib/types'
+import {
+  assignableRolesForCaller,
+  canInviteAdminUsers,
+} from '@/lib/adminRoleMatrix'
 
 interface AdminUserRow {
   id: string
@@ -37,7 +40,28 @@ export function AdminUsersPage() {
   const [loading, setLoading] = useState(true)
   const [newEmail, setNewEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
-  const [newRole, setNewRole] = useState<UserRole>('community_admin')
+  // Compute assignable roles from the caller's profile.role. The
+  // server-side Edge Function is the authoritative gate; this list
+  // exists only so the UI does not surface options that will be
+  // rejected. See `src/lib/adminRoleMatrix.ts`.
+  const assignableRoles = useMemo(
+    () => assignableRolesForCaller(profile?.role),
+    [profile?.role]
+  )
+  const canInvite = canInviteAdminUsers(profile?.role)
+  const defaultRole: UserRole = useMemo(() => {
+    if (assignableRoles.includes('community_admin' as UserRole)) return 'community_admin'
+    return (assignableRoles[0] as UserRole) ?? ('viewer' as UserRole)
+  }, [assignableRoles])
+  const [newRole, setNewRole] = useState<UserRole>(defaultRole)
+  // Keep the selected role valid if the caller's role changes (e.g.
+  // role flip, refresh) — never leave the picker on a value the
+  // backend will reject.
+  useEffect(() => {
+    if (!assignableRoles.includes(newRole)) {
+      setNewRole(defaultRole)
+    }
+  }, [assignableRoles, defaultRole, newRole])
   const [displayName, setDisplayName] = useState('')
   const [positionTitle, setPositionTitle] = useState('')
   const [inviting, setInviting] = useState(false)
@@ -59,8 +83,16 @@ export function AdminUsersPage() {
 
   async function inviteUser(e: React.FormEvent) {
     e.preventDefault()
+    if (!canInvite) {
+      toast.error('Your role is not permitted to invite admin users.')
+      return
+    }
     if (!newEmail.trim() || !newPassword) {
       toast.error('Enter email and temporary password')
+      return
+    }
+    if (!assignableRoles.includes(newRole)) {
+      toast.error(`Your role cannot assign "${newRole}".`)
       return
     }
     setInviting(true)
@@ -75,9 +107,13 @@ export function AdminUsersPage() {
     })
     setInviting(false)
     if (error) {
-      toast.error(
-        'Could not reach the create-admin-user Edge Function. Deploy it with the Supabase CLI and ensure SUPABASE_SERVICE_ROLE_KEY is set for the function environment.'
-      )
+      // Surface the server-side reason where possible (the Edge
+      // Function returns 403/422 with a `message` body for
+      // forbidden role assignments). supabase-js wraps non-2xx
+      // responses into `error`; if the response carried a JSON
+      // body we still get a message.
+      const msg = error.message || 'Could not reach the create-admin-user Edge Function.'
+      toast.error(msg)
       return
     }
     const payload = data as { ok?: boolean; message?: string }
@@ -226,43 +262,55 @@ export function AdminUsersPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={inviteUser} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="new_email">Email</Label>
-                  <Input id="new_email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="admin@example.com" />
+              {!canInvite ? (
+                <div className="text-sm text-muted-foreground">
+                  Your role is not permitted to invite admin users. Ask a
+                  super admin or platform admin.
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="new_pw">Temporary password</Label>
-                  <Input id="new_pw" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Initial password (user will be forced to change)" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Role</Label>
-                  <Select value={newRole} onValueChange={(v) => setNewRole(v as UserRole)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {USER_ROLES.map((r) => (
-                        <SelectItem key={r} value={r}>
-                          {r}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="disp">Display name (optional)</Label>
-                  <Input id="disp" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="pos">Position title (optional)</Label>
-                  <Input id="pos" value={positionTitle} onChange={(e) => setPositionTitle(e.target.value)} placeholder="e.g. Chair" />
-                </div>
-                <Button type="submit" className="w-full" disabled={inviting}>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  {inviting ? 'Creating…' : 'Create admin'}
-                </Button>
-              </form>
+              ) : (
+                <form onSubmit={inviteUser} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="new_email">Email</Label>
+                    <Input id="new_email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="admin@example.com" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="new_pw">Temporary password</Label>
+                    <Input id="new_pw" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Initial password (user will be forced to change)" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Role</Label>
+                    <Select value={newRole} onValueChange={(v) => setNewRole(v as UserRole)}>
+                      <SelectTrigger data-testid="admin-users-role-select">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {assignableRoles.map((r) => (
+                          <SelectItem key={r} value={r} data-testid={`admin-users-role-option-${r}`}>
+                            {r}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground">
+                      Only roles you may assign are listed. Server-side
+                      governance ({profile?.role ?? 'unknown'}) is enforced
+                      by the create-admin-user Edge Function.
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="disp">Display name (optional)</Label>
+                    <Input id="disp" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="pos">Position title (optional)</Label>
+                    <Input id="pos" value={positionTitle} onChange={(e) => setPositionTitle(e.target.value)} placeholder="e.g. Chair" />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={inviting}>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    {inviting ? 'Creating…' : 'Create admin'}
+                  </Button>
+                </form>
+              )}
             </CardContent>
           </Card>
         </div>

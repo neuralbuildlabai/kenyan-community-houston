@@ -79,3 +79,28 @@ on conflict (community_id) do update set
 -- live on production day-1 before flipping DNS. Otherwise mark
 -- them `archived` here, e.g.:
 --   update public.resources set status='archived' where slug in ('...');
+
+-- ─────────────────────────────────────────────────────────────
+-- 5. Migrations 005 / 006 / 007 — seasonal events.
+--    Migrations 005, 006, and 007 publish concrete KIGH events
+--    (Family Fun Day 2026-05-02 and Financial Literacy Session
+--    2026-04-24) and back-fill resource links. They run by
+--    default when `supabase db push` applies the chain. For a
+--    fresh production project two safe options exist:
+--
+--      a) If those events are part of the day-1 calendar, leave
+--         them as-is and confirm the rendered times/dates on the
+--         public calendar before DNS flip.
+--      b) If the production calendar should start empty, archive
+--         the inserted rows after `db push`:
+--
+--           update public.events set status='archived'
+--           where slug in (
+--             'kigh-family-fun-day-2026',
+--             'kigh-financial-literacy-session-2026-04-24'
+--           );
+--
+--    Document the choice in the cutover ticket. Do not delete the
+--    migrations; staging has already applied them, and rewriting
+--    history will diverge the chains.
+-- ─────────────────────────────────────────────────────────────

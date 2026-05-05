@@ -42,3 +42,12 @@ kigh-private-review/
 # Playwright
 playwright-report/
 test-results/
+
+# KIGH local-only admin helper scripts (staging/UAT clean-up)
+# These are intentionally NOT shipped because they target a
+# specific staging Supabase project and embed staging-only
+# tester emails. Keep them on the operator's machine only.
+scripts/admin/clear-admin-password-gate.mjs
+scripts/admin/clear-uat-password-force.mjs
+scripts/admin/local-*.mjs
+scripts/admin/*.local.mjs
