@@ -266,8 +266,8 @@ export function MembershipPage() {
         toast.error('Please sign in to submit membership.')
       else if (error.message?.includes('email_mismatch_with_signed_in_user'))
         toast.error('Email must match your signed-in account.')
-      else if (error.message?.includes('membership_already_registered'))
-        toast.error('A membership is already linked to your account.')
+      else if (error.message?.includes('member_email_registered_to_another_user'))
+        toast.error('This email is already linked to another account. Contact support if you need help.')
       else toast.error(error.message || 'Registration failed. Please try again.')
       return
     }

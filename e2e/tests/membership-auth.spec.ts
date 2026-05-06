@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test'
 
+/**
+ * Legacy email claim + duplicate avoidance live in Postgres migration 027
+ * (`submit_membership_registration`). Re-run audit SQL at bottom of that file
+ * after deploy; full RPC paths need Supabase + real auth (not covered here).
+ */
+
 test.describe('membership registration auth fields', () => {
   test('logged-out membership shows Continue with Google and password fields', async ({ page }) => {
     await page.goto('/membership')
