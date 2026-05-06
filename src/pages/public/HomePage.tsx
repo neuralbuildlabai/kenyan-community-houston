@@ -195,7 +195,8 @@ export function HomePage() {
                     // Hide the broken image cleanly if the asset has been
                     // renamed / removed; the surrounding gradient still
                     // looks intentional.
-                    ;(e.currentTarget as HTMLImageElement).style.display = 'none'
+                    const el = e.currentTarget as HTMLImageElement
+                    el.style.display = 'none'
                   }}
                 />
                 <div

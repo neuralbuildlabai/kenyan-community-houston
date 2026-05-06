@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Trophy, Search } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { SportsCard } from '@/components/SportsCard'

@@ -27,8 +27,8 @@ test.describe('mobile smoke', () => {
     await expect(page).toHaveURL(/\/login/)
   })
 
-  test('admin login layout', async ({ page }) => {
-    await page.goto('/admin/login')
+  test('shared login layout', async ({ page }) => {
+    await page.goto('/login')
     await expectNoHorizontalOverflow(page)
   })
 

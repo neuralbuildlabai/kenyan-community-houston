@@ -31,11 +31,11 @@ test.describe('staging banner visibility', () => {
     await expect(banner).toContainText(/non-production environment/i)
   })
 
-  test('shown on the admin login page when not in production', async ({ page }) => {
+  test('shown on the shared login page when not in production', async ({ page }) => {
     if (process.env.VITE_APP_ENV === 'production') {
       test.skip(true, 'Banner is intentionally hidden in production')
     }
-    await page.goto('/admin/login')
+    await page.goto('/login')
     await expect(page.getByTestId('staging-banner')).toBeVisible()
   })
 })

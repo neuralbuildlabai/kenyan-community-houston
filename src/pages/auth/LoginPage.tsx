@@ -10,8 +10,11 @@ import { trackLogin } from '@/lib/analytics'
 import { toast } from 'sonner'
 import { APP_NAME } from '@/lib/constants'
 import { KighLogo } from '@/components/KighLogo'
+import { isElevatedAdminRole } from '@/lib/types'
+import { resolvePostLoginPath, sanitizeNextParam } from '@/lib/authRedirect'
+import { getBrowserOrigin } from '@/lib/siteOrigin'
 
-export function MemberLoginPage() {
+export function LoginPage() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const { signIn } = useAuth()
@@ -20,8 +23,8 @@ export function MemberLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const nextRaw = params.get('next')
-  const nextPath = nextRaw && nextRaw.startsWith('/') && !nextRaw.startsWith('//') ? nextRaw : '/profile'
+  const nextPath = sanitizeNextParam(params.get('next'))
+  const [oauthLoading, setOauthLoading] = useState(false)
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -31,13 +34,50 @@ export function MemberLoginPage() {
     }
     setLoading(true)
     const { error } = await signIn(email, password)
+    if (error) {
+      setLoading(false)
+      toast.error(error.message)
+      return
+    }
+
+    const { data: sess } = await supabase.auth.getSession()
+    const uid = sess.session?.user?.id ?? null
+    if (!uid) {
+      setLoading(false)
+      toast.error('Session was not ready. Please try signing in again.')
+      return
+    }
+    const { data: prof } = await supabase.from('profiles').select('role').eq('id', uid).maybeSingle()
+    const role = (prof?.role as string | undefined) ?? undefined
+
+    const dest = resolvePostLoginPath(nextPath, role)
+    await trackLogin(isElevatedAdminRole(role) ? 'admin_login' : 'member_login', uid)
     setLoading(false)
+    navigate(dest, { replace: true })
+  }
+
+  async function handleGoogle() {
+    const origin = getBrowserOrigin()
+    if (!origin) {
+      toast.error('Cannot start Google sign in (missing page origin).')
+      return
+    }
+    const nextForCallback = nextPath ?? '/profile'
+    setOauthLoading(true)
+    const { data: oauthData, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(nextForCallback)}`,
+        skipBrowserRedirect: true,
+      },
+    })
+    setOauthLoading(false)
     if (error) {
       toast.error(error.message)
-    } else {
-      const { data: sess } = await supabase.auth.getSession()
-      await trackLogin('member_login', sess.session?.user?.id ?? null)
-      navigate(nextPath, { replace: true })
+      return
+    }
+    if (oauthData?.url) {
+      window.location.assign(oauthData.url)
     }
   }
 
@@ -49,14 +89,31 @@ export function MemberLoginPage() {
             <KighLogo withCard className="h-16 w-16" imgClassName="max-h-14" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">{APP_NAME}</h1>
-          <p className="text-muted-foreground text-sm mt-1">Member sign in · KIGH</p>
+          <p className="text-muted-foreground text-sm mt-1">Sign in to your account</p>
         </div>
         <div className="bg-card rounded-2xl border shadow-sm p-8 space-y-6">
-          <form onSubmit={handleLogin} className="space-y-5">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={loading || oauthLoading}
+            onClick={() => void handleGoogle()}
+          >
+            {oauthLoading ? 'Redirecting…' : 'Continue with Google'}
+          </Button>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">or</span>
+            </div>
+          </div>
+          <form onSubmit={(ev) => void handleLogin(ev)} className="space-y-5">
             <div className="space-y-1.5">
-              <Label htmlFor="m-email">Email</Label>
+              <Label htmlFor="login-email">Email</Label>
               <Input
-                id="m-email"
+                id="login-email"
                 type="email"
                 autoComplete="email"
                 value={email}
@@ -65,10 +122,10 @@ export function MemberLoginPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="m-password">Password</Label>
+              <Label htmlFor="login-password">Password</Label>
               <div className="relative">
                 <Input
-                  id="m-password"
+                  id="login-password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   value={password}
@@ -91,11 +148,10 @@ export function MemberLoginPage() {
             </Button>
           </form>
           <p className="text-center text-sm text-muted-foreground">
-            Board and site administrators can use{' '}
-            <Link to="/admin/login" className="text-primary font-medium underline-offset-4 hover:underline">
-              Admin sign in
+            New to KIGH?{' '}
+            <Link to="/membership" className="text-primary font-medium underline-offset-4 hover:underline">
+              Membership registration
             </Link>
-            .
           </p>
         </div>
       </div>

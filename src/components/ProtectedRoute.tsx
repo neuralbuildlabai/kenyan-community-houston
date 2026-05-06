@@ -39,7 +39,8 @@ export function ProtectedRoute({ children, requiredRoles }: ProtectedRouteProps)
   // (from AuthContext) and the role list check are intentional —
   // belt-and-braces.
   if (!user || !isAdmin || !isElevatedAdminRole(profile?.role)) {
-    return <Navigate to="/admin/login" state={{ from: location }} replace />
+    const next = encodeURIComponent(`${location.pathname}${location.search}`)
+    return <Navigate to={`/login?next=${next}`} replace />
   }
 
   if (requiredRoles && profile && !requiredRoles.includes(profile.role)) {

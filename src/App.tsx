@@ -42,7 +42,6 @@ import { TermsPage } from '@/pages/public/TermsPage'
 import { DisclaimerPage } from '@/pages/public/DisclaimerPage'
 import { NotFoundPage } from '@/pages/public/NotFoundPage'
 
-import { AdminLoginPage } from '@/pages/admin/LoginPage'
 import { AdminDashboardPage } from '@/pages/admin/DashboardPage'
 import { AdminCalendarPage } from '@/pages/admin/CalendarPage'
 import { AdminAnnouncementsPage } from '@/pages/admin/AnnouncementsPage'
@@ -64,7 +63,8 @@ import { AdminSystemHealthPage } from '@/pages/admin/AdminSystemHealthPage'
 import { SYSTEM_HEALTH_ADMIN_ROLES } from '@/lib/platformAdmin'
 
 import { RequireAuth } from '@/components/RequireAuth'
-import { MemberLoginPage } from '@/pages/member/MemberLoginPage'
+import { LoginPage } from '@/pages/auth/LoginPage'
+import { AuthCallbackPage } from '@/pages/auth/AuthCallbackPage'
 import { ProfilePage } from '@/pages/member/ProfilePage'
 import { ProfileMediaPage } from '@/pages/member/ProfileMediaPage'
 
@@ -109,7 +109,9 @@ export default function App() {
               <Route path="membership/success" element={<MembershipSuccessPage />} />
               <Route path="support" element={<SupportPage />} />
               <Route path="resources" element={<ResourcesPage />} />
-              <Route path="login" element={<MemberLoginPage />} />
+              <Route path="login" element={<LoginPage />} />
+              <Route path="admin/login" element={<LoginPage />} />
+              <Route path="auth/callback" element={<AuthCallbackPage />} />
               <Route
                 path="profile"
                 element={
@@ -134,9 +136,6 @@ export default function App() {
               <Route path="disclaimer" element={<DisclaimerPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
-
-            {/* ── Admin Auth ── */}
-            <Route path="admin/login" element={<AdminLoginPage />} />
 
             {/* ── Admin Protected Routes ── */}
             <Route

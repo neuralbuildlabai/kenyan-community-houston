@@ -146,7 +146,7 @@ async function main() {
   }
 
   console.log(`✅ ${targetEmail} is now super_admin in production.`);
-  console.log('   Sign in once at /admin/login. The change-password gate will');
+  console.log('   Sign in once at /login. The change-password gate will');
   console.log('   require a new password before the dashboard loads.');
 }
 

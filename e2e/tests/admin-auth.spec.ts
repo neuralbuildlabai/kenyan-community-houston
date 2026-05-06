@@ -8,7 +8,7 @@ test.describe('admin auth', () => {
   })
 
   test('login and dashboard', async ({ page }) => {
-    await page.goto('/admin/login')
+    await page.goto('/login')
     await expect(page.getByRole('heading', { name: 'Kenyan Community Houston' })).toBeVisible()
     await loginAsAdmin(page)
     await expect(page.getByRole('link', { name: /Calendar/i }).first()).toBeVisible()

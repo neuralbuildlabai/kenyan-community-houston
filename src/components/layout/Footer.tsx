@@ -132,9 +132,7 @@ export function Footer() {
 
         <Separator className="mt-12 mb-6 bg-white/12" />
 
-        {/* Bottom bar: copyright + legal + secondary admin link.
-            Admin login also lives in the public header; we keep it
-            here too so testers can always find it from any page. */}
+        {/* Bottom bar: copyright + legal + shared sign-in link */}
         <div className="flex flex-col gap-3 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-white/55">© {year} {APP_NAME}. All rights reserved.</p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -149,11 +147,11 @@ export function Footer() {
             ))}
             <span aria-hidden className="text-white/25">·</span>
             <Link
-              to="/admin/login"
+              to="/login"
               className="inline-flex items-center gap-1.5 hover:text-white hover:underline underline-offset-2 transition-colors"
             >
               <Lock className="h-3 w-3" aria-hidden />
-              Admin login
+              Login
             </Link>
           </div>
         </div>

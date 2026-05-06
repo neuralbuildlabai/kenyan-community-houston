@@ -132,7 +132,22 @@ npm run dev
 
 App runs at [http://localhost:5173](http://localhost:5173)
 
-Admin portal: [http://localhost:5173/admin/login](http://localhost:5173/admin/login)
+Sign in (members and admins): [http://localhost:5173/login](http://localhost:5173/login) — `/admin/login` resolves to the same page.
+
+### Google / Gmail sign-in (Supabase Auth)
+
+The app supports **Continue with Google** on `/login` and on `/membership`. Configure this in the Supabase dashboard (not in git-secrets):
+
+1. **Supabase Dashboard** → **Authentication** → **Providers** → enable **Google**, and paste the **Client ID** and **Client secret** from Google Cloud.
+2. **Google Cloud Console** → **APIs & Services** → **Credentials** → create an **OAuth 2.0 Client ID** (Web). Under **Authorized redirect URIs**, add the URL Supabase shows for the Google provider (typically `https://<project-ref>.supabase.co/auth/v1/callback`).
+3. **Supabase Dashboard** → **Authentication** → **URL Configuration**:
+   - Set **Site URL** to your real site root in production (or `http://127.0.0.1:5173` for local dev if that is how you open the app).
+   - Under **Redirect URLs**, allow every origin you use, including the SPA auth route, for example:  
+     `http://127.0.0.1:5173/auth/callback`  
+     `https://<your-staging-domain>/auth/callback`  
+     `https://<your-production-domain>/auth/callback`  
+     The app redirects to `/auth/callback?next=/membership` (or `/profile`, etc.) after Google OAuth and uses the same path for **email confirmation** links from `signUp`.
+4. **Email/password** sign-up accepts any valid email domain; there is no Gmail-only restriction. Google is optional OAuth in addition to email/password.
 
 ---
 
@@ -189,7 +204,7 @@ supabase/
 
 | Route | Description |
 |---|---|
-| `/admin/login` | Admin login |
+| `/login` (also `/admin/login`) | Shared sign-in for members and admins |
 | `/admin/dashboard` | Overview & stats |
 | `/admin/submissions` | Moderation queue |
 | `/admin/events` | Manage events |

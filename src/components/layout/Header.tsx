@@ -140,19 +140,17 @@ export function Header() {
           >
             <Link to="/events/submit">Submit event</Link>
           </Button>
-          {/* Admin login — visible on md+ so testers/staff can find it
-              from any tablet or laptop without hunting in the footer.
-              Styled secondary so it never competes with public CTAs. */}
-          {(!user || !isAdmin) && (
+          {/* Shared sign-in — same entry point for members and admins */}
+          {!user && (
             <Button
               asChild
               size="sm"
               variant="outline"
               className="hidden md:inline-flex shrink-0 border-border/80 text-muted-foreground hover:text-foreground font-medium gap-1.5"
             >
-              <Link to="/admin/login">
+              <Link to="/login">
                 <Lock className="h-3.5 w-3.5" aria-hidden />
-                Admin login
+                Login
               </Link>
             </Button>
           )}
@@ -263,16 +261,16 @@ export function Header() {
                   >
                     <Link to="/events/submit">Submit an event</Link>
                   </Button>
-                  {(!user || !isAdmin) && (
+                  {!user && (
                     <Button
                       asChild
                       variant="outline"
                       className="w-full gap-2"
                       onClick={() => setMobileOpen(false)}
                     >
-                      <Link to="/admin/login">
+                      <Link to="/login">
                         <Lock className="h-4 w-4" />
-                        Admin login
+                        Login
                       </Link>
                     </Button>
                   )}
@@ -311,16 +309,7 @@ export function Header() {
                         Logout
                       </Button>
                     </>
-                  ) : (
-                    <Button
-                      asChild
-                      variant="ghost"
-                      className="w-full"
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      <Link to="/login">Member login</Link>
-                    </Button>
-                  )}
+                  ) : null}
                 </div>
               </nav>
             </SheetContent>

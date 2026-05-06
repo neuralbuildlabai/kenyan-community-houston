@@ -51,8 +51,9 @@ export function ProfilePage() {
     if (!user) return
     setLoading(true)
     try {
-      let { data: p, error } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
+      const { data: initialProfile, error } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
       if (error) throw error
+      let p = initialProfile
       if (!p) {
         const ins = await supabase
           .from('profiles')

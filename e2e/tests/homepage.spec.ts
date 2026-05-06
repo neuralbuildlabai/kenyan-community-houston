@@ -28,9 +28,9 @@ test.describe('homepage', () => {
       page.getByRole('heading', { name: /New to Houston, or just looking for support\?/i })
     ).toBeVisible()
 
-    const adminLogin = page.getByRole('link', { name: /Admin login/i }).first()
-    await expect(adminLogin).toBeVisible()
-    await expect(adminLogin).toHaveAttribute('href', /\/admin\/login/)
+    const loginLink = page.getByRole('contentinfo').getByRole('link', { name: /^Login$/i })
+    await expect(loginLink).toBeVisible()
+    await expect(loginLink).toHaveAttribute('href', '/login')
 
     const disclaimer = page.getByRole('contentinfo').getByRole('link', { name: 'Disclaimer' }).first()
     await expect(disclaimer).toBeVisible()

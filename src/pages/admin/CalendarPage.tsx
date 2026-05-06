@@ -19,7 +19,12 @@ import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { MapLink } from '@/components/MapLink'
 import { supabase } from '@/lib/supabase'
 import { CALENDAR_FILTER_CATEGORIES } from '@/lib/constants'
-import { canonicalCategory, formatCategoryLabel, COMMUNITY_SUBMISSION_CATEGORIES } from '@/lib/communityCategories'
+import {
+  canonicalCategory,
+  formatCategoryLabel,
+  COMMUNITY_SUBMISSION_CATEGORIES,
+  type CommunitySubmissionCategory,
+} from '@/lib/communityCategories'
 import { generateSlug } from '@/lib/utils'
 import { formatDateShort } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -44,7 +49,7 @@ const defaultForm = () => ({
   slug: '',
   short_description: '',
   description: '',
-  category: COMMUNITY_SUBMISSION_CATEGORIES[0],
+  category: COMMUNITY_SUBMISSION_CATEGORIES[0] as CommunitySubmissionCategory,
   start_date: '',
   end_date: '',
   start_time: '',
@@ -394,7 +399,10 @@ export function AdminCalendarPage() {
             </div>
             <div className="form-field-stack">
               <Label>Category *</Label>
-              <Select value={form.category} onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}>
+              <Select
+                value={form.category}
+                onValueChange={(v) => setForm((f) => ({ ...f, category: v as CommunitySubmissionCategory }))}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {CALENDAR_FILTER_CATEGORIES.map((c) => (

@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 /**
  * The hardened ProtectedRoute requires both `isAdmin` (session) AND
  * an elevated profiles.role. A non-authenticated visitor must be
- * redirected to /admin/login when hitting any /admin/* route.
+ * redirected to /login (with return path) when hitting any /admin/* route.
  *
  * We don't have a "non-admin authenticated" fixture by default in
  * this repo, so we assert the unauth case here — that alone catches
@@ -35,8 +35,8 @@ const ADMIN_PROTECTED = [
 ] as const
 
 for (const route of ADMIN_PROTECTED) {
-  test(`unauthenticated visitor is redirected from ${route} to /admin/login`, async ({ page }) => {
+  test(`unauthenticated visitor is redirected from ${route} to /login`, async ({ page }) => {
     await page.goto(route, { waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL(/\/admin\/login/)
+    await expect(page).toHaveURL(/\/login/)
   })
 }

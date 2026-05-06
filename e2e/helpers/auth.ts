@@ -11,7 +11,7 @@ export async function loginAsAdmin(page: Page) {
   if (!email || !password) {
     throw new Error('loginAsAdmin called without E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD')
   }
-  await page.goto('/admin/login')
+  await page.goto('/login')
   await page.getByLabel('Email', { exact: false }).fill(email)
   await page.getByLabel('Password', { exact: false }).fill(password)
   await page.getByRole('button', { name: /sign in/i }).click()

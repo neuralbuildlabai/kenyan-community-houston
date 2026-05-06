@@ -23,10 +23,8 @@ if (!envCheck.ok) {
     )
   }
   // In staging / development, log loudly but do not block boot.
-  // eslint-disable-next-line no-console
   console.warn('[supabase] env guard:', envCheck.reason)
 } else if (envCheck.reason) {
-  // eslint-disable-next-line no-console
   console.info('[supabase] env guard:', envCheck.reason)
 }
 

@@ -121,8 +121,14 @@ export function AdminSubmissionsPage() {
         : type === 'events'
           ? `id, ${col}, category, created_at, status, flyer_url, image_url`
           : `id, ${col}, category, created_at, status`
-    const { data } = await supabase.from(type).select(sel).eq('status', 'pending').order('created_at', { ascending: true })
-    setItems((data ?? []) as PendingItem[])
+    const { data, error } = await supabase.from(type).select(sel).eq('status', 'pending').order('created_at', { ascending: true })
+    if (error) {
+      toast.error(error.message)
+      setItems([])
+      setLoading(false)
+      return
+    }
+    setItems((data ?? []) as unknown as PendingItem[])
     setLoading(false)
   }
 

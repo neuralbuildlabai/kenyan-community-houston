@@ -24,7 +24,7 @@ export interface NavGroup {
 
 /**
  * Top-level desktop nav. Keep this list short — five items leaves
- * room for the More menu, the Submit Event CTA, and the Admin login
+ * room for the More menu, the Submit Event CTA, and the Login link
  * affordance without crowding the header on a 1280px viewport.
  */
 export const PRIMARY_NAV: ReadonlyArray<NavItem> = [

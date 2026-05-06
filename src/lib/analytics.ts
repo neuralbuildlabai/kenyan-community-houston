@@ -52,7 +52,6 @@ async function insertEvent(payload: {
       },
     ])
     if (error) {
-      // eslint-disable-next-line no-console
       console.debug('[analytics]', error.message)
     }
   } catch {

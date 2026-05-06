@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Plus, Trash2, UserPlus } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/lib/supabase'
 import { MEMBERSHIP_INTEREST_OPTIONS } from '@/lib/constants'
 import { toast } from 'sonner'
+import { useAuth } from '@/contexts/AuthContext'
+import { getBrowserOrigin } from '@/lib/siteOrigin'
 
 type MembershipType = 'individual' | 'family_household' | 'associate'
 
@@ -33,7 +35,13 @@ const emptyHousehold = (): HouseholdRow => ({
 
 export function MembershipPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [loading, setLoading] = useState(false)
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [pendingAccountCreated, setPendingAccountCreated] = useState(false)
+  const [oauthLoading, setOauthLoading] = useState(false)
   const [membershipType, setMembershipType] = useState<MembershipType>('individual')
   const [interests, setInterests] = useState<string[]>([])
   const [agreed, setAgreed] = useState(false)
@@ -57,11 +65,88 @@ export function MembershipPage() {
     setHousehold((rows) => rows.map((r, i) => (i === idx ? { ...r, ...patch } : r)))
   }
 
+  useEffect(() => {
+    if (!user) return
+    const meta = user.user_metadata as Record<string, unknown> | undefined
+    const full =
+      (typeof meta?.full_name === 'string' && meta.full_name.trim()) ||
+      (typeof meta?.name === 'string' && meta.name.trim()) ||
+      ''
+    const parts = full.split(/\s+/).filter(Boolean)
+    const firstFromMeta = parts[0] ?? ''
+    const lastFromMeta = parts.length > 1 ? parts.slice(1).join(' ') : ''
+    setPrimary((p) => ({
+      ...p,
+      email: (user.email ?? p.email).trim(),
+      first_name: p.first_name.trim() || firstFromMeta,
+      last_name: p.last_name.trim() || lastFromMeta,
+    }))
+  }, [user])
+
+  async function handleGoogleSignup() {
+    const origin = getBrowserOrigin()
+    if (!origin) {
+      toast.error('Cannot start Google sign in (missing page origin).')
+      return
+    }
+    setOauthLoading(true)
+    const { data: oauthData, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${origin}/auth/callback?next=${encodeURIComponent('/membership')}`,
+        skipBrowserRedirect: true,
+      },
+    })
+    setOauthLoading(false)
+    if (error) {
+      toast.error(error.message)
+      return
+    }
+    if (oauthData?.url) window.location.assign(oauthData.url)
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!agreed || !consent) {
       toast.error('Please confirm both required checkboxes')
       return
+    }
+    if (!primary.first_name.trim() || !primary.last_name.trim()) {
+      toast.error('First and last name are required')
+      return
+    }
+    if (!primary.phone.trim()) {
+      toast.error('Phone is required')
+      return
+    }
+    if (!user) {
+      if (!primary.email.trim()) {
+        toast.error('Email is required')
+        return
+      }
+      if (!password) {
+        toast.error('Password is required')
+        return
+      }
+      if (password.length < 8) {
+        toast.error('Password must be at least 8 characters')
+        return
+      }
+      if (!confirmPassword) {
+        toast.error('Please confirm your password')
+        return
+      }
+      if (password !== confirmPassword) {
+        toast.error('Passwords do not match')
+        return
+      }
+    } else {
+      const signedInEmail = (user.email ?? '').trim().toLowerCase()
+      const formEmail = primary.email.trim().toLowerCase()
+      if (signedInEmail && formEmail && signedInEmail !== formEmail) {
+        toast.error('Email must match the address you are signed in with, or sign out to register with a different email.')
+        return
+      }
     }
     if (membershipType === 'family_household') {
       const validRows = household.filter((h) => h.full_name.trim())
@@ -71,6 +156,76 @@ export function MembershipPage() {
       }
     }
     setLoading(true)
+
+    if (!user) {
+      const origin = getBrowserOrigin()
+      const fullName = `${primary.first_name.trim()} ${primary.last_name.trim()}`.trim()
+      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+        email: primary.email.trim(),
+        password,
+        options: {
+          emailRedirectTo: origin
+            ? `${origin}/auth/callback?next=${encodeURIComponent('/membership')}`
+            : undefined,
+          data: {
+            full_name: fullName,
+            phone: primary.phone.trim(),
+            role: 'member',
+          },
+        },
+      })
+      if (signUpErr) {
+        setLoading(false)
+        toast.error(signUpErr.message || 'Could not create account')
+        return
+      }
+      if (!signUpData.user) {
+        setLoading(false)
+        toast.error('Sign up did not return a user. Please try again.')
+        return
+      }
+      if (!signUpData.session) {
+        setLoading(false)
+        setPendingAccountCreated(true)
+        toast.info('Confirm your email', {
+          description:
+            'After you confirm, sign in and return here to finish membership registration.',
+        })
+        return
+      }
+    }
+
+    const { data: authUserResp } = await supabase.auth.getUser()
+    const authUser = authUserResp.user
+    if (!authUser?.id) {
+      setLoading(false)
+      toast.error('You must be signed in to submit membership. Please sign in and try again.')
+      return
+    }
+
+    const fullName = `${primary.first_name.trim()} ${primary.last_name.trim()}`.trim()
+    const { error: profileErr } = await supabase.from('profiles').upsert(
+      {
+        id: authUser.id,
+        email: primary.email.trim().toLowerCase(),
+        full_name: fullName,
+        phone: primary.phone.trim() || null,
+        city: primary.city.trim() || null,
+        state: primary.state.trim() || null,
+        zip_code: primary.zip_code.trim() || null,
+        county_or_heritage: primary.kenyan_county_or_heritage.trim() || null,
+        preferred_communication: primary.preferred_communication.trim() || null,
+        interests,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'id' }
+    )
+    if (profileErr) {
+      setLoading(false)
+      toast.error(profileErr.message || 'Could not save your profile')
+      return
+    }
+
     const householdPayload =
       membershipType === 'family_household'
         ? household
@@ -107,6 +262,12 @@ export function MembershipPage() {
     if (error) {
       if (error.message?.includes('consent_required')) toast.error('Consent and agreement are required')
       else if (error.message?.includes('missing_required_fields')) toast.error('Please complete required fields')
+      else if (error.message?.includes('authentication_required'))
+        toast.error('Please sign in to submit membership.')
+      else if (error.message?.includes('email_mismatch_with_signed_in_user'))
+        toast.error('Email must match your signed-in account.')
+      else if (error.message?.includes('membership_already_registered'))
+        toast.error('A membership is already linked to your account.')
       else toast.error(error.message || 'Registration failed. Please try again.')
       return
     }
@@ -152,6 +313,25 @@ export function MembershipPage() {
       </div>
 
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12 space-y-8">
+        {pendingAccountCreated && (
+          <Card className="border-primary/25 bg-primary/[0.04] shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg">Check your email</CardTitle>
+              <CardDescription className="text-base text-foreground/90">
+                Your login account has been created. Please confirm your email, then return to complete your membership registration.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                After confirming your email, sign in and submit this form again so we can link your membership to your account.
+              </p>
+              <Button asChild>
+                <Link to="/login">Go to sign in</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="shadow-sm border-primary/15 overflow-hidden">
           <CardHeader className="bg-muted/30 border-b border-border/60">
             <CardTitle className="text-lg">Annual membership dues</CardTitle>
@@ -169,9 +349,31 @@ export function MembershipPage() {
         </Card>
 
         <form onSubmit={onSubmit} className="space-y-8">
+          {!user && (
+            <Card className="shadow-sm border-primary/15">
+              <CardHeader>
+                <CardTitle className="text-lg">Create your account</CardTitle>
+                <CardDescription>
+                  Use Google or set an email and password below. Any valid email provider works (Gmail, Yahoo, Outlook, iCloud, work email, etc.). Passwords are only stored by Supabase Auth.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  disabled={loading || oauthLoading}
+                  onClick={() => void handleGoogleSignup()}
+                >
+                  {oauthLoading ? 'Redirecting…' : 'Continue with Google'}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg">1. Primary member</CardTitle>
+              <CardTitle className="text-lg">Primary member</CardTitle>
               <CardDescription>Contact details for the main registrant.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
@@ -185,11 +387,28 @@ export function MembershipPage() {
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="em">Email *</Label>
-                <Input id="em" type="email" required value={primary.email} onChange={(e) => setPrimary((p) => ({ ...p, email: e.target.value }))} />
+                <Input
+                  id="em"
+                  type="email"
+                  required
+                  readOnly={!!user}
+                  aria-readonly={!!user}
+                  value={primary.email}
+                  onChange={(e) => setPrimary((p) => ({ ...p, email: e.target.value }))}
+                />
+                {user ? (
+                  <p className="text-xs text-muted-foreground">Email matches your signed-in account.</p>
+                ) : null}
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="ph">Phone</Label>
-                <Input id="ph" type="tel" value={primary.phone} onChange={(e) => setPrimary((p) => ({ ...p, phone: e.target.value }))} />
+                <Label htmlFor="ph">Phone *</Label>
+                <Input
+                  id="ph"
+                  type="tel"
+                  required
+                  value={primary.phone}
+                  onChange={(e) => setPrimary((p) => ({ ...p, phone: e.target.value }))}
+                />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="a1">Address line 1</Label>
@@ -226,9 +445,57 @@ export function MembershipPage() {
             </CardContent>
           </Card>
 
+          {!user && (
+            <Card className="shadow-sm border-primary/15">
+              <CardHeader>
+                <CardTitle className="text-lg">Account password *</CardTitle>
+                <CardDescription>
+                  Choose a password for the website. It is stored securely by Supabase Auth — never on a KIGH spreadsheet or custom table.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label htmlFor="pw">Password *</Label>
+                  <Input
+                    id="pw"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="At least 8 characters"
+                  />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label htmlFor="pw2">Confirm password *</Label>
+                  <Input
+                    id="pw2"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox checked={showPassword} onCheckedChange={(v) => setShowPassword(v === true)} />
+                    Show passwords
+                  </label>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {user ? (
+            <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 px-4 py-3">
+              Signed in as <span className="font-medium text-foreground">{user.email}</span>. Your membership will be linked to this account.
+            </p>
+          ) : null}
+
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg">2. Membership type *</CardTitle>
+              <CardTitle className="text-lg">Membership type *</CardTitle>
               <CardDescription>Individual, household, or associate.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -247,7 +514,7 @@ export function MembershipPage() {
             <Card className="shadow-sm border-dashed border-primary/25 bg-muted/20">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <div>
-                  <CardTitle className="text-lg">3. Household members</CardTitle>
+                  <CardTitle className="text-lg">Household members</CardTitle>
                   <CardDescription>Add everyone covered by this registration.</CardDescription>
                 </div>
                 <Button
@@ -313,7 +580,7 @@ export function MembershipPage() {
 
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg">{membershipType === 'family_household' ? '4' : '3'}. Interests</CardTitle>
+              <CardTitle className="text-lg">Interests</CardTitle>
               <CardDescription>Select all areas you care about.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2">
@@ -334,7 +601,7 @@ export function MembershipPage() {
 
           <Card className="shadow-sm border-primary/10">
             <CardHeader>
-              <CardTitle className="text-lg">{membershipType === 'family_household' ? '5' : '4'}. Agreements *</CardTitle>
+              <CardTitle className="text-lg">Agreements *</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <label className="flex items-start gap-3 text-sm cursor-pointer leading-relaxed">
