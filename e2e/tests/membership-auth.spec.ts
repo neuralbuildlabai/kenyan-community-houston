@@ -7,9 +7,9 @@ import { test, expect } from '@playwright/test'
  */
 
 test.describe('membership registration auth fields', () => {
-  test('logged-out membership shows Continue with Google and password fields', async ({ page }) => {
+  test('logged-out membership hides Google and shows password fields (OAuth disabled)', async ({ page }) => {
     await page.goto('/membership')
-    await expect(page.getByRole('button', { name: /Continue with Google/i }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: /Continue with Google/i })).toHaveCount(0)
     await expect(page.getByRole('heading', { level: 3, name: /Account password/i })).toBeVisible()
   })
 

@@ -14,6 +14,7 @@ import { MEMBERSHIP_INTEREST_OPTIONS } from '@/lib/constants'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import { getBrowserOrigin } from '@/lib/siteOrigin'
+import { isGoogleAuthEnabled } from '@/lib/featureFlags'
 
 type MembershipType = 'individual' | 'family_household' | 'associate'
 
@@ -84,6 +85,7 @@ export function MembershipPage() {
   }, [user])
 
   async function handleGoogleSignup() {
+    if (!isGoogleAuthEnabled()) return
     const origin = getBrowserOrigin()
     if (!origin) {
       toast.error('Cannot start Google sign in (missing page origin).')
@@ -349,7 +351,7 @@ export function MembershipPage() {
         </Card>
 
         <form onSubmit={onSubmit} className="space-y-8">
-          {!user && (
+          {!user && isGoogleAuthEnabled() ? (
             <Card className="shadow-sm border-primary/15">
               <CardHeader>
                 <CardTitle className="text-lg">Create your account</CardTitle>
@@ -369,7 +371,16 @@ export function MembershipPage() {
                 </Button>
               </CardContent>
             </Card>
-          )}
+          ) : !user ? (
+            <Card className="shadow-sm border-primary/15">
+              <CardHeader>
+                <CardTitle className="text-lg">Create your account</CardTitle>
+                <CardDescription>
+                  Enter your email and password below. Any valid email provider works (Gmail, Yahoo, Outlook, iCloud, work email, etc.). Passwords are only stored by Supabase Auth.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ) : null}
 
           <Card className="shadow-sm">
             <CardHeader>

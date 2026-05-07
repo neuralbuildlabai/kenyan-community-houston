@@ -13,6 +13,7 @@ import { KighLogo } from '@/components/KighLogo'
 import { isElevatedAdminRole } from '@/lib/types'
 import { resolvePostLoginPath, sanitizeNextParam } from '@/lib/authRedirect'
 import { getBrowserOrigin } from '@/lib/siteOrigin'
+import { isGoogleAuthEnabled } from '@/lib/featureFlags'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -57,6 +58,7 @@ export function LoginPage() {
   }
 
   async function handleGoogle() {
+    if (!isGoogleAuthEnabled()) return
     const origin = getBrowserOrigin()
     if (!origin) {
       toast.error('Cannot start Google sign in (missing page origin).')
@@ -92,23 +94,27 @@ export function LoginPage() {
           <p className="text-muted-foreground text-sm mt-1">Sign in to your account</p>
         </div>
         <div className="bg-card rounded-2xl border shadow-sm p-8 space-y-6">
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            disabled={loading || oauthLoading}
-            onClick={() => void handleGoogle()}
-          >
-            {oauthLoading ? 'Redirecting…' : 'Continue with Google'}
-          </Button>
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">or</span>
-            </div>
-          </div>
+          {isGoogleAuthEnabled() ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={loading || oauthLoading}
+                onClick={() => void handleGoogle()}
+              >
+                {oauthLoading ? 'Redirecting…' : 'Continue with Google'}
+              </Button>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">or</span>
+                </div>
+              </div>
+            </>
+          ) : null}
           <form onSubmit={(ev) => void handleLogin(ev)} className="space-y-5">
             <div className="space-y-1.5">
               <Label htmlFor="login-email">Email</Label>

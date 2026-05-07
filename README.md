@@ -136,7 +136,9 @@ Sign in (members and admins): [http://localhost:5173/login](http://localhost:517
 
 ### Google / Gmail sign-in (Supabase Auth)
 
-The app supports **Continue with Google** on `/login` and on `/membership`. Configure this in the Supabase dashboard (not in git-secrets):
+Set **`VITE_ENABLE_GOOGLE_AUTH=true`** in your env before building if you want **Continue with Google** on `/login` and `/membership`. When **`false` or unset**, Google buttons are hidden (default for UAT until redirect URIs match). **`/auth/callback`** remains available for email confirmation and future OAuth.
+
+Configure Google in the Supabase dashboard (not in git-secrets):
 
 1. **Supabase Dashboard** → **Authentication** → **Providers** → enable **Google**, and paste the **Client ID** and **Client secret** from Google Cloud.
 2. **Google Cloud Console** → **APIs & Services** → **Credentials** → create an **OAuth 2.0 Client ID** (Web). Under **Authorized redirect URIs**, add the URL Supabase shows for the Google provider (typically `https://<project-ref>.supabase.co/auth/v1/callback`).

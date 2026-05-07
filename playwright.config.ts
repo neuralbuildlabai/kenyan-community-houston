@@ -35,5 +35,9 @@ export default defineConfig({
         timeout: 120_000,
         stdout: 'pipe',
         stderr: 'pipe',
+        env: {
+          ...process.env,
+          VITE_ENABLE_GOOGLE_AUTH: process.env.VITE_ENABLE_GOOGLE_AUTH ?? 'false',
+        },
       },
 })
