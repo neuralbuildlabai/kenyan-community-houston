@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import type { AdminUserSecurity, Profile, UserRole } from '@/lib/types'
 import { isElevatedAdminRole } from '@/lib/types'
 import { getSessionAdminPasswordGate } from '@/lib/adminPasswordGate'
+import { claimOrCreateMemberForAuthUser } from '@/lib/memberSync'
 
 const ADMIN_SECURITY_FETCH_MS = 12_000
 
@@ -143,6 +144,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return
       }
       const prof = await fetchProfile(next.user.id)
+      const { error: syncErr } = await claimOrCreateMemberForAuthUser(supabase)
+      if (syncErr) {
+        console.warn('[auth] claimOrCreateMemberForAuthUser:', syncErr.message)
+      }
       if (profileIsAdmin(prof)) {
         await fetchAdminSecurity(next.user.id)
       } else {

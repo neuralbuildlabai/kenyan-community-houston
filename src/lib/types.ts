@@ -233,6 +233,8 @@ export interface Member {
   first_name: string
   last_name: string
   email: string
+  /** When set, mirrors Supabase Auth email confirmation time (migration 028). */
+  auth_email_confirmed_at?: string | null
   phone: string | null
   address_line1: string | null
   city: string | null

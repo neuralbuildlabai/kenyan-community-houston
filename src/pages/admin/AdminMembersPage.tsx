@@ -16,7 +16,7 @@ const MEM_TYPES: MembershipType[] = ['individual', 'family_household', 'associat
 const MEM_STATUS: MembershipRecordStatus[] = ['pending', 'active', 'inactive', 'rejected']
 const DUES: DuesStatus[] = ['pending', 'paid', 'waived', 'overdue']
 
-const COL_COUNT = 13
+const COL_COUNT = 14
 
 export function AdminMembersPage() {
   const [rows, setRows] = useState<MemberWithHousehold[]>([])
@@ -89,6 +89,7 @@ export function AdminMembersPage() {
       'willing_to_serve',
       'interests',
       'submitted_at',
+      'auth_email_confirmed_at',
     ]
     const lines = [cols.join(',')]
     for (const m of filtered) {
@@ -185,6 +186,7 @@ export function AdminMembersPage() {
               <TableHead className="w-8" />
               <TableHead>Name</TableHead>
               <TableHead className="hidden lg:table-cell">Email</TableHead>
+              <TableHead className="hidden md:table-cell">Auth email</TableHead>
               <TableHead className="hidden xl:table-cell">Phone</TableHead>
               <TableHead className="hidden sm:table-cell text-center">HH</TableHead>
               <TableHead className="hidden md:table-cell max-w-[140px]">Interests</TableHead>
@@ -239,6 +241,15 @@ export function AdminMembersPage() {
                         <div className="lg:hidden text-xs text-muted-foreground font-normal truncate max-w-[140px]">{m.email}</div>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{m.email}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {m.auth_email_confirmed_at ? (
+                          <Badge variant="outline" className="font-normal">
+                            Verified
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">Unverified</Badge>
+                        )}
+                      </TableCell>
                       <TableCell className="hidden xl:table-cell text-sm">{m.phone ?? '—'}</TableCell>
                       <TableCell className="hidden sm:table-cell text-center text-sm">{hh.length}</TableCell>
                       <TableCell className="hidden md:table-cell text-xs text-muted-foreground max-w-[160px]">
@@ -335,6 +346,14 @@ export function AdminMembersPage() {
                 </div>
                 <p className="text-muted-foreground">{detail.email}</p>
                 <p className="text-muted-foreground">{detail.phone ?? 'No phone on file'}</p>
+                <p className="text-muted-foreground text-xs mt-1">
+                  Auth login email:{' '}
+                  {detail.auth_email_confirmed_at ? (
+                    <span className="text-foreground">verified</span>
+                  ) : (
+                    <span className="text-foreground">not verified yet</span>
+                  )}
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>

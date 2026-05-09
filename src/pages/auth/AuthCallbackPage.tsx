@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { resolveAuthCallbackPath, sanitizeNextParam } from '@/lib/authRedirect'
+import { claimOrCreateMemberForAuthUser } from '@/lib/memberSync'
 import { Button } from '@/components/ui/button'
 import { KighLogo } from '@/components/KighLogo'
 import { APP_NAME } from '@/lib/constants'
@@ -47,6 +48,11 @@ export function AuthCallbackPage() {
         },
         { onConflict: 'id' }
       )
+
+      const { error: syncErr } = await claimOrCreateMemberForAuthUser(supabase)
+      if (syncErr) {
+        console.warn('[auth/callback] claimOrCreateMemberForAuthUser:', syncErr.message)
+      }
 
       const dest = resolveAuthCallbackPath(next, role, '/membership')
       if (!cancelled) {

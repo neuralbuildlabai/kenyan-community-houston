@@ -15,6 +15,13 @@ test.describe('admin auth', () => {
     await expect(page.getByRole('link', { name: /Contact messages/i })).toBeVisible()
   })
 
+  test('membership registrations admin page loads', async ({ page }) => {
+    await loginAsAdmin(page)
+    await page.goto('/admin/members')
+    await expect(page.getByRole('heading', { name: 'Membership registrations' })).toBeVisible()
+    await expect(page.getByText(/Auth email/i)).toBeVisible()
+  })
+
   test('logout is visible and returns to public homepage', async ({ page }) => {
     await loginAsAdmin(page)
     await expect(page.getByRole('button', { name: 'Logout' }).first()).toBeVisible()

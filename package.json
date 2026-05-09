@@ -8,6 +8,8 @@
     "build": "vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 50",
     "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:auth": "playwright test e2e/tests/membership-auth.spec.ts e2e/tests/auth-routes.spec.ts e2e/tests/homepage.spec.ts e2e/tests/non-admin-access.spec.ts e2e/tests/staging-banner.spec.ts",
     "test:e2e:headed": "playwright test --headed",
@@ -61,6 +63,7 @@
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3",
-    "vite": "^5.0.11"
+    "vite": "^5.0.11",
+    "vitest": "^3.2.4"
   }
 }

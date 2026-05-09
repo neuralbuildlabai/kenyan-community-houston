@@ -15,6 +15,8 @@ import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import { getBrowserOrigin } from '@/lib/siteOrigin'
 import { isGoogleAuthEnabled } from '@/lib/featureFlags'
+import { claimOrCreateMemberForAuthUser } from '@/lib/memberSync'
+import { buildMembershipSignupAuthMetadata } from '@/lib/membershipAuthMetadata'
 
 type MembershipType = 'individual' | 'family_household' | 'associate'
 
@@ -161,7 +163,19 @@ export function MembershipPage() {
 
     if (!user) {
       const origin = getBrowserOrigin()
-      const fullName = `${primary.first_name.trim()} ${primary.last_name.trim()}`.trim()
+      const householdCount =
+        membershipType === 'family_household'
+          ? household.filter((h) => h.full_name.trim()).length || 1
+          : 1
+      const meta = buildMembershipSignupAuthMetadata({
+        first_name: primary.first_name,
+        last_name: primary.last_name,
+        phone: primary.phone,
+        membership_type: membershipType,
+        interests,
+        household_count: householdCount,
+        preferred_communication: primary.preferred_communication,
+      })
       const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
         email: primary.email.trim(),
         password,
@@ -170,9 +184,7 @@ export function MembershipPage() {
             ? `${origin}/auth/callback?next=${encodeURIComponent('/membership')}`
             : undefined,
           data: {
-            full_name: fullName,
-            phone: primary.phone.trim(),
-            role: 'member',
+            ...meta,
           },
         },
       })
@@ -191,9 +203,13 @@ export function MembershipPage() {
         setPendingAccountCreated(true)
         toast.info('Confirm your email', {
           description:
-            'After you confirm, sign in and return here to finish membership registration.',
+            'We saved your membership intake as pending. After you confirm your email, sign in and return here to complete required agreements and details.',
         })
         return
+      }
+      const { error: syncErr } = await claimOrCreateMemberForAuthUser(supabase)
+      if (syncErr) {
+        console.warn('[membership] claimOrCreateMemberForAuthUser after signup:', syncErr.message)
       }
     }
 
@@ -320,12 +336,12 @@ export function MembershipPage() {
             <CardHeader>
               <CardTitle className="text-lg">Check your email</CardTitle>
               <CardDescription className="text-base text-foreground/90">
-                Your login account has been created. Please confirm your email, then return to complete your membership registration.
+                Your account has been created and a pending membership record is on file. Confirm your email, then sign in and return here to finish required agreements and contact details.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                After confirming your email, sign in and submit this form again so we can link your membership to your account.
+                Administrators can see your registration as pending until you complete the final step after verification.
               </p>
               <Button asChild>
                 <Link to="/login">Go to sign in</Link>
