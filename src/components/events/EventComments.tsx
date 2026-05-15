@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import type { EventComment } from '@/lib/types'
 import { formatDate } from '@/lib/utils'
+import { validatePublicCommunityContent } from '@/lib/communityModeration'
 
 type Props = {
   eventId: string
@@ -17,6 +18,12 @@ type Props = {
 
 function friendlySubmitError(err: { message?: string } | null): string {
   const m = err?.message ?? ''
+  if (m.includes('inappropriate_content')) {
+    return 'Please revise your message. Community posts must remain respectful and appropriate.'
+  }
+  if (m.includes('private_information_sharing')) {
+    return 'Please avoid sharing private phone numbers, home addresses, or sensitive personal details in public community posts.'
+  }
   if (m.includes('event_comments_body_len') || m.includes('violates check constraint')) {
     return 'Please keep your question between 1 and 2,000 characters.'
   }
@@ -85,6 +92,11 @@ export function EventComments({ eventId }: Props) {
     const trimmed = body.trim()
     if (trimmed.length < 1 || trimmed.length > 2000) {
       toast.error('Please enter between 1 and 2,000 characters.')
+      return
+    }
+    const pub = validatePublicCommunityContent(trimmed)
+    if (!pub.ok) {
+      toast.error(pub.reason)
       return
     }
     setSubmitting(true)

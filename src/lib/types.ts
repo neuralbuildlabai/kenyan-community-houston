@@ -596,6 +596,48 @@ export interface EventComment {
   updated_at: string
 }
 
+/** `public.feed_posts` (migration 032). */
+export type FeedPostType = 'general' | 'question' | 'resource' | 'celebration' | 'reminder' | 'referral'
+
+export type FeedPostStatus = 'approved' | 'hidden' | 'removed'
+
+export type FeedCommentStatus = 'approved' | 'hidden' | 'removed'
+
+export interface FeedPost {
+  id: string
+  author_id: string
+  body: string
+  status: FeedPostStatus
+  post_type: FeedPostType
+  comments_enabled: boolean
+  created_at: string
+  updated_at: string
+  removed_at: string | null
+  removed_by: string | null
+  removed_reason: string | null
+}
+
+export interface FeedComment {
+  id: string
+  post_id: string
+  author_id: string
+  body: string
+  status: FeedCommentStatus
+  created_at: string
+  updated_at: string
+  removed_at: string | null
+  removed_by: string | null
+  removed_reason: string | null
+}
+
+export interface FeedReaction {
+  id: string
+  post_id: string
+  user_id: string
+  reaction_type: 'like'
+  created_at: string
+}
+
 export type ServiceInterestAvailability =
   | 'occasional'
   | 'monthly'

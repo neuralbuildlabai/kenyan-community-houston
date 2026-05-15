@@ -30,6 +30,7 @@ const REQUIRED_DESTINATIONS = [
   '/about',
   '/contact',
   '/chat',
+  '/community-feed',
 ] as const
 
 test.describe('public nav config', () => {
@@ -64,7 +65,7 @@ test.describe('public nav config', () => {
   })
 
   test('top-tier admin destinations are NOT in the public nav', () => {
-    const admin = ['/admin', '/admin/dashboard', '/admin/system-health', '/admin/chat', '/admin/event-comments', '/admin/invites']
+    const admin = ['/admin', '/admin/dashboard', '/admin/system-health', '/admin/chat', '/admin/event-comments', '/admin/invites', '/admin/feed']
     const allTos = ALL_PUBLIC_NAV.map((i) => i.to)
     for (const a of admin) {
       expect(allTos).not.toContain(a)

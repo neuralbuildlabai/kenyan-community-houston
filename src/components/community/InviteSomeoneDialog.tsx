@@ -16,6 +16,7 @@ import {
   normalizeWhatsAppPhone,
   PUBLIC_SITE_URL,
 } from '@/lib/memberDemographics'
+import { validatePublicCommunityContent } from '@/lib/communityModeration'
 
 type Props = {
   triggerVariant?: 'default' | 'outline' | 'secondary' | 'ghost'
@@ -61,6 +62,13 @@ export function InviteSomeoneDialog({
     if (note.length > 300) {
       toast.error('Personal note must be 300 characters or fewer.')
       return
+    }
+    if (note.length > 0) {
+      const noteCheck = validatePublicCommunityContent(note)
+      if (!noteCheck.ok) {
+        toast.error(noteCheck.reason)
+        return
+      }
     }
     const message = buildInviteMessage({
       recipientName: recipientName.trim() || null,

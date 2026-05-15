@@ -1,0 +1,36 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { describe, expect, it } from 'vitest'
+
+describe('migration 032 community feed & safety', () => {
+  it('defines feed tables, RLS, RPCs, limits, moderation helpers, and list RPC is_owner', () => {
+    const p = resolve(process.cwd(), 'supabase/migrations/032_community_feed_and_safety_filter.sql')
+    const sql = readFileSync(p, 'utf8')
+    expect(sql).toContain('create table if not exists public.feed_posts')
+    expect(sql).toContain('create table if not exists public.feed_comments')
+    expect(sql).toContain('create table if not exists public.feed_reactions')
+    expect(sql).toContain('alter table public.feed_posts enable row level security')
+    expect(sql).toContain('alter table public.feed_comments enable row level security')
+    expect(sql).toContain('alter table public.feed_reactions enable row level security')
+    expect(sql).toContain('create or replace function public.create_feed_post')
+    expect(sql).toContain('create or replace function public.create_feed_comment')
+    expect(sql).toContain('post_daily_limit_reached')
+    expect(sql).toContain('post_weekly_limit_reached')
+    expect(sql).toContain('comments_enabled')
+    expect(sql).toContain('constraint feed_comments_body_len check (char_length(trim(body)) between 1 and 200)')
+    expect(sql).toContain('create or replace function public.kigh_contains_blocked_language')
+    expect(sql).toContain('create or replace function public.kigh_is_approved_member')
+    expect(sql).toContain('is_owner boolean')
+    expect(sql).toContain('as is_owner')
+    expect(sql).toContain('create or replace function public.kigh_feed_safe_display_name')
+    expect(sql).toContain('list_community_feed_posts')
+    expect(sql).toContain('list_community_feed_comments')
+    const start = sql.indexOf('create or replace function public.create_chat_request')
+    expect(start).toBeGreaterThan(-1)
+    const end = sql.indexOf('create or replace function public.chat_messages_community_safety_guard', start)
+    expect(end).toBeGreaterThan(start)
+    const fnBlock = sql.slice(start, end)
+    expect(fnBlock).toContain('kigh_contains_blocked_language(v_body)')
+    expect(fnBlock).not.toContain('kigh_contains_sensitive_public_sharing(v_body)')
+  })
+})

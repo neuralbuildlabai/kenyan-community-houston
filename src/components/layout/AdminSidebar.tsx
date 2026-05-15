@@ -25,6 +25,7 @@ import {
   MessagesSquare,
   ListTree,
   MessageCircle,
+  Newspaper,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -75,6 +76,7 @@ function buildNavGroups(profileRole: string | null | undefined): NavGroup[] {
         { to: '/admin/chat', label: 'Community requests', Icon: MessagesSquare },
         { to: '/admin/event-comments', label: 'Event comments', Icon: ListTree },
         { to: '/admin/invites', label: 'WhatsApp invites', Icon: MessageCircle },
+        { to: '/admin/feed', label: 'Community Feed', Icon: Newspaper },
         { to: '/admin/service-interests', label: 'Call to Serve', Icon: HeartHandshake },
         { to: '/admin/media-submissions', label: 'Media submissions', Icon: Clapperboard },
       ],

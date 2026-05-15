@@ -346,6 +346,65 @@ export interface Database {
         }
         Update: Partial<Database['public']['Tables']['event_comments']['Row']>
       }
+      feed_posts: {
+        Row: {
+          id: string
+          author_id: string
+          body: string
+          status: string
+          post_type: string
+          comments_enabled: boolean
+          created_at: string
+          updated_at: string
+          removed_at: string | null
+          removed_by: string | null
+          removed_reason: string | null
+        }
+        Insert: {
+          author_id: string
+          body: string
+          status?: string
+          post_type?: string
+          comments_enabled?: boolean
+        }
+        Update: Partial<Database['public']['Tables']['feed_posts']['Row']>
+      }
+      feed_comments: {
+        Row: {
+          id: string
+          post_id: string
+          author_id: string
+          body: string
+          status: string
+          created_at: string
+          updated_at: string
+          removed_at: string | null
+          removed_by: string | null
+          removed_reason: string | null
+        }
+        Insert: {
+          post_id: string
+          author_id: string
+          body: string
+          status?: string
+        }
+        Update: Partial<Database['public']['Tables']['feed_comments']['Row']>
+      }
+      feed_reactions: {
+        Row: {
+          id: string
+          post_id: string
+          user_id: string
+          reaction_type: string
+          created_at: string
+        }
+        Insert: {
+          post_id: string
+          user_id: string
+          reaction_type?: string
+        }
+        Update: Partial<Database['public']['Tables']['feed_reactions']['Row']>
+      }
       member_invites: {
         Row: {
           id: string
@@ -486,7 +545,58 @@ export interface Database {
         Args: Record<string, never>
         Returns: Json
       }
-    }
+      kigh_is_approved_member: {
+        Args: Record<string, never>
+        Returns: boolean
+      }
+      create_feed_post: {
+        Args: { p_body: string; p_post_type: string; p_comments_enabled?: boolean }
+        Returns: string
+      }
+      create_feed_comment: {
+        Args: { p_post_id: string; p_body: string }
+        Returns: string
+      }
+      toggle_feed_post_comments: {
+        Args: { p_post_id: string; p_comments_enabled: boolean }
+        Returns: null
+      }
+      moderate_feed_post: {
+        Args: { p_post_id: string; p_status: string; p_reason: string }
+        Returns: null
+      }
+      moderate_feed_comment: {
+        Args: { p_comment_id: string; p_status: string; p_reason: string }
+        Returns: null
+      }
+      feed_post_limit_status: {
+        Args: Record<string, never>
+        Returns: Json
+      }
+      list_community_feed_posts: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: string
+          body: string
+          post_type: string
+          comments_enabled: boolean
+          created_at: string
+          author_display_name: string
+          like_count: number
+          comment_count: number
+          is_owner: boolean
+        }[]
+      }
+      list_community_feed_comments: {
+        Args: { p_post_id: string }
+        Returns: {
+          id: string
+          body: string
+          created_at: string
+          author_display_name: string
+        }[]
+      }
+    },
     Enums: {
       user_role: 'super_admin' | 'community_admin' | 'business_admin' | 'support_admin' | 'moderator' | 'viewer'
       content_status: 'draft' | 'pending_review' | 'approved' | 'published' | 'unpublished' | 'archived' | 'rejected'

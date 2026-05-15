@@ -4,6 +4,7 @@ import {
   formatCategoryLabel,
   categoryValuesMatchingCanonical,
 } from './communityCategories'
+import type { FeedPostType } from './types'
 
 export { COMMUNITY_SUBMISSION_CATEGORIES, canonicalCategory, formatCategoryLabel, categoryValuesMatchingCanonical }
 
@@ -113,6 +114,43 @@ export const SPORTS_CATEGORIES = [
   'Tournament',
   'Community',
   'Other',
+] as const
+
+/** `public.feed_posts.post_type` (migration 032). */
+export const FEED_POST_TYPES: FeedPostType[] = [
+  'general',
+  'question',
+  'resource',
+  'celebration',
+  'reminder',
+  'referral',
+]
+
+export const FEED_POST_STATUSES = ['approved', 'hidden', 'removed'] as const
+
+export const FEED_COMMENT_STATUSES = ['approved', 'hidden', 'removed'] as const
+
+export const feedPostTypeLabel: Record<FeedPostType, string> = {
+  general: 'General',
+  question: 'Question',
+  resource: 'Resource',
+  celebration: 'Celebration',
+  reminder: 'Reminder',
+  referral: 'Referral',
+}
+
+export const feedStatusLabel: Record<(typeof FEED_POST_STATUSES)[number], string> = {
+  approved: 'Published',
+  hidden: 'Hidden',
+  removed: 'Removed',
+}
+
+export const FEED_MODERATION_REASON_PRESETS = [
+  { value: 'inappropriate_language', label: 'Inappropriate language' },
+  { value: 'harassment', label: 'Harassment' },
+  { value: 'private_information', label: 'Private information' },
+  { value: 'spam', label: 'Spam' },
+  { value: 'other', label: 'Other' },
 ] as const
 
 export const CONTACT_CATEGORIES = [

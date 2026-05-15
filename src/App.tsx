@@ -42,6 +42,7 @@ import { TermsPage } from '@/pages/public/TermsPage'
 import { DisclaimerPage } from '@/pages/public/DisclaimerPage'
 import { NotFoundPage } from '@/pages/public/NotFoundPage'
 import { ChatPage } from '@/pages/public/ChatPage'
+import { CommunityFeedPage } from '@/pages/public/CommunityFeedPage'
 
 import { AdminDashboardPage } from '@/pages/admin/DashboardPage'
 import { AdminCalendarPage } from '@/pages/admin/CalendarPage'
@@ -64,6 +65,7 @@ import { AdminSystemHealthPage } from '@/pages/admin/AdminSystemHealthPage'
 import { AdminChatPage } from '@/pages/admin/AdminChatPage'
 import { AdminEventCommentsPage } from '@/pages/admin/AdminEventCommentsPage'
 import { AdminInvitesPage } from '@/pages/admin/AdminInvitesPage'
+import { AdminFeedPage } from '@/pages/admin/AdminFeedPage'
 import { SYSTEM_HEALTH_ADMIN_ROLES } from '@/lib/platformAdmin'
 
 import { RequireAuth } from '@/components/RequireAuth'
@@ -107,6 +109,7 @@ export default function App() {
               <Route path="about" element={<AboutPage />} />
               <Route path="contact" element={<ContactPage />} />
               <Route path="chat" element={<ChatPage />} />
+              <Route path="community-feed" element={<CommunityFeedPage />} />
               <Route path="governance" element={<GovernancePage />} />
               <Route path="serve" element={<ServePage />} />
               <Route path="serve/apply" element={<ServeApplyPage />} />
@@ -177,6 +180,7 @@ export default function App() {
               <Route path="chat" element={<AdminChatPage />} />
               <Route path="event-comments" element={<AdminEventCommentsPage />} />
               <Route path="invites" element={<AdminInvitesPage />} />
+              <Route path="feed" element={<AdminFeedPage />} />
               <Route path="service-interests" element={<AdminServiceInterestsPage />} />
               <Route path="media-submissions" element={<AdminMediaSubmissionsPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />

@@ -23,6 +23,8 @@ import {
 } from '@/lib/chatRequests'
 import { formatDate } from '@/lib/utils'
 import { InviteSomeoneDialog } from '@/components/community/InviteSomeoneDialog'
+import { validateCommunityContent } from '@/lib/communityModeration'
+import { mapChatMessageModerationError } from '@/lib/communityFeed'
 
 function mapCreateRequestError(message: string): string {
   if (message.includes('active_request_already_exists') || message.includes('23505')) {
@@ -32,6 +34,9 @@ function mapCreateRequestError(message: string): string {
   if (message.includes('invalid_body_length')) return 'Message must be between 1 and 3,000 characters.'
   if (message.includes('invalid_category')) return 'Please choose a valid category.'
   if (message.includes('authentication_required')) return 'Please sign in to start a request.'
+  if (message.includes('inappropriate_content')) {
+    return 'Please revise your message. Community posts must remain respectful and appropriate.'
+  }
   return 'Could not start your request. Please try again.'
 }
 
@@ -111,6 +116,11 @@ export function ChatPage() {
       toast.error('Message must be between 1 and 3,000 characters.')
       return
     }
+    const mod = validateCommunityContent(b)
+    if (!mod.ok) {
+      toast.error(mod.reason)
+      return
+    }
     setSubmitting(true)
     const { data, error } = await supabase.rpc('create_chat_request', {
       p_title: t,
@@ -139,6 +149,11 @@ export function ChatPage() {
       toast.error('Message must be between 1 and 3,000 characters.')
       return
     }
+    const modReply = validateCommunityContent(b)
+    if (!modReply.ok) {
+      toast.error(modReply.reason)
+      return
+    }
     if (!isChatThreadActive(activeThread.status)) {
       toast.error('This request is closed.')
       return
@@ -153,7 +168,10 @@ export function ChatPage() {
     })
     setReplying(false)
     if (error) {
-      toast.error('Could not send your message. If the request was closed, start a new one after closing.')
+      toast.error(
+        mapChatMessageModerationError(error.message ?? '') ??
+          'Could not send your message. If the request was closed, start a new one after closing.'
+      )
       return
     }
     setReplyBody('')

@@ -17,6 +17,11 @@ test.describe('Community request admin route protection', () => {
     await expect(page).toHaveURL(/\/login/)
   })
 
+  test('/admin/feed redirects logged-out user to login', async ({ page }) => {
+    await page.goto('/admin/feed', { waitUntil: 'domcontentloaded' })
+    await expect(page).toHaveURL(/\/login/)
+  })
+
   test('public nav config does not list admin-only routes', () => {
     const tos = ALL_PUBLIC_NAV.map((i) => i.to)
     expect(tos.some((t) => t.startsWith('/admin'))).toBe(false)

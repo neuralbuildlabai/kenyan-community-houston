@@ -11,6 +11,7 @@ const ADMIN_PATHS = [
   '/admin/gallery',
   '/admin/users',
   '/admin/media-submissions',
+  '/admin/feed',
   '/admin/analytics',
   '/admin/dashboard',
 ] as const
