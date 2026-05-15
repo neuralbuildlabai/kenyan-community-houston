@@ -11,9 +11,11 @@ import { toast } from 'sonner'
 import { APP_NAME } from '@/lib/constants'
 import { KighLogo } from '@/components/KighLogo'
 import { isElevatedAdminRole } from '@/lib/types'
+import type { Profile } from '@/lib/types'
 import { resolvePostLoginPath, sanitizeNextParam } from '@/lib/authRedirect'
 import { getBrowserOrigin } from '@/lib/siteOrigin'
 import { isGoogleAuthEnabled } from '@/lib/featureFlags'
+import { requiresProfilePasswordRefresh } from '@/lib/profilePasswordGate'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -41,18 +43,31 @@ export function LoginPage() {
       return
     }
 
-    const { data: sess } = await supabase.auth.getSession()
-    const uid = sess.session?.user?.id ?? null
+    const { data: userResp } = await supabase.auth.getUser()
+    const sessionUser = userResp.user
+    const uid = sessionUser?.id ?? null
     if (!uid) {
       setLoading(false)
       toast.error('Session was not ready. Please try signing in again.')
       return
     }
-    const { data: prof } = await supabase.from('profiles').select('role').eq('id', uid).maybeSingle()
-    const role = (prof?.role as string | undefined) ?? undefined
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('role, password_changed_at, password_expires_at, force_password_change')
+      .eq('id', uid)
+      .maybeSingle()
+    const profile = prof as Profile | null
+    const role = profile?.role as string | undefined
 
     const dest = resolvePostLoginPath(nextPath, role)
     await trackLogin(isElevatedAdminRole(role) ? 'admin_login' : 'member_login', uid)
+
+    if (sessionUser && requiresProfilePasswordRefresh(profile, sessionUser)) {
+      setLoading(false)
+      navigate(`/change-password?next=${encodeURIComponent(dest)}`, { replace: true })
+      return
+    }
+
     setLoading(false)
     navigate(dest, { replace: true })
   }

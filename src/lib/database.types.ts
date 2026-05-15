@@ -23,6 +23,10 @@ export interface Database {
           general_location_area?: string | null
           professional_field?: string | null
           professional_field_other?: string | null
+          password_changed_at?: string | null
+          password_expires_at?: string | null
+          force_password_change?: boolean
+          password_policy_version?: string
         }
         Insert: {
           id: string
@@ -37,6 +41,10 @@ export interface Database {
           general_location_area?: string | null
           professional_field?: string | null
           professional_field_other?: string | null
+          password_changed_at?: string | null
+          password_expires_at?: string | null
+          force_password_change?: boolean
+          password_policy_version?: string
         }
         Update: {
           id?: string
@@ -50,6 +58,10 @@ export interface Database {
           general_location_area?: string | null
           professional_field?: string | null
           professional_field_other?: string | null
+          password_changed_at?: string | null
+          password_expires_at?: string | null
+          force_password_change?: boolean
+          password_policy_version?: string
         }
       }
       events: {
@@ -595,6 +607,14 @@ export interface Database {
           created_at: string
           author_display_name: string
         }[]
+      }
+      kigh_apply_profile_password_rotation: {
+        Args: Record<string, never>
+        Returns: null
+      }
+      kigh_profile_force_password_change: {
+        Args: { p_user_id: string }
+        Returns: null
       }
     },
     Enums: {

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
@@ -25,9 +25,18 @@ import {
   GENERAL_LOCATION_AREA_VALUES,
   PROFESSIONAL_FIELD_LABEL,
   PROFESSIONAL_FIELD_VALUES,
-  isAllowedGeneralLocationArea,
 } from '@/lib/memberDemographics'
+import {
+  buildProfilesSelfServicePatch,
+  classifyProfileSaveSupabaseError,
+  GENERIC_PROFILE_SAVE_FAILURE,
+  LOCATION_PROFESSION_VALIDATION_MESSAGE,
+  logSupabaseErrorDebug,
+} from '@/lib/profilePayload'
+import { validatePhoneNumber } from '@/lib/phoneValidation'
 import { InviteSomeoneDialog } from '@/components/community/InviteSomeoneDialog'
+import { requiresProfilePasswordRefresh } from '@/lib/profilePasswordGate'
+import { hasEmailPasswordIdentity } from '@/lib/passwordPolicy'
 
 type HhDraft = Partial<ProfileHouseholdMember> & { id?: string }
 
@@ -111,63 +120,35 @@ export function ProfilePage() {
 
   async function saveProfile() {
     if (!user) return
-    const gla = (row.general_location_area ?? '').toString().trim()
-    if (!gla || !isAllowedGeneralLocationArea(gla)) {
-      toast.error('Please select your general Houston-area location.')
-      return
-    }
-    const pfRaw = row.professional_field?.toString().trim() || ''
-    const pf = pfRaw === '' ? null : pfRaw
-    const pfo = (row.professional_field_other ?? '').trim() || null
-    if (pf === 'other' && (!pfo || pfo.length < 1)) {
-      toast.error('Please describe what you do when you select Other.')
+    const built = buildProfilesSelfServicePatch(row)
+    if (!built.ok) {
+      toast.error(built.message)
       return
     }
     setSaving(true)
     try {
-      const patch = {
-        full_name: row.full_name?.trim() || null,
-        preferred_name: row.preferred_name?.trim() || null,
-        phone: row.phone?.trim() || null,
-        bio: row.bio?.trim() || null,
-        city: row.city?.trim() || null,
-        state: row.state?.trim() || null,
-        zip_code: row.zip_code?.trim() || null,
-        county_or_heritage: row.county_or_heritage?.trim() || null,
-        preferred_communication: row.preferred_communication?.trim() || null,
-        occupation: row.occupation?.trim() || null,
-        business_or_profession: row.business_or_profession?.trim() || null,
-        emergency_contact_name: row.emergency_contact_name?.trim() || null,
-        emergency_contact_phone: row.emergency_contact_phone?.trim() || null,
-        interests: row.interests ?? [],
-        willing_to_volunteer: !!row.willing_to_volunteer,
-        willing_to_serve: !!row.willing_to_serve,
-        volunteer_interests: row.volunteer_interests ?? [],
-        service_notes: row.service_notes?.trim() || null,
-        profile_visibility: row.profile_visibility ?? 'private',
-        email: user.email ?? row.email,
-        general_location_area: gla,
-        professional_field: pf,
-        professional_field_other: pf === 'other' ? pfo : null,
+      const { error } = await supabase.from('profiles').update(built.patch).eq('id', user.id)
+      if (error) {
+        logSupabaseErrorDebug('profiles.update', error)
+        throw error
       }
-      const { error } = await supabase.from('profiles').update(patch).eq('id', user.id)
-      if (error) throw error
       const { error: memErr } = await supabase
         .from('members')
         .update({
-          general_location_area: gla,
-          professional_field: pf,
-          professional_field_other: pf === 'other' ? pfo : null,
+          general_location_area: built.patch.general_location_area,
+          professional_field: built.patch.professional_field,
+          professional_field_other: built.patch.professional_field_other,
         })
         .eq('user_id', user.id)
-      if (memErr) {
-        // Member row may not exist yet; ignore failed sync
-      }
+      if (memErr) logSupabaseErrorDebug('members.demographics', memErr)
       toast.success('Profile saved')
       await refreshProfile()
       await loadAll()
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Save failed')
+      const pe = e as { code?: string; message?: string; details?: string | null; hint?: string | null }
+      logSupabaseErrorDebug('profiles.save', pe)
+      const hint = classifyProfileSaveSupabaseError(pe)
+      toast.error(hint === 'location_profession' ? LOCATION_PROFESSION_VALIDATION_MESSAGE : GENERIC_PROFILE_SAVE_FAILURE)
     } finally {
       setSaving(false)
     }
@@ -209,13 +190,20 @@ export function ProfilePage() {
       await refreshProfile()
       await loadAll()
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Upload failed')
+      const pe = e as { code?: string; message?: string; details?: string | null; hint?: string | null }
+      logSupabaseErrorDebug('profiles.avatar', pe)
+      toast.error(GENERIC_PROFILE_SAVE_FAILURE)
     }
   }
 
   async function saveHouseholdMember(d: HhDraft) {
     if (!user || !d.full_name?.trim()) {
       toast.error('Full name is required')
+      return
+    }
+    const hp = validatePhoneNumber(d.phone ?? '', { allowEmpty: true })
+    if (!hp.ok) {
+      toast.error(hp.reason)
       return
     }
     try {
@@ -227,7 +215,7 @@ export function ProfilePage() {
             relationship: d.relationship?.trim() || null,
             age_group: (d.age_group as 'adult' | 'youth' | 'child' | null) ?? null,
             email: d.email?.trim() || null,
-            phone: d.phone?.trim() || null,
+            phone: hp.value,
             notes: d.notes?.trim() || null,
           })
           .eq('id', d.id)
@@ -240,7 +228,7 @@ export function ProfilePage() {
           relationship: d.relationship?.trim() || null,
           age_group: (d.age_group as 'adult' | 'youth' | 'child' | null) ?? null,
           email: d.email?.trim() || null,
-          phone: d.phone?.trim() || null,
+          phone: hp.value,
           notes: d.notes?.trim() || null,
         })
         if (error) throw error
@@ -274,16 +262,14 @@ export function ProfilePage() {
   return (
     <>
       <SEOHead title="My profile" description="Update your KIGH community profile, household, and interests." />
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:py-10 space-y-8">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:py-10 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2">
               <User className="h-7 w-7 text-primary shrink-0" />
               My profile
             </h1>
-            <p className="text-muted-foreground text-sm mt-1 max-w-xl">
-              Your information is private by default. KIGH leadership may view profiles to support programs and membership.
-            </p>
+            <p className="text-muted-foreground text-sm mt-1 max-w-lg">Keep your member information up to date.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {isAdmin ? (
@@ -299,10 +285,40 @@ export function ProfilePage() {
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Account</CardTitle>
-            <CardDescription>Email is managed by your login provider.</CardDescription>
+        {user && hasEmailPasswordIdentity(user) ? (
+          <Card className="border-border/80 shadow-sm" data-testid="profile-password-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Password</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              {requiresProfilePasswordRefresh(row as Profile, user) ? (
+                <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200/80 rounded-md px-2.5 py-1.5">
+                  Password update required before continuing.
+                </p>
+              ) : null}
+              <p className="text-muted-foreground">
+                Last changed:{' '}
+                <span className="text-foreground font-medium">
+                  {row.password_changed_at ? new Date(row.password_changed_at).toLocaleDateString() : 'Not recorded'}
+                </span>
+              </p>
+              <p className="text-muted-foreground">
+                Expires:{' '}
+                <span className="text-foreground font-medium">
+                  {row.password_expires_at ? new Date(row.password_expires_at).toLocaleDateString() : 'Update required'}
+                </span>
+              </p>
+              <p className="text-xs text-muted-foreground">For security, passwords are renewed every 6 months.</p>
+              <Button asChild size="sm" variant="outline" className="w-full sm:w-auto">
+                <Link to="/change-password?next=%2Fprofile">Change password</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        <Card className="border-border/80 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Account</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
@@ -328,10 +344,9 @@ export function ProfilePage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile photo</CardTitle>
-            <CardDescription>Stored securely; only you and authorized admins can view.</CardDescription>
+        <Card className="border-border/80 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Profile photo</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col sm:flex-row gap-4 items-start">
             <div className="h-24 w-24 rounded-full border bg-muted overflow-hidden shrink-0 flex items-center justify-center text-muted-foreground text-sm">
@@ -348,10 +363,9 @@ export function ProfilePage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Contact & location</CardTitle>
-            <CardDescription>Fields marked * are especially helpful for community outreach.</CardDescription>
+        <Card className="border-border/80 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Contact & location</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
@@ -389,29 +403,6 @@ export function ProfilePage() {
               <Input value={row.zip_code ?? ''} onChange={(e) => setRow((r) => ({ ...r, zip_code: e.target.value }))} />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label>County or heritage</Label>
-              <Input value={row.county_or_heritage ?? ''} onChange={(e) => setRow((r) => ({ ...r, county_or_heritage: e.target.value }))} />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label>Preferred communication</Label>
-              <Select
-                value={row.preferred_communication ?? '__none__'}
-                onValueChange={(v) => setRow((r) => ({ ...r, preferred_communication: v === '__none__' ? null : v }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select…" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">—</SelectItem>
-                  {PREFERRED_COMMUNICATION_OPTIONS.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="profile-general-location">General Houston-area location *</Label>
               <Select
                 value={(row.general_location_area as string) || '__none__'}
@@ -431,13 +422,44 @@ export function ProfilePage() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Select a broad area only. We do not show your private address or phone number publicly. General area information may be
-                used only in aggregate community metrics.
-              </p>
+              <p className="text-xs text-muted-foreground">Choose the broad area closest to you (used in aggregate metrics only).</p>
+            </div>
+            <p className="text-xs text-muted-foreground sm:col-span-2 border-t pt-3 mt-1">
+              Private contact details are visible only to authorized admins. Public areas use broad, safe information only.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/80 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Community profile</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>County / heritage</Label>
+              <Input value={row.county_or_heritage ?? ''} onChange={(e) => setRow((r) => ({ ...r, county_or_heritage: e.target.value }))} />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="profile-professional">What do you do?</Label>
+              <Label>Preferred contact</Label>
+              <Select
+                value={row.preferred_communication ?? '__none__'}
+                onValueChange={(v) => setRow((r) => ({ ...r, preferred_communication: v === '__none__' ? null : v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">—</SelectItem>
+                  {PREFERRED_COMMUNICATION_OPTIONS.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="profile-professional">Profession</Label>
               <Select
                 value={(row.professional_field as string) || '__none__'}
                 onValueChange={(v) =>
@@ -452,7 +474,7 @@ export function ProfilePage() {
                   <SelectValue placeholder="Optional" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">Skip for now</SelectItem>
+                  <SelectItem value="__none__">Optional</SelectItem>
                   {PROFESSIONAL_FIELD_VALUES.map((v) => (
                     <SelectItem key={v} value={v}>
                       {PROFESSIONAL_FIELD_LABEL[v]}
@@ -460,23 +482,39 @@ export function ProfilePage() {
                   ))}
                 </SelectContent>
               </Select>
-              {row.professional_field === 'other' ? (
-                <div className="space-y-1.5 pt-1">
-                  <Label htmlFor="profile-professional-other">Describe (required if Other) *</Label>
-                  <Input
-                    id="profile-professional-other"
-                    data-testid="profile-professional-other"
-                    maxLength={80}
-                    value={row.professional_field_other ?? ''}
-                    onChange={(e) => setRow((r) => ({ ...r, professional_field_other: e.target.value }))}
-                  />
-                </div>
-              ) : null}
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                This helps the community understand skills and professions represented among members. Individual details are not shown
-                publicly.
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">Used only for aggregate community planning.</p>
             </div>
+            {row.professional_field === 'other' ? (
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="profile-professional-other">Other profession *</Label>
+                <Input
+                  id="profile-professional-other"
+                  data-testid="profile-professional-other"
+                  maxLength={80}
+                  value={row.professional_field_other ?? ''}
+                  onChange={(e) => setRow((r) => ({ ...r, professional_field_other: e.target.value }))}
+                />
+              </div>
+            ) : null}
+            <div className="space-y-2 sm:col-span-2">
+              <Label className="text-foreground">Interests</Label>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {PROFILE_INTEREST_OPTIONS.map((opt) => (
+                  <label key={opt} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox checked={(row.interests ?? []).includes(opt)} onCheckedChange={() => toggleInterest(opt)} />
+                    <span>{opt}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/80 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Bio & emergency</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Bio</Label>
               <Textarea rows={3} value={row.bio ?? ''} onChange={(e) => setRow((r) => ({ ...r, bio: e.target.value }))} />
@@ -500,24 +538,9 @@ export function ProfilePage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Interests</CardTitle>
-            <CardDescription>Select areas you care about.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
-            {PROFILE_INTEREST_OPTIONS.map((opt) => (
-              <label key={opt} className="flex items-center gap-2 text-sm cursor-pointer">
-                <Checkbox checked={(row.interests ?? []).includes(opt)} onCheckedChange={() => toggleInterest(opt)} />
-                <span>{opt}</span>
-              </label>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Volunteering & service</CardTitle>
+        <Card className="border-border/80 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Service</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <label className="flex items-center gap-2 text-sm">
@@ -551,11 +574,10 @@ export function ProfilePage() {
         <Card>
           <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <Users className="h-5 w-5" />
                 Household
               </CardTitle>
-              <CardDescription>Family members you would like to keep on file with your profile.</CardDescription>
             </div>
             <Button size="sm" onClick={() => setHhDialog({ open: true, draft: { full_name: '' } })}>
               Add member
@@ -593,11 +615,11 @@ export function ProfilePage() {
           </CardContent>
         </Card>
 
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-          <Button asChild variant="outline">
-            <Link to="/profile/media">Community media submissions</Link>
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between pt-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/profile/media">Media submissions</Link>
           </Button>
-          <Button className="gap-2" onClick={() => void saveProfile()} disabled={saving}>
+          <Button size="sm" className="gap-2" onClick={() => void saveProfile()} disabled={saving}>
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Save profile
           </Button>

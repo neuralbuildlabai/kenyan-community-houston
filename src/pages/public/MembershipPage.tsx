@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/lib/supabase'
 import { MEMBERSHIP_INTEREST_OPTIONS } from '@/lib/constants'
@@ -23,6 +24,13 @@ import {
   PROFESSIONAL_FIELD_LABEL,
   PROFESSIONAL_FIELD_VALUES,
 } from '@/lib/memberDemographics'
+import { logSupabaseErrorDebug, normalizeLocationProfession } from '@/lib/profilePayload'
+import { validatePhoneNumber } from '@/lib/phoneValidation'
+import {
+  mapPasswordPolicyErrorsToSignupHints,
+  passwordRotationAfterChangePayload,
+  validatePasswordPolicy,
+} from '@/lib/passwordPolicy'
 
 type MembershipType = 'individual' | 'family_household' | 'associate'
 
@@ -49,6 +57,7 @@ export function MembershipPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [passwordFieldErrors, setPasswordFieldErrors] = useState<string[]>([])
   const [pendingAccountCreated, setPendingAccountCreated] = useState(false)
   const [oauthLoading, setOauthLoading] = useState(false)
   const [membershipType, setMembershipType] = useState<MembershipType>('individual')
@@ -133,12 +142,18 @@ export function MembershipPage() {
       toast.error('Phone is required')
       return
     }
-    if (!generalLocationArea) {
-      toast.error('Please select your general Houston-area location.')
+    const primaryPhone = validatePhoneNumber(primary.phone)
+    if (!primaryPhone.ok) {
+      toast.error(primaryPhone.reason)
       return
     }
-    if (professionalField === 'other' && !professionalFieldOther.trim()) {
-      toast.error('Please describe what you do when you select Other.')
+    const locProf = normalizeLocationProfession({
+      general_location_area: generalLocationArea,
+      professional_field: professionalField,
+      professional_field_other: professionalFieldOther,
+    })
+    if (!locProf.ok) {
+      toast.error(locProf.message)
       return
     }
     if (!user) {
@@ -147,21 +162,28 @@ export function MembershipPage() {
         return
       }
       if (!password) {
+        setPasswordFieldErrors(['Enter a password.'])
         toast.error('Password is required')
         return
       }
-      if (password.length < 8) {
-        toast.error('Password must be at least 8 characters')
+      const pv = validatePasswordPolicy(password)
+      if (!pv.ok) {
+        const hints = mapPasswordPolicyErrorsToSignupHints(pv.errors)
+        setPasswordFieldErrors(hints)
+        toast.error(pv.errors[0] ?? 'Invalid password')
         return
       }
       if (!confirmPassword) {
+        setPasswordFieldErrors([])
         toast.error('Please confirm your password')
         return
       }
       if (password !== confirmPassword) {
+        setPasswordFieldErrors([])
         toast.error('Passwords do not match')
         return
       }
+      setPasswordFieldErrors([])
     } else {
       const signedInEmail = (user.email ?? '').trim().toLowerCase()
       const formEmail = primary.email.trim().toLowerCase()
@@ -176,6 +198,13 @@ export function MembershipPage() {
         toast.error('Add at least one household member with a full name')
         return
       }
+      for (const h of validRows) {
+        const hp = validatePhoneNumber(h.phone, { allowEmpty: true })
+        if (!hp.ok) {
+          toast.error(hp.reason)
+          return
+        }
+      }
     }
     setLoading(true)
 
@@ -188,7 +217,7 @@ export function MembershipPage() {
       const meta = buildMembershipSignupAuthMetadata({
         first_name: primary.first_name,
         last_name: primary.last_name,
-        phone: primary.phone,
+        phone: primaryPhone.value!,
         membership_type: membershipType,
         interests,
         household_count: householdCount,
@@ -240,12 +269,13 @@ export function MembershipPage() {
     }
 
     const fullName = `${primary.first_name.trim()} ${primary.last_name.trim()}`.trim()
+    const rotation = !user ? passwordRotationAfterChangePayload() : {}
     const { error: profileErr } = await supabase.from('profiles').upsert(
       {
         id: authUser.id,
         email: primary.email.trim().toLowerCase(),
         full_name: fullName,
-        phone: primary.phone.trim() || null,
+        phone: primaryPhone.value,
         city: primary.city.trim() || null,
         state: primary.state.trim() || null,
         zip_code: primary.zip_code.trim() || null,
@@ -253,16 +283,17 @@ export function MembershipPage() {
         preferred_communication: primary.preferred_communication.trim() || null,
         interests,
         updated_at: new Date().toISOString(),
-        general_location_area: generalLocationArea,
-        professional_field: professionalField === '__none__' ? null : professionalField,
-        professional_field_other:
-          professionalField === 'other' ? professionalFieldOther.trim() || null : null,
+        general_location_area: locProf.general_location_area,
+        professional_field: locProf.professional_field,
+        professional_field_other: locProf.professional_field_other,
+        ...rotation,
       },
       { onConflict: 'id' }
     )
     if (profileErr) {
+      logSupabaseErrorDebug('profiles.upsert.membership', profileErr)
       setLoading(false)
-      toast.error(profileErr.message || 'Could not save your profile')
+      toast.error('We could not save your profile. Please check the highlighted fields and try again.')
       return
     }
 
@@ -270,20 +301,23 @@ export function MembershipPage() {
       membershipType === 'family_household'
         ? household
             .filter((h) => h.full_name.trim())
-            .map((h) => ({
-              full_name: h.full_name.trim(),
-              relationship: h.relationship.trim() || null,
-              age_group: h.age_group || null,
-              email: h.email.trim() || null,
-              phone: h.phone.trim() || null,
-            }))
+            .map((h) => {
+              const hp = validatePhoneNumber(h.phone, { allowEmpty: true })
+              return {
+                full_name: h.full_name.trim(),
+                relationship: h.relationship.trim() || null,
+                age_group: h.age_group || null,
+                email: h.email.trim() || null,
+                phone: hp.ok ? hp.value : null,
+              }
+            })
         : []
 
     const p_data = {
       first_name: primary.first_name.trim(),
       last_name: primary.last_name.trim(),
       email: primary.email.trim(),
-      phone: primary.phone.trim(),
+      phone: primaryPhone.value!,
       address_line1: primary.address_line1.trim(),
       city: primary.city.trim(),
       state: primary.state.trim(),
@@ -295,15 +329,15 @@ export function MembershipPage() {
       agreed_to_constitution: agreed,
       consent_to_communications: consent,
       household: householdPayload,
-      general_location_area: generalLocationArea,
-      professional_field: professionalField === '__none__' ? null : professionalField,
-      professional_field_other:
-        professionalField === 'other' ? professionalFieldOther.trim() || null : null,
+      general_location_area: locProf.general_location_area,
+      professional_field: locProf.professional_field,
+      professional_field_other: locProf.professional_field_other,
     }
 
     const { error } = await supabase.rpc('submit_membership_registration', { p_data })
     setLoading(false)
     if (error) {
+      logSupabaseErrorDebug('rpc.submit_membership_registration', error)
       if (error.message?.includes('consent_required')) toast.error('Consent and agreement are required')
       else if (error.message?.includes('missing_required_fields')) toast.error('Please complete required fields')
       else if (error.message?.includes('authentication_required'))
@@ -331,17 +365,17 @@ export function MembershipPage() {
       />
 
       <div className="border-b bg-gradient-to-br from-primary/[0.07] via-background to-muted/40">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
           <div className="flex flex-col sm:flex-row sm:items-start gap-5">
             <KighLogo withCard className="h-[4.5rem] w-[4.5rem] shrink-0 shadow-sm" imgClassName="max-h-16" />
             <div>
-              <div className="flex items-center gap-2 text-primary mb-2">
+              <div className="flex items-center gap-2 text-primary mb-1.5">
                 <UserPlus className="h-5 w-5" />
                 <span className="text-xs font-semibold uppercase tracking-wide">KIGH membership</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">Membership registration</h1>
-              <p className="mt-3 text-muted-foreground leading-relaxed">
-                Join the Kenyan community in Greater Houston. Register as an individual, family, or associate member and stay connected to events, resources, and community support.
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Membership registration</h1>
+              <p className="mt-2 text-sm text-muted-foreground max-w-xl">
+                Join the Kenyan Community Houston network. Complete the sections below — it only takes a few minutes.
               </p>
             </div>
           </div>
@@ -350,9 +384,12 @@ export function MembershipPage() {
 
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 -mt-2 mb-2">
         <Card className="border-primary/15 shadow-sm bg-muted/25">
-          <CardContent className="py-4 px-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              <span className="font-semibold text-foreground">Membership keeps you connected.</span> Service helps move the community forward. If you are willing to help, you can also submit a service interest form.
+          <CardContent className="py-3 px-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">$20/year</span> dues (due Jan 31) — pay via official channels.{' '}
+              <Link to="/support" className="text-primary font-medium underline-offset-4 hover:underline">
+                Support
+              </Link>
             </p>
             <Button asChild size="sm" variant="default" className="shrink-0 w-full sm:w-auto">
               <Link to="/serve">Call to Serve</Link>
@@ -361,55 +398,42 @@ export function MembershipPage() {
         </Card>
       </div>
 
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12 space-y-8">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-6">
         {pendingAccountCreated && (
           <Card className="border-primary/25 bg-primary/[0.04] shadow-sm">
-            <CardHeader>
+            <CardHeader className="pb-2">
               <CardTitle className="text-lg">Check your email</CardTitle>
-              <CardDescription className="text-base text-foreground/90">
-                Your account has been created and a pending membership record is on file. Confirm your email, then sign in and return here to finish required agreements and contact details.
-              </CardDescription>
+              <CardDescription>Confirm your email, then sign in and return here to finish agreements.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Administrators can see your registration as pending until you complete the final step after verification.
-              </p>
-              <Button asChild>
-                <Link to="/login">Go to sign in</Link>
+            <CardContent>
+              <Button asChild size="sm">
+                <Link to="/login">Sign in</Link>
               </Button>
             </CardContent>
           </Card>
         )}
 
-        <Card className="shadow-sm border-primary/15 overflow-hidden">
-          <CardHeader className="bg-muted/30 border-b border-border/60">
-            <CardTitle className="text-lg">Annual membership dues</CardTitle>
-            <CardDescription className="text-base text-foreground/90 leading-relaxed">
-              Dues are <strong className="text-foreground">$20 per year</strong>, due by <strong className="text-foreground">January 31</strong>. Payment is not collected on this website — use official channels when you are ready.
+        <Card className="shadow-sm border-border/80 overflow-hidden">
+          <CardHeader className="bg-muted/30 border-b border-border/60 py-3">
+            <CardTitle className="text-base">Annual dues</CardTitle>
+            <CardDescription className="text-sm">
+              $20 per year, due January 31. Not billed on this site — see Support for payment options.
             </CardDescription>
           </CardHeader>
-          <CardContent className="pt-5 text-sm text-muted-foreground leading-relaxed">
-            Membership dues are $20 annually and due by January 31. Payment instructions are available on the{' '}
-            <Link to="/support" className="text-primary font-semibold underline-offset-4 hover:underline">
-              Support KIGH
-            </Link>{' '}
-            page.
-          </CardContent>
         </Card>
 
-        <form onSubmit={onSubmit} className="space-y-8">
+        <form onSubmit={onSubmit} className="space-y-6">
           {!user && isGoogleAuthEnabled() ? (
-            <Card className="shadow-sm border-primary/15">
-              <CardHeader>
-                <CardTitle className="text-lg">Create your account</CardTitle>
-                <CardDescription>
-                  Use Google or set an email and password below. Any valid email provider works (Gmail, Yahoo, Outlook, iCloud, work email, etc.). Passwords are only stored by Supabase Auth.
-                </CardDescription>
+            <Card className="shadow-sm border-border/80">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Account setup</CardTitle>
+                <CardDescription className="text-sm">Google or email and password (stored by Supabase Auth).</CardDescription>
               </CardHeader>
               <CardContent>
                 <Button
                   type="button"
                   variant="outline"
+                  size="sm"
                   className="w-full sm:w-auto"
                   disabled={loading || oauthLoading}
                   onClick={() => void handleGoogleSignup()}
@@ -419,20 +443,17 @@ export function MembershipPage() {
               </CardContent>
             </Card>
           ) : !user ? (
-            <Card className="shadow-sm border-primary/15">
-              <CardHeader>
-                <CardTitle className="text-lg">Create your account</CardTitle>
-                <CardDescription>
-                  Enter your email and password below. Any valid email provider works (Gmail, Yahoo, Outlook, iCloud, work email, etc.). Passwords are only stored by Supabase Auth.
-                </CardDescription>
+            <Card className="shadow-sm border-border/80">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Account setup</CardTitle>
+                <CardDescription className="text-sm">Email and password (stored by Supabase Auth).</CardDescription>
               </CardHeader>
             </Card>
           ) : null}
 
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg">Primary member</CardTitle>
-              <CardDescription>Contact details for the main registrant.</CardDescription>
+          <Card className="shadow-sm border-border/80">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Your information</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
@@ -454,9 +475,6 @@ export function MembershipPage() {
                   value={primary.email}
                   onChange={(e) => setPrimary((p) => ({ ...p, email: e.target.value }))}
                 />
-                {user ? (
-                  <p className="text-xs text-muted-foreground">Email matches your signed-in account.</p>
-                ) : null}
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="ph">Phone *</Label>
@@ -467,6 +485,33 @@ export function MembershipPage() {
                   value={primary.phone}
                   onChange={(e) => setPrimary((p) => ({ ...p, phone: e.target.value }))}
                 />
+              </div>
+              {user ? (
+                <p className="text-xs text-muted-foreground sm:col-span-2">Signed in as {user.email}</p>
+              ) : null}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm border-border/80">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Contact & location</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="a1">Address line 1</Label>
+                <Input id="a1" value={primary.address_line1} onChange={(e) => setPrimary((p) => ({ ...p, address_line1: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="city">City *</Label>
+                <Input id="city" required value={primary.city} onChange={(e) => setPrimary((p) => ({ ...p, city: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="st">State *</Label>
+                <Input id="st" required value={primary.state} onChange={(e) => setPrimary((p) => ({ ...p, state: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="zip">ZIP code *</Label>
+                <Input id="zip" required value={primary.zip_code} onChange={(e) => setPrimary((p) => ({ ...p, zip_code: e.target.value }))} />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="membership-general-location">General Houston-area location *</Label>
@@ -489,20 +534,50 @@ export function MembershipPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Select a broad area only. We do not show your private address or phone number publicly. Your exact address, phone number,
-                  and private contact details are never shown publicly. General area information may be used only in aggregate community
-                  metrics.
+                <p className="text-xs text-muted-foreground mt-1" data-testid="membership-location-helper">
+                  Choose the broad area closest to you.
                 </p>
+              </div>
+              <p className="text-xs text-muted-foreground sm:col-span-2 border-t pt-3">
+                Phone, address, and private details are not shown publicly.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm border-border/80">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Community profile</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="co">Kenyan county / heritage</Label>
+                <Input id="co" value={primary.kenyan_county_or_heritage} onChange={(e) => setPrimary((p) => ({ ...p, kenyan_county_or_heritage: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Preferred communication *</Label>
+                <Select value={primary.preferred_communication} onValueChange={(v) => setPrimary((p) => ({ ...p, preferred_communication: v }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="sms">SMS</SelectItem>
+                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                    <SelectItem value="phone">Phone</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="membership-professional">What do you do?</Label>
+                <p className="text-xs text-muted-foreground mb-1" data-testid="membership-profession-helper">
+                  Used only for aggregate community planning.
+                </p>
                 <Select value={professionalField} onValueChange={setProfessionalField}>
                   <SelectTrigger id="membership-professional" data-testid="membership-professional-field">
                     <SelectValue placeholder="Optional" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">Skip for now</SelectItem>
+                    <SelectItem value="__none__">Optional</SelectItem>
                     {PROFESSIONAL_FIELD_VALUES.map((v) => (
                       <SelectItem key={v} value={v}>
                         {PROFESSIONAL_FIELD_LABEL[v]}
@@ -511,8 +586,8 @@ export function MembershipPage() {
                   </SelectContent>
                 </Select>
                 {professionalField === 'other' ? (
-                  <div className="space-y-1.5 pt-1">
-                    <Label htmlFor="membership-professional-other">Describe (required if Other) *</Label>
+                  <div className="space-y-1.5 pt-2">
+                    <Label htmlFor="membership-professional-other">Other profession *</Label>
                     <Input
                       id="membership-professional-other"
                       data-testid="membership-professional-other"
@@ -522,55 +597,47 @@ export function MembershipPage() {
                     />
                   </div>
                 ) : null}
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  This helps the community understand skills and professions represented among members. Individual details are not shown
-                  publicly.
-                </p>
               </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="a1">Address line 1</Label>
-                <Input id="a1" value={primary.address_line1} onChange={(e) => setPrimary((p) => ({ ...p, address_line1: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="city">City *</Label>
-                <Input id="city" required value={primary.city} onChange={(e) => setPrimary((p) => ({ ...p, city: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="st">State *</Label>
-                <Input id="st" required value={primary.state} onChange={(e) => setPrimary((p) => ({ ...p, state: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="zip">ZIP code *</Label>
-                <Input id="zip" required value={primary.zip_code} onChange={(e) => setPrimary((p) => ({ ...p, zip_code: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="co">Kenyan county or heritage</Label>
-                <Input id="co" value={primary.kenyan_county_or_heritage} onChange={(e) => setPrimary((p) => ({ ...p, kenyan_county_or_heritage: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label>Preferred communication *</Label>
-                <Select value={primary.preferred_communication} onValueChange={(v) => setPrimary((p) => ({ ...p, preferred_communication: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="email">Email</SelectItem>
-                    <SelectItem value="sms">SMS</SelectItem>
-                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                    <SelectItem value="phone">Phone</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Interests</Label>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {MEMBERSHIP_INTEREST_OPTIONS.map((opt) => (
+                    <label key={opt} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={interests.includes(opt)}
+                        onCheckedChange={(v) => {
+                          if (v === true) setInterests((prev) => [...new Set([...prev, opt])])
+                          else setInterests((prev) => prev.filter((x) => x !== opt))
+                        }}
+                      />
+                      {opt}
+                    </label>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
 
           {!user && (
-            <Card className="shadow-sm border-primary/15">
-              <CardHeader>
-                <CardTitle className="text-lg">Account password *</CardTitle>
-                <CardDescription>
-                  Choose a password for the website. It is stored securely by Supabase Auth — never on a KIGH spreadsheet or custom table.
+            <Card className="shadow-sm border-border/80">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Password *</CardTitle>
+                <CardDescription className="text-sm">
+                  6–16 characters with uppercase, lowercase, number, and symbol. Stored by Supabase Auth.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
+                {passwordFieldErrors.length > 0 ? (
+                  <Alert variant="destructive" className="sm:col-span-2 py-2" data-testid="membership-password-error">
+                    <AlertDescription>
+                      <ul className="list-disc pl-4 space-y-0.5 text-sm">
+                        {passwordFieldErrors.map((err) => (
+                          <li key={err}>{err}</li>
+                        ))}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                ) : null}
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="pw">Password *</Label>
                   <Input
@@ -579,8 +646,11 @@ export function MembershipPage() {
                     autoComplete="new-password"
                     required
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 8 characters"
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      setPasswordFieldErrors([])
+                    }}
+                    placeholder="e.g. Abc123!"
                   />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
@@ -591,7 +661,10 @@ export function MembershipPage() {
                     autoComplete="new-password"
                     required
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value)
+                      setPasswordFieldErrors([])
+                    }}
                   />
                 </div>
                 <div className="sm:col-span-2">
@@ -604,16 +677,9 @@ export function MembershipPage() {
             </Card>
           )}
 
-          {user ? (
-            <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 px-4 py-3">
-              Signed in as <span className="font-medium text-foreground">{user.email}</span>. Your membership will be linked to this account.
-            </p>
-          ) : null}
-
-          <Card className="shadow-sm">
-            <CardHeader>
+          <Card className="shadow-sm border-border/80">
+            <CardHeader className="pb-3">
               <CardTitle className="text-lg">Membership type *</CardTitle>
-              <CardDescription>Individual, household, or associate.</CardDescription>
             </CardHeader>
             <CardContent>
               <Select value={membershipType} onValueChange={(v) => setMembershipType(v as MembershipType)}>
@@ -631,8 +697,7 @@ export function MembershipPage() {
             <Card className="shadow-sm border-dashed border-primary/25 bg-muted/20">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <div>
-                  <CardTitle className="text-lg">Household members</CardTitle>
-                  <CardDescription>Add everyone covered by this registration.</CardDescription>
+                  <CardTitle className="text-lg">Household</CardTitle>
                 </div>
                 <Button
                   type="button"
@@ -695,30 +760,9 @@ export function MembershipPage() {
             </Card>
           )}
 
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg">Interests</CardTitle>
-              <CardDescription>Select all areas you care about.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-2">
-              {MEMBERSHIP_INTEREST_OPTIONS.map((opt) => (
-                <label key={opt} className="flex items-center gap-2.5 text-sm cursor-pointer rounded-lg border border-transparent px-2 py-1.5 hover:bg-muted/50">
-                  <Checkbox
-                    checked={interests.includes(opt)}
-                    onCheckedChange={(v) => {
-                      if (v === true) setInterests((prev) => [...new Set([...prev, opt])])
-                      else setInterests((prev) => prev.filter((x) => x !== opt))
-                    }}
-                  />
-                  {opt}
-                </label>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm border-primary/10">
-            <CardHeader>
-              <CardTitle className="text-lg">Agreements *</CardTitle>
+          <Card className="shadow-sm border-border/80">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Consent *</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <label className="flex items-start gap-3 text-sm cursor-pointer leading-relaxed">

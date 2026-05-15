@@ -30,6 +30,8 @@ const MEMBER_SAFE_PREFIXES = [
   '/about',
   '/contact',
   '/chat',
+  '/change-password',
+  '/community-feed',
 ]
 
 function isMemberSafePath(path: string): boolean {

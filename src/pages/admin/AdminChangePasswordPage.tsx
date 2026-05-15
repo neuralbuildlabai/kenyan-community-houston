@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import { newAdminPasswordChecklist, validateNewAdminPassword } from '@/lib/adminPasswordPolicy'
+import { passwordPolicyChecklist, validatePasswordPolicy } from '@/lib/passwordPolicy'
 import { toast } from 'sonner'
 import type { AdminPasswordGateReason } from '@/lib/adminPasswordGate'
 import { postLogoutPath } from '@/lib/logoutRedirect'
@@ -14,7 +14,7 @@ import { postLogoutPath } from '@/lib/logoutRedirect'
 export function AdminChangePasswordPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, signOut, refreshAdminSecurity } = useAuth()
+  const { user, signOut, refreshAdminSecurity, refreshProfile } = useAuth()
   const reason = (location.state as { reason?: AdminPasswordGateReason } | null)?.reason
 
   const headline =
@@ -26,9 +26,7 @@ export function AdminChangePasswordPage() {
   const [confirm, setConfirm] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const email = user?.email ?? ''
-
-  const checklist = useMemo(() => newAdminPasswordChecklist(password, email, confirm), [password, email, confirm])
+  const checklist = useMemo(() => passwordPolicyChecklist(password, confirm), [password, confirm])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -36,9 +34,13 @@ export function AdminChangePasswordPage() {
       toast.error('You must be signed in.')
       return
     }
-    const v = validateNewAdminPassword(password, email, confirm)
+    const v = validatePasswordPolicy(password)
     if (!v.ok) {
       toast.error(v.errors[0] ?? 'Password does not meet requirements')
+      return
+    }
+    if (password !== confirm) {
+      toast.error('Passwords do not match')
       return
     }
     setSaving(true)
@@ -46,6 +48,12 @@ export function AdminChangePasswordPage() {
     if (pwErr) {
       setSaving(false)
       toast.error(pwErr.message || 'Could not update password')
+      return
+    }
+    const { error: rpcErr } = await supabase.rpc('kigh_apply_profile_password_rotation')
+    if (rpcErr) {
+      setSaving(false)
+      toast.error(rpcErr.message || 'Password updated, but profile sync failed. Contact support.')
       return
     }
     const { error: dbErr } = await supabase
@@ -58,9 +66,10 @@ export function AdminChangePasswordPage() {
       .eq('user_id', user.id)
     setSaving(false)
     if (dbErr) {
-      toast.error(dbErr.message || 'Password updated, but profile sync failed. Contact support.')
+      toast.error(dbErr.message || 'Password updated, but admin metadata sync failed. Contact support.')
       return
     }
+    await refreshProfile()
     await refreshAdminSecurity()
     toast.success('Password updated')
     navigate('/admin/dashboard', { replace: true })
@@ -79,7 +88,7 @@ export function AdminChangePasswordPage() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={(ev) => void handleSubmit(ev)} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="np">New password</Label>
             <Input id="np" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />

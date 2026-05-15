@@ -2,6 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import type { UserRole } from '@/lib/types'
 import { isElevatedAdminRole } from '@/lib/types'
+import { requiresProfilePasswordRefresh } from '@/lib/profilePasswordGate'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -45,6 +46,11 @@ export function ProtectedRoute({ children, requiredRoles }: ProtectedRouteProps)
 
   if (requiredRoles && profile && !requiredRoles.includes(profile.role)) {
     return <Navigate to="/admin/dashboard" replace />
+  }
+
+  if (user && profile && requiresProfilePasswordRefresh(profile, user)) {
+    const next = encodeURIComponent(`${location.pathname}${location.search}`)
+    return <Navigate to={`/change-password?next=${next}`} replace />
   }
 
   return <>{children}</>

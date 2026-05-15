@@ -11,6 +11,8 @@ interface ImportMetaEnv {
   readonly VITE_CONTACT_EMAIL?: string
   /** Public website URL for invite links (e.g. https://kenyancommunityhouston.org). */
   readonly VITE_PUBLIC_SITE_URL?: string
+  /** When true, logs Supabase error code/message/details/hint in the browser console (UAT debugging). */
+  readonly VITE_DEBUG_SUPABASE_ERRORS?: string
 }
 
 interface ImportMeta {

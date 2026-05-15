@@ -3,6 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { resolveAuthCallbackPath, sanitizeNextParam } from '@/lib/authRedirect'
 import { claimOrCreateMemberForAuthUser } from '@/lib/memberSync'
+import type { Profile } from '@/lib/types'
+import { requiresProfilePasswordRefresh } from '@/lib/profilePasswordGate'
 import { Button } from '@/components/ui/button'
 import { KighLogo } from '@/components/KighLogo'
 import { APP_NAME } from '@/lib/constants'
@@ -24,9 +26,6 @@ export function AuthCallbackPage() {
       const { data: userData } = await supabase.auth.getUser()
       const user = userData.user
       if (!user || cancelled) return
-
-      const { data: prof } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle()
-      const role = prof?.role as string | undefined
 
       const meta = user.user_metadata as Record<string, unknown>
       const fullName =
@@ -54,7 +53,20 @@ export function AuthCallbackPage() {
         console.warn('[auth/callback] claimOrCreateMemberForAuthUser:', syncErr.message)
       }
 
+      const { data: prof2 } = await supabase
+        .from('profiles')
+        .select('role, password_changed_at, password_expires_at, force_password_change')
+        .eq('id', userId)
+        .maybeSingle()
+      const profile = prof2 as Profile | null
+      const role = profile?.role as string | undefined
+
       const dest = resolveAuthCallbackPath(next, role, '/membership')
+      if (!cancelled && requiresProfilePasswordRefresh(profile, user)) {
+        setMessage('')
+        navigate(`/change-password?next=${encodeURIComponent(dest)}`, { replace: true })
+        return
+      }
       if (!cancelled) {
         setMessage('')
         navigate(dest, { replace: true })

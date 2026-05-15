@@ -69,10 +69,13 @@ import { AdminFeedPage } from '@/pages/admin/AdminFeedPage'
 import { SYSTEM_HEALTH_ADMIN_ROLES } from '@/lib/platformAdmin'
 
 import { RequireAuth } from '@/components/RequireAuth'
+import { RequiresFreshPassword } from '@/components/RequiresFreshPassword'
+import { PasswordExpiryRouteGate } from '@/components/PasswordExpiryRouteGate'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { AuthCallbackPage } from '@/pages/auth/AuthCallbackPage'
 import { ProfilePage } from '@/pages/member/ProfilePage'
 import { ProfileMediaPage } from '@/pages/member/ProfileMediaPage'
+import { ChangePasswordPage } from '@/pages/member/ChangePasswordPage'
 
 export default function App() {
   return (
@@ -108,8 +111,8 @@ export default function App() {
               <Route path="new-to-houston" element={<NewToHoustonPage />} />
               <Route path="about" element={<AboutPage />} />
               <Route path="contact" element={<ContactPage />} />
-              <Route path="chat" element={<ChatPage />} />
-              <Route path="community-feed" element={<CommunityFeedPage />} />
+              <Route path="chat" element={<PasswordExpiryRouteGate><ChatPage /></PasswordExpiryRouteGate>} />
+              <Route path="community-feed" element={<PasswordExpiryRouteGate><CommunityFeedPage /></PasswordExpiryRouteGate>} />
               <Route path="governance" element={<GovernancePage />} />
               <Route path="serve" element={<ServePage />} />
               <Route path="serve/apply" element={<ServeApplyPage />} />
@@ -121,10 +124,20 @@ export default function App() {
               <Route path="admin/login" element={<LoginPage />} />
               <Route path="auth/callback" element={<AuthCallbackPage />} />
               <Route
+                path="change-password"
+                element={
+                  <RequireAuth>
+                    <ChangePasswordPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
                 path="profile"
                 element={
                   <RequireAuth>
-                    <ProfilePage />
+                    <RequiresFreshPassword>
+                      <ProfilePage />
+                    </RequiresFreshPassword>
                   </RequireAuth>
                 }
               />
@@ -132,7 +145,9 @@ export default function App() {
                 path="profile/media"
                 element={
                   <RequireAuth>
-                    <ProfileMediaPage />
+                    <RequiresFreshPassword>
+                      <ProfileMediaPage />
+                    </RequiresFreshPassword>
                   </RequireAuth>
                 }
               />

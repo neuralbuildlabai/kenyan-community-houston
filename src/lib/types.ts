@@ -133,6 +133,11 @@ export interface Profile {
   avatar_mime_type?: string | null
   avatar_file_size?: number | null
   profile_visibility?: 'private' | 'members_only' | 'public'
+  /** Last Supabase Auth password rotation (metadata only). */
+  password_changed_at?: string | null
+  password_expires_at?: string | null
+  force_password_change?: boolean
+  password_policy_version?: string | null
 }
 
 export interface ProfileHouseholdMember {

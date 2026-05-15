@@ -9,13 +9,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
-import {
-  buildInviteMessage,
-  buildWhatsAppInviteUrl,
-  isValidWhatsAppNormalizedDigits,
-  normalizeWhatsAppPhone,
-  PUBLIC_SITE_URL,
-} from '@/lib/memberDemographics'
+import { buildInviteMessage, buildWhatsAppInviteUrl, isValidWhatsAppNormalizedDigits, PUBLIC_SITE_URL } from '@/lib/memberDemographics'
+import { PHONE_VALIDATION_USER_MESSAGE, phoneDigitsOnly, validatePhoneNumber } from '@/lib/phoneValidation'
 import { validatePublicCommunityContent } from '@/lib/communityModeration'
 
 type Props = {
@@ -49,13 +44,15 @@ export function InviteSomeoneDialog({
       toast.error('Sign in to generate a tracked invite.')
       return
     }
-    const digits = normalizeWhatsAppPhone(recipientPhone)
-    if (!digits) {
-      toast.error('Phone number is required.')
+    const phoneRes = validatePhoneNumber(recipientPhone)
+    if (!phoneRes.ok) {
+      toast.error(phoneRes.reason)
       return
     }
+    const canonical = phoneRes.value!
+    const digits = phoneDigitsOnly(canonical)
     if (!isValidWhatsAppNormalizedDigits(digits)) {
-      toast.error('Enter a valid phone number (7–15 digits after removing formatting).')
+      toast.error(PHONE_VALIDATION_USER_MESSAGE)
       return
     }
     const note = personalNote.trim()
@@ -76,12 +73,11 @@ export function InviteSomeoneDialog({
       siteUrl: PUBLIC_SITE_URL,
     })
     const url = buildWhatsAppInviteUrl(digits, message)
-    const rawPhone = recipientPhone.trim()
     setSubmitting(true)
     const { error } = await supabase.from('member_invites').insert({
       invited_by: user.id,
       recipient_name: recipientName.trim() || null,
-      recipient_phone: rawPhone,
+      recipient_phone: canonical,
       normalized_phone: digits,
       personal_note: note || null,
       invite_message: message,
@@ -153,16 +149,17 @@ export function InviteSomeoneDialog({
               <Label htmlFor="invite-recipient-phone">Recipient phone *</Label>
               <Input
                 id="invite-recipient-phone"
+                data-testid="invite-recipient-phone"
                 type="tel"
                 inputMode="tel"
                 required
                 value={recipientPhone}
                 onChange={(e) => setRecipientPhone(e.target.value)}
                 autoComplete="tel"
-                placeholder="+1 713 555 0100"
+                placeholder="+17135550100"
                 disabled={submitting}
               />
-              <p className="text-xs text-muted-foreground">US or international formats accepted; we normalize digits for WhatsApp.</p>
+              <p className="text-xs text-muted-foreground">Digits and optional leading + only (7–15 digits). Saved value is normalized.</p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="invite-personal-note">Personal note (optional)</Label>
