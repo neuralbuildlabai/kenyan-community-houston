@@ -20,6 +20,14 @@ import { PROFILE_INTEREST_OPTIONS, HOUSEHOLD_RELATIONSHIP_OPTIONS, PREFERRED_COM
 import { AVATAR_MAX_BYTES, KIGH_MEMBER_MEDIA_BUCKET, isAllowedAvatarMime } from '@/lib/memberStorage'
 import { sanitizeStorageFileName } from '@/lib/kighPrivateStorage'
 import { PRIVATE_SIGNED_URL_EXPIRY_SEC } from '@/lib/kighPrivateStorage'
+import {
+  GENERAL_LOCATION_AREA_LABEL,
+  GENERAL_LOCATION_AREA_VALUES,
+  PROFESSIONAL_FIELD_LABEL,
+  PROFESSIONAL_FIELD_VALUES,
+  isAllowedGeneralLocationArea,
+} from '@/lib/memberDemographics'
+import { InviteSomeoneDialog } from '@/components/community/InviteSomeoneDialog'
 
 type HhDraft = Partial<ProfileHouseholdMember> & { id?: string }
 
@@ -103,6 +111,18 @@ export function ProfilePage() {
 
   async function saveProfile() {
     if (!user) return
+    const gla = (row.general_location_area ?? '').toString().trim()
+    if (!gla || !isAllowedGeneralLocationArea(gla)) {
+      toast.error('Please select your general Houston-area location.')
+      return
+    }
+    const pfRaw = row.professional_field?.toString().trim() || ''
+    const pf = pfRaw === '' ? null : pfRaw
+    const pfo = (row.professional_field_other ?? '').trim() || null
+    if (pf === 'other' && (!pfo || pfo.length < 1)) {
+      toast.error('Please describe what you do when you select Other.')
+      return
+    }
     setSaving(true)
     try {
       const patch = {
@@ -126,9 +146,23 @@ export function ProfilePage() {
         service_notes: row.service_notes?.trim() || null,
         profile_visibility: row.profile_visibility ?? 'private',
         email: user.email ?? row.email,
+        general_location_area: gla,
+        professional_field: pf,
+        professional_field_other: pf === 'other' ? pfo : null,
       }
       const { error } = await supabase.from('profiles').update(patch).eq('id', user.id)
       if (error) throw error
+      const { error: memErr } = await supabase
+        .from('members')
+        .update({
+          general_location_area: gla,
+          professional_field: pf,
+          professional_field_other: pf === 'other' ? pfo : null,
+        })
+        .eq('user_id', user.id)
+      if (memErr) {
+        // Member row may not exist yet; ignore failed sync
+      }
       toast.success('Profile saved')
       await refreshProfile()
       await loadAll()
@@ -261,6 +295,7 @@ export function ProfilePage() {
               <LogOut className="h-4 w-4 mr-1.5" />
               Logout
             </Button>
+            <InviteSomeoneDialog triggerVariant="outline" />
           </div>
         </div>
 
@@ -375,6 +410,72 @@ export function ProfilePage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="profile-general-location">General Houston-area location *</Label>
+              <Select
+                value={(row.general_location_area as string) || '__none__'}
+                onValueChange={(v) => setRow((r) => ({ ...r, general_location_area: v === '__none__' ? null : v }))}
+              >
+                <SelectTrigger id="profile-general-location" data-testid="profile-general-location">
+                  <SelectValue placeholder="Select an area" />
+                </SelectTrigger>
+                <SelectContent className="max-h-72 overflow-y-auto">
+                  <SelectItem value="__none__" disabled>
+                    Select an area
+                  </SelectItem>
+                  {GENERAL_LOCATION_AREA_VALUES.map((v) => (
+                    <SelectItem key={v} value={v}>
+                      {GENERAL_LOCATION_AREA_LABEL[v]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Select a broad area only. We do not show your private address or phone number publicly. General area information may be
+                used only in aggregate community metrics.
+              </p>
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="profile-professional">What do you do?</Label>
+              <Select
+                value={(row.professional_field as string) || '__none__'}
+                onValueChange={(v) =>
+                  setRow((r) => ({
+                    ...r,
+                    professional_field: v === '__none__' ? null : v,
+                    professional_field_other: v !== 'other' ? null : r.professional_field_other,
+                  }))
+                }
+              >
+                <SelectTrigger id="profile-professional" data-testid="profile-professional-field">
+                  <SelectValue placeholder="Optional" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Skip for now</SelectItem>
+                  {PROFESSIONAL_FIELD_VALUES.map((v) => (
+                    <SelectItem key={v} value={v}>
+                      {PROFESSIONAL_FIELD_LABEL[v]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {row.professional_field === 'other' ? (
+                <div className="space-y-1.5 pt-1">
+                  <Label htmlFor="profile-professional-other">Describe (required if Other) *</Label>
+                  <Input
+                    id="profile-professional-other"
+                    data-testid="profile-professional-other"
+                    maxLength={80}
+                    value={row.professional_field_other ?? ''}
+                    onChange={(e) => setRow((r) => ({ ...r, professional_field_other: e.target.value }))}
+                  />
+                </div>
+              ) : null}
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                This helps the community understand skills and professions represented among members. Individual details are not shown
+                publicly.
+              </p>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Bio</Label>

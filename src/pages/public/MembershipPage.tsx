@@ -17,6 +17,12 @@ import { getBrowserOrigin } from '@/lib/siteOrigin'
 import { isGoogleAuthEnabled } from '@/lib/featureFlags'
 import { claimOrCreateMemberForAuthUser } from '@/lib/memberSync'
 import { buildMembershipSignupAuthMetadata } from '@/lib/membershipAuthMetadata'
+import {
+  GENERAL_LOCATION_AREA_LABEL,
+  GENERAL_LOCATION_AREA_VALUES,
+  PROFESSIONAL_FIELD_LABEL,
+  PROFESSIONAL_FIELD_VALUES,
+} from '@/lib/memberDemographics'
 
 type MembershipType = 'individual' | 'family_household' | 'associate'
 
@@ -50,6 +56,10 @@ export function MembershipPage() {
   const [agreed, setAgreed] = useState(false)
   const [consent, setConsent] = useState(false)
   const [household, setHousehold] = useState<HouseholdRow[]>([emptyHousehold()])
+
+  const [generalLocationArea, setGeneralLocationArea] = useState('')
+  const [professionalField, setProfessionalField] = useState<string>('__none__')
+  const [professionalFieldOther, setProfessionalFieldOther] = useState('')
 
   const [primary, setPrimary] = useState({
     first_name: '',
@@ -121,6 +131,14 @@ export function MembershipPage() {
     }
     if (!primary.phone.trim()) {
       toast.error('Phone is required')
+      return
+    }
+    if (!generalLocationArea) {
+      toast.error('Please select your general Houston-area location.')
+      return
+    }
+    if (professionalField === 'other' && !professionalFieldOther.trim()) {
+      toast.error('Please describe what you do when you select Other.')
       return
     }
     if (!user) {
@@ -235,6 +253,10 @@ export function MembershipPage() {
         preferred_communication: primary.preferred_communication.trim() || null,
         interests,
         updated_at: new Date().toISOString(),
+        general_location_area: generalLocationArea,
+        professional_field: professionalField === '__none__' ? null : professionalField,
+        professional_field_other:
+          professionalField === 'other' ? professionalFieldOther.trim() || null : null,
       },
       { onConflict: 'id' }
     )
@@ -273,6 +295,10 @@ export function MembershipPage() {
       agreed_to_constitution: agreed,
       consent_to_communications: consent,
       household: householdPayload,
+      general_location_area: generalLocationArea,
+      professional_field: professionalField === '__none__' ? null : professionalField,
+      professional_field_other:
+        professionalField === 'other' ? professionalFieldOther.trim() || null : null,
     }
 
     const { error } = await supabase.rpc('submit_membership_registration', { p_data })
@@ -286,6 +312,11 @@ export function MembershipPage() {
         toast.error('Email must match your signed-in account.')
       else if (error.message?.includes('member_email_registered_to_another_user'))
         toast.error('This email is already linked to another account. Contact support if you need help.')
+      else if (error.message?.includes('missing_or_invalid_general_location_area'))
+        toast.error('Please select a valid general Houston-area location.')
+      else if (error.message?.includes('invalid_professional_field')) toast.error('Please choose a valid professional category.')
+      else if (error.message?.includes('professional_field_other_required'))
+        toast.error('Please describe what you do when you select Other.')
       else toast.error(error.message || 'Registration failed. Please try again.')
       return
     }
@@ -436,6 +467,65 @@ export function MembershipPage() {
                   value={primary.phone}
                   onChange={(e) => setPrimary((p) => ({ ...p, phone: e.target.value }))}
                 />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="membership-general-location">General Houston-area location *</Label>
+                <Select
+                  value={generalLocationArea || '__none__'}
+                  onValueChange={(v) => setGeneralLocationArea(v === '__none__' ? '' : v)}
+                  required
+                >
+                  <SelectTrigger id="membership-general-location" data-testid="membership-general-location">
+                    <SelectValue placeholder="Select an area" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72 overflow-y-auto">
+                    <SelectItem value="__none__" disabled>
+                      Select an area
+                    </SelectItem>
+                    {GENERAL_LOCATION_AREA_VALUES.map((v) => (
+                      <SelectItem key={v} value={v}>
+                        {GENERAL_LOCATION_AREA_LABEL[v]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Select a broad area only. We do not show your private address or phone number publicly. Your exact address, phone number,
+                  and private contact details are never shown publicly. General area information may be used only in aggregate community
+                  metrics.
+                </p>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="membership-professional">What do you do?</Label>
+                <Select value={professionalField} onValueChange={setProfessionalField}>
+                  <SelectTrigger id="membership-professional" data-testid="membership-professional-field">
+                    <SelectValue placeholder="Optional" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Skip for now</SelectItem>
+                    {PROFESSIONAL_FIELD_VALUES.map((v) => (
+                      <SelectItem key={v} value={v}>
+                        {PROFESSIONAL_FIELD_LABEL[v]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {professionalField === 'other' ? (
+                  <div className="space-y-1.5 pt-1">
+                    <Label htmlFor="membership-professional-other">Describe (required if Other) *</Label>
+                    <Input
+                      id="membership-professional-other"
+                      data-testid="membership-professional-other"
+                      maxLength={80}
+                      value={professionalFieldOther}
+                      onChange={(e) => setProfessionalFieldOther(e.target.value)}
+                    />
+                  </div>
+                ) : null}
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  This helps the community understand skills and professions represented among members. Individual details are not shown
+                  publicly.
+                </p>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="a1">Address line 1</Label>

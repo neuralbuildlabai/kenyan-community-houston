@@ -7,6 +7,11 @@ test.describe('Community request admin route protection', () => {
     await expect(page).toHaveURL(/\/login/)
   })
 
+  test('/admin/invites redirects logged-out user to login', async ({ page }) => {
+    await page.goto('/admin/invites', { waitUntil: 'domcontentloaded' })
+    await expect(page).toHaveURL(/\/login/)
+  })
+
   test('/admin/event-comments redirects logged-out user to login', async ({ page }) => {
     await page.goto('/admin/event-comments', { waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL(/\/login/)

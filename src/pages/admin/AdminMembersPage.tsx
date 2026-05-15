@@ -9,6 +9,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import type { DuesStatus, HouseholdMember, Member, MembershipRecordStatus, MembershipType } from '@/lib/types'
+import {
+  GENERAL_LOCATION_AREA_LABEL,
+  GENERAL_LOCATION_AREA_VALUES,
+  PROFESSIONAL_FIELD_LABEL,
+  PROFESSIONAL_FIELD_VALUES,
+} from '@/lib/memberDemographics'
 
 type MemberWithHousehold = Member & { household_members?: HouseholdMember[] }
 
@@ -356,6 +362,64 @@ export function AdminMembersPage() {
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-2">
+                <div className="col-span-2 space-y-1.5">
+                  <span className="text-muted-foreground text-xs uppercase">General Houston-area location</span>
+                  <Select
+                    value={detail.general_location_area ?? '__none__'}
+                    onValueChange={(v) =>
+                      updateMember(detail.id, { general_location_area: v === '__none__' ? null : (v as Member['general_location_area']) })
+                    }
+                  >
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="—" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-72 overflow-y-auto">
+                      <SelectItem value="__none__">—</SelectItem>
+                      {GENERAL_LOCATION_AREA_VALUES.map((a) => (
+                        <SelectItem key={a} value={a}>
+                          {GENERAL_LOCATION_AREA_LABEL[a]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2 space-y-1.5">
+                  <span className="text-muted-foreground text-xs uppercase">Professional field</span>
+                  <Select
+                    value={detail.professional_field ?? '__none__'}
+                    onValueChange={(v) =>
+                      updateMember(detail.id, {
+                        professional_field: v === '__none__' ? null : (v as Member['professional_field']),
+                        professional_field_other: v !== 'other' ? null : detail.professional_field_other,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="—" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">—</SelectItem>
+                      {PROFESSIONAL_FIELD_VALUES.map((f) => (
+                        <SelectItem key={f} value={f}>
+                          {PROFESSIONAL_FIELD_LABEL[f]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {detail.professional_field === 'other' ? (
+                    <Input
+                      className="h-9 text-sm"
+                      defaultValue={detail.professional_field_other ?? ''}
+                      maxLength={80}
+                      placeholder="Describe (required if Other)"
+                      onBlur={(e) =>
+                        updateMember(detail.id, {
+                          professional_field_other: e.target.value.trim() || null,
+                        })
+                      }
+                    />
+                  ) : null}
+                </div>
                 <div>
                   <span className="text-muted-foreground text-xs uppercase">Type</span>
                   <div>{detail.membership_type.replace(/_/g, ' ')}</div>

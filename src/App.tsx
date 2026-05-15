@@ -63,6 +63,7 @@ import { AdminAnalyticsPage } from '@/pages/admin/AdminAnalyticsPage'
 import { AdminSystemHealthPage } from '@/pages/admin/AdminSystemHealthPage'
 import { AdminChatPage } from '@/pages/admin/AdminChatPage'
 import { AdminEventCommentsPage } from '@/pages/admin/AdminEventCommentsPage'
+import { AdminInvitesPage } from '@/pages/admin/AdminInvitesPage'
 import { SYSTEM_HEALTH_ADMIN_ROLES } from '@/lib/platformAdmin'
 
 import { RequireAuth } from '@/components/RequireAuth'
@@ -175,6 +176,7 @@ export default function App() {
               <Route path="contacts" element={<AdminContactsPage />} />
               <Route path="chat" element={<AdminChatPage />} />
               <Route path="event-comments" element={<AdminEventCommentsPage />} />
+              <Route path="invites" element={<AdminInvitesPage />} />
               <Route path="service-interests" element={<AdminServiceInterestsPage />} />
               <Route path="media-submissions" element={<AdminMediaSubmissionsPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />

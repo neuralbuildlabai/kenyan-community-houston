@@ -9,8 +9,8 @@ interface ImportMetaEnv {
   readonly VITE_APP_NAME: string
   /** Public contact email shown sitewide; defaults in code if unset. */
   readonly VITE_CONTACT_EMAIL?: string
-  /** When `"true"`, show Continue with Google on login/membership. Default off for UAT. */
-  readonly VITE_ENABLE_GOOGLE_AUTH?: string
+  /** Public website URL for invite links (e.g. https://kenyancommunityhouston.org). */
+  readonly VITE_PUBLIC_SITE_URL?: string
 }
 
 interface ImportMeta {

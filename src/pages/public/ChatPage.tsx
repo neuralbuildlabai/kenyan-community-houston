@@ -22,6 +22,7 @@ import {
   isChatThreadActive,
 } from '@/lib/chatRequests'
 import { formatDate } from '@/lib/utils'
+import { InviteSomeoneDialog } from '@/components/community/InviteSomeoneDialog'
 
 function mapCreateRequestError(message: string): string {
   if (message.includes('active_request_already_exists') || message.includes('23505')) {
@@ -214,6 +215,13 @@ export function ChatPage() {
       </div>
 
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-border/60 bg-card/80 px-4 py-3 shadow-sm">
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
+            Know someone who would value updates from KIGH? Invite them personally — the site never sends SMS on your behalf.
+          </p>
+          <InviteSomeoneDialog />
+        </div>
+
         {!user && (
           <Card className="border-primary/20 shadow-sm">
             <CardHeader>

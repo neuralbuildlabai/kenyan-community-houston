@@ -3,6 +3,12 @@ import { BarChart3 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 import { SimpleBars, type BarDatum } from '@/components/admin/SimpleBars'
+import {
+  GENERAL_LOCATION_AREA_LABEL,
+  PROFESSIONAL_FIELD_LABEL,
+  type GeneralLocationArea,
+  type ProfessionalField,
+} from '@/lib/memberDemographics'
 
 type Summary = {
   period_days?: number
@@ -30,12 +36,19 @@ type LoginRow = { day: string; logins: number }
 
 type GrowthRow = { week_start: string; new_profiles: number }
 
+type DemographicsPayload = {
+  total_linked_members?: number
+  by_location?: { area: string; n: number; pct: number }[]
+  by_profession?: { field: string; n: number; pct: number }[]
+}
+
 export function AdminAnalyticsPage() {
   const [summary30, setSummary30] = useState<Summary | null>(null)
   const [weeks, setWeeks] = useState<WeekRow[]>([])
   const [top, setTop] = useState<TopRow[]>([])
   const [logins, setLogins] = useState<LoginRow[]>([])
   const [growth, setGrowth] = useState<GrowthRow[]>([])
+  const [demographics, setDemographics] = useState<DemographicsPayload | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -44,18 +57,24 @@ export function AdminAnalyticsPage() {
       setLoading(true)
       setError(null)
       try {
-        const [s30, w, t, l, g] = await Promise.all([
+        const [s30, w, t, l, g, dem] = await Promise.all([
           supabase.rpc('kigh_admin_analytics_summary', { p_days: 30 }),
           supabase.rpc('kigh_admin_engagement_by_week', { p_weeks: 8 }),
           supabase.rpc('kigh_admin_top_clicks', { p_days: 30, p_limit: 20 }),
           supabase.rpc('kigh_admin_login_counts', { p_days: 30 }),
           supabase.rpc('kigh_admin_member_growth_by_week', { p_weeks: 8 }),
+          supabase.rpc('kigh_admin_member_demographics'),
         ])
         if (s30.error) throw new Error(s30.error.message)
         if (w.error) throw new Error(w.error.message)
         if (t.error) throw new Error(t.error.message)
         if (l.error) throw new Error(l.error.message)
         if (g.error) throw new Error(g.error.message)
+        if (dem.error) {
+          setDemographics(null)
+        } else {
+          setDemographics((dem.data as DemographicsPayload) ?? null)
+        }
         setSummary30((s30.data as Summary) ?? null)
         setWeeks((w.data as WeekRow[]) ?? [])
         setTop((t.data as TopRow[]) ?? [])
@@ -80,6 +99,24 @@ export function AdminAnalyticsPage() {
     label: r.week_start,
     value: Number(r.new_profiles),
     sub: 'New profiles',
+  }))
+
+  const locationBars: BarDatum[] = (demographics?.by_location ?? []).map((r) => ({
+    label:
+      r.area === 'unspecified'
+        ? 'Unspecified'
+        : GENERAL_LOCATION_AREA_LABEL[r.area as GeneralLocationArea] ?? r.area,
+    value: Number(r.n),
+    sub: `${r.pct}% of ${demographics?.total_linked_members ?? 0} linked members`,
+  }))
+
+  const professionBars: BarDatum[] = (demographics?.by_profession ?? []).map((r) => ({
+    label:
+      r.field === 'not_specified'
+        ? 'Not specified'
+        : PROFESSIONAL_FIELD_LABEL[r.field as ProfessionalField] ?? r.field,
+    value: Number(r.n),
+    sub: `${r.pct}% of ${demographics?.total_linked_members ?? 0} linked members`,
   }))
 
   return (
@@ -148,6 +185,37 @@ export function AdminAnalyticsPage() {
               <p className="text-sm text-muted-foreground">No profile growth in this window.</p>
             ) : (
               <SimpleBars data={growthBars} valueClassName="text-primary" />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="border-primary/10">
+          <CardHeader>
+            <CardTitle className="text-base">Members by general location</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {locationBars.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No linked member location data yet, or apply migration 031 to enable this report.
+              </p>
+            ) : (
+              <SimpleBars data={locationBars} />
+            )}
+          </CardContent>
+        </Card>
+        <Card className="border-primary/10">
+          <CardHeader>
+            <CardTitle className="text-base">Members by professional field</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {professionBars.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No linked member profession data yet, or apply migration 031 to enable this report.
+              </p>
+            ) : (
+              <SimpleBars data={professionBars} valueClassName="text-primary" />
             )}
           </CardContent>
         </Card>

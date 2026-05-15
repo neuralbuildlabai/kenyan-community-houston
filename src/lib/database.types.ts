@@ -20,6 +20,9 @@ export interface Database {
           bio: string | null
           created_at: string
           updated_at: string
+          general_location_area?: string | null
+          professional_field?: string | null
+          professional_field_other?: string | null
         }
         Insert: {
           id: string
@@ -31,6 +34,9 @@ export interface Database {
           bio?: string | null
           created_at?: string
           updated_at?: string
+          general_location_area?: string | null
+          professional_field?: string | null
+          professional_field_other?: string | null
         }
         Update: {
           id?: string
@@ -41,6 +47,9 @@ export interface Database {
           phone?: string | null
           bio?: string | null
           updated_at?: string
+          general_location_area?: string | null
+          professional_field?: string | null
+          professional_field_other?: string | null
         }
       }
       events: {
@@ -337,6 +346,32 @@ export interface Database {
         }
         Update: Partial<Database['public']['Tables']['event_comments']['Row']>
       }
+      member_invites: {
+        Row: {
+          id: string
+          invited_by: string
+          recipient_name: string | null
+          recipient_phone: string
+          normalized_phone: string
+          personal_note: string | null
+          invite_message: string
+          channel: string
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          invited_by: string
+          recipient_name?: string | null
+          recipient_phone: string
+          normalized_phone: string
+          personal_note?: string | null
+          invite_message: string
+          channel?: string
+          status?: string
+        }
+        Update: Partial<Database['public']['Tables']['member_invites']['Row']>
+      }
       contact_submissions: {
         Row: {
           id: string
@@ -446,6 +481,10 @@ export interface Database {
       close_chat_request: {
         Args: { p_thread_id: string; p_close_reason?: string | null }
         Returns: null
+      }
+      kigh_admin_member_demographics: {
+        Args: Record<string, never>
+        Returns: Json
       }
     }
     Enums: {

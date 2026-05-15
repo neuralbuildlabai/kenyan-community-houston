@@ -95,6 +95,9 @@ export interface AdminUserSecurity {
   updated_at?: string
 }
 
+export type GeneralLocationArea = import('@/lib/memberDemographics').GeneralLocationArea
+export type ProfessionalField = import('@/lib/memberDemographics').ProfessionalField
+
 export interface Profile {
   id: string
   email: string
@@ -105,6 +108,10 @@ export interface Profile {
   bio: string | null
   created_at: string
   updated_at: string
+  /** Broad Houston metro area for aggregate planning; never shown publicly on its own. */
+  general_location_area?: GeneralLocationArea | string | null
+  professional_field?: ProfessionalField | string | null
+  professional_field_other?: string | null
   preferred_name?: string | null
   city?: string | null
   state?: string | null
@@ -228,8 +235,23 @@ export type DuesStatus = 'pending' | 'paid' | 'waived' | 'overdue'
 
 export type MembershipRecordStatus = 'pending' | 'active' | 'inactive' | 'rejected'
 
+export interface MemberInvite {
+  id: string
+  invited_by: string
+  recipient_name: string | null
+  recipient_phone: string
+  normalized_phone: string
+  personal_note: string | null
+  invite_message: string
+  channel: 'whatsapp'
+  status: 'opened_whatsapp' | 'cancelled'
+  created_at: string
+  updated_at: string
+}
+
 export interface Member {
   id: string
+  user_id?: string | null
   first_name: string
   last_name: string
   email: string
@@ -250,6 +272,9 @@ export interface Member {
   membership_status: MembershipRecordStatus
   willing_to_volunteer?: boolean
   willing_to_serve?: boolean
+  general_location_area?: GeneralLocationArea | string | null
+  professional_field?: ProfessionalField | string | null
+  professional_field_other?: string | null
   submitted_at: string
   created_at: string
   updated_at: string
