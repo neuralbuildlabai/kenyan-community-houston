@@ -13,6 +13,7 @@ import { isEventPast } from '@/lib/eventDate'
 import { MapLink } from '@/components/MapLink'
 import { trackEntityView } from '@/lib/analytics'
 import { safeExternalHref } from '@/lib/externalUrl'
+import { EventComments } from '@/components/events/EventComments'
 
 function resourceHref(r: Resource): string | null {
   // External URLs run through the safe normaliser so unsafe protocols
@@ -268,6 +269,10 @@ export function EventDetailPage() {
               </div>
             )}
           </aside>
+        </div>
+
+        <div className="mt-12">
+          <EventComments eventId={event.id} />
         </div>
       </div>
     </>

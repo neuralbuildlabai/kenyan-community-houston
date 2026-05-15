@@ -41,6 +41,7 @@ import { PrivacyPage } from '@/pages/public/PrivacyPage'
 import { TermsPage } from '@/pages/public/TermsPage'
 import { DisclaimerPage } from '@/pages/public/DisclaimerPage'
 import { NotFoundPage } from '@/pages/public/NotFoundPage'
+import { ChatPage } from '@/pages/public/ChatPage'
 
 import { AdminDashboardPage } from '@/pages/admin/DashboardPage'
 import { AdminCalendarPage } from '@/pages/admin/CalendarPage'
@@ -60,6 +61,8 @@ import { AdminServiceInterestsPage } from '@/pages/admin/AdminServiceInterestsPa
 import { AdminMediaSubmissionsPage } from '@/pages/admin/AdminMediaSubmissionsPage'
 import { AdminAnalyticsPage } from '@/pages/admin/AdminAnalyticsPage'
 import { AdminSystemHealthPage } from '@/pages/admin/AdminSystemHealthPage'
+import { AdminChatPage } from '@/pages/admin/AdminChatPage'
+import { AdminEventCommentsPage } from '@/pages/admin/AdminEventCommentsPage'
 import { SYSTEM_HEALTH_ADMIN_ROLES } from '@/lib/platformAdmin'
 
 import { RequireAuth } from '@/components/RequireAuth'
@@ -102,6 +105,7 @@ export default function App() {
               <Route path="new-to-houston" element={<NewToHoustonPage />} />
               <Route path="about" element={<AboutPage />} />
               <Route path="contact" element={<ContactPage />} />
+              <Route path="chat" element={<ChatPage />} />
               <Route path="governance" element={<GovernancePage />} />
               <Route path="serve" element={<ServePage />} />
               <Route path="serve/apply" element={<ServeApplyPage />} />
@@ -169,6 +173,8 @@ export default function App() {
               <Route path="gallery" element={<AdminGalleryPage />} />
               <Route path="submissions" element={<AdminSubmissionsPage />} />
               <Route path="contacts" element={<AdminContactsPage />} />
+              <Route path="chat" element={<AdminChatPage />} />
+              <Route path="event-comments" element={<AdminEventCommentsPage />} />
               <Route path="service-interests" element={<AdminServiceInterestsPage />} />
               <Route path="media-submissions" element={<AdminMediaSubmissionsPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />

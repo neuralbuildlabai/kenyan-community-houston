@@ -29,6 +29,7 @@ const MEMBER_SAFE_PREFIXES = [
   '/gallery',
   '/about',
   '/contact',
+  '/chat',
 ]
 
 function isMemberSafePath(path: string): boolean {
@@ -76,7 +77,7 @@ export function resolveAuthCallbackPath(
 
   if (elevated) {
     if (safe?.startsWith('/admin')) return safe
-    if (safe === '/profile' || safe === '/login' || safe?.startsWith('/membership')) return safe
+    if (safe === '/profile' || safe === '/login' || safe === '/chat' || safe?.startsWith('/membership')) return safe
     return '/admin/dashboard'
   }
 

@@ -22,6 +22,8 @@ const ROUTE_LABELS: Record<string, string> = {
   '/admin/gallery': 'Gallery',
   '/admin/submissions': 'Public submissions',
   '/admin/contacts': 'Contact messages',
+  '/admin/chat': 'Community requests',
+  '/admin/event-comments': 'Event comments',
   '/admin/service-interests': 'Call to Serve',
   '/admin/media-submissions': 'Media submissions',
   '/admin/settings': 'Site settings',

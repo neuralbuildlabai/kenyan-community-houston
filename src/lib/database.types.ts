@@ -272,6 +272,71 @@ export interface Database {
         }
         Update: Partial<Database['public']['Tables']['gallery_images']['Row']>
       }
+      chat_threads: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          category: string
+          status: string
+          priority: string
+          assigned_admin_id: string | null
+          closed_at: string | null
+          closed_by: string | null
+          close_reason: string | null
+          last_message_at: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          title: string
+          category?: string
+          status?: string
+          priority?: string
+          assigned_admin_id?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['chat_threads']['Row']>
+      }
+      chat_messages: {
+        Row: {
+          id: string
+          thread_id: string
+          sender_id: string
+          sender_role: string
+          body: string
+          is_internal_note: boolean
+          created_at: string
+        }
+        Insert: {
+          thread_id: string
+          sender_id: string
+          sender_role?: string
+          body: string
+          is_internal_note?: boolean
+        }
+        Update: Partial<Database['public']['Tables']['chat_messages']['Row']>
+      }
+      event_comments: {
+        Row: {
+          id: string
+          event_id: string
+          user_id: string
+          body: string
+          status: string
+          parent_comment_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          event_id: string
+          user_id: string
+          body: string
+          status?: string
+          parent_comment_id?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['event_comments']['Row']>
+      }
       contact_submissions: {
         Row: {
           id: string
@@ -373,6 +438,14 @@ export interface Database {
       has_role: {
         Args: { check_role: string }
         Returns: boolean
+      }
+      create_chat_request: {
+        Args: { p_title: string; p_category: string; p_body: string }
+        Returns: string
+      }
+      close_chat_request: {
+        Args: { p_thread_id: string; p_close_reason?: string | null }
+        Returns: null
       }
     }
     Enums: {

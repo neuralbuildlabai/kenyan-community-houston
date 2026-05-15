@@ -1,8 +1,12 @@
 import { expect, test, type Page } from '@playwright/test'
-import { hasAdminCredentials } from './env'
+import { hasAdminCredentials, hasMemberCredentials } from './env'
 
 export function skipIfNoAdmin() {
   test.skip(!hasAdminCredentials, 'Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD to run admin tests')
+}
+
+export function skipIfNoMember() {
+  test.skip(!hasMemberCredentials, 'Set E2E_MEMBER_EMAIL and E2E_MEMBER_PASSWORD to run member tests')
 }
 
 export async function loginAsAdmin(page: Page) {

@@ -24,6 +24,7 @@ const ROUTES = [
   '/disclaimer',
   '/contact',
   '/login',
+  '/chat',
 ] as const
 
 for (const route of ROUTES) {

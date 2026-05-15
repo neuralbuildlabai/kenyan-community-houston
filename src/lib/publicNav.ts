@@ -54,6 +54,7 @@ export const MORE_NAV_GROUPS: ReadonlyArray<NavGroup> = [
     items: [
       { to: '/community-groups', label: 'Community Groups' },
       { to: '/resources', label: 'Resources' },
+      { to: '/chat', label: 'Ask the Community' },
       { to: '/new-to-houston', label: 'New to Houston' },
     ],
   },

@@ -531,6 +531,46 @@ export interface AdminActivityLog {
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
+/** `public.chat_threads` (migration 030). */
+export interface ChatThread {
+  id: string
+  user_id: string
+  title: string
+  category: string
+  status: string
+  priority: string
+  assigned_admin_id: string | null
+  closed_at: string | null
+  closed_by: string | null
+  close_reason: string | null
+  last_message_at: string
+  created_at: string
+  updated_at: string
+}
+
+/** `public.chat_messages` (migration 030). */
+export interface ChatMessage {
+  id: string
+  thread_id: string
+  sender_id: string
+  sender_role: string
+  body: string
+  is_internal_note: boolean
+  created_at: string
+}
+
+/** `public.event_comments` (migration 030). */
+export interface EventComment {
+  id: string
+  event_id: string
+  user_id: string
+  body: string
+  status: string
+  parent_comment_id: string | null
+  created_at: string
+  updated_at: string
+}
+
 export type ServiceInterestAvailability =
   | 'occasional'
   | 'monthly'
