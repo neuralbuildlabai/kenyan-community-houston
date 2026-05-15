@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ScrollText } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
-import { APP_NAME } from '@/lib/constants'
+import { APP_NAME, PUBLIC_CONTACT_EMAIL } from '@/lib/constants'
 
 export function DisclaimerPage() {
   return (
@@ -98,8 +98,8 @@ export function DisclaimerPage() {
           <h2 className="text-xl font-semibold text-foreground">10. Contact</h2>
           <p>
             For questions about this disclaimer, please email{' '}
-            <a href="mailto:info@kenyancommunityhouston.com" className="text-primary hover:underline">
-              info@kenyancommunityhouston.com
+            <a href={`mailto:${PUBLIC_CONTACT_EMAIL}`} className="text-primary hover:underline">
+              {PUBLIC_CONTACT_EMAIL}
             </a>
             . You can also review our{' '}
             <Link to="/terms" className="text-primary hover:underline">Terms of Use</Link> and{' '}

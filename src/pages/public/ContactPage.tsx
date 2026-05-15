@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/lib/supabase'
+import { PUBLIC_CONTACT_EMAIL } from '@/lib/constants'
 import { toast } from 'sonner'
 
 const INQUIRY_TYPES = ['General Inquiry', 'Event Submission', 'Business Listing', 'Fundraiser', 'Report Content', 'Partnership', 'Membership / Join', 'Other']
@@ -115,8 +116,8 @@ export function ContactPage() {
               </div>
               <div>
                 <div className="font-medium text-sm">Email</div>
-                <a href="mailto:info@kenyancommunityhouston.com" className="text-sm text-primary hover:underline">
-                  info@kenyancommunityhouston.com
+                <a href={`mailto:${PUBLIC_CONTACT_EMAIL}`} className="text-sm text-primary hover:underline">
+                  {PUBLIC_CONTACT_EMAIL}
                 </a>
               </div>
             </div>
@@ -188,8 +189,8 @@ export function ContactPage() {
                   />
                 </div>
 
-                {/* Honeypot field — keep visually hidden but in the DOM. */}
-                <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', height: 0, width: 0, overflow: 'hidden' }}>
+                {/* Honeypot — in the DOM for bots; display:none so humans never see it (Playwright-safe). */}
+                <div aria-hidden="true" className="hidden">
                   <Label htmlFor="company_website">Company website</Label>
                   <Input
                     id="company_website"

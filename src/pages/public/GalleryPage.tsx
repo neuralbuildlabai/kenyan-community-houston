@@ -17,15 +17,37 @@ export function GalleryPage() {
 
   useEffect(() => {
     async function load() {
-      const [{ data: alb }, { data: img }] = await Promise.all([
-        supabase.from('gallery_albums').select('*').eq('is_published', true).order('created_at', { ascending: false }),
-        supabase.from('gallery_images').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
-      ])
-      setAlbums((alb as GalleryAlbum[]) ?? [])
-      setImages((img as GalleryImage[]) ?? [])
+      // Schema matches migrations 001 + 019: `gallery_images.status` (not is_published),
+      // `image_url` (not url), albums use `name` (not title).
+      const { data: imgRows, error: imgErr } = await supabase
+        .from('gallery_images')
+        .select('id, album_id, image_url, caption, created_at, status')
+        .eq('status', 'published')
+        .order('created_at', { ascending: true })
+
+      if (imgErr) {
+        console.warn('[gallery] could not load images:', imgErr.message)
+      }
+
+      const imgs = (imgRows ?? []) as GalleryImage[]
+
+      const { data: albRows, error: albErr } = await supabase
+        .from('gallery_albums')
+        .select('id, name, slug, description, cover_url, created_at')
+        .order('created_at', { ascending: false })
+
+      if (albErr) {
+        console.warn('[gallery] could not load albums:', albErr.message)
+      }
+
+      const albumIds = new Set(imgs.map((i) => i.album_id).filter((id): id is string => !!id))
+      const albs = ((albRows ?? []) as GalleryAlbum[]).filter((a) => albumIds.has(a.id))
+
+      setImages(imgs)
+      setAlbums(albs)
       setLoading(false)
     }
-    load()
+    void load()
   }, [])
 
   const filtered = selectedAlbum
@@ -59,7 +81,7 @@ export function GalleryPage() {
                 size="sm"
                 onClick={() => setSelectedAlbum(a.id)}
               >
-                {a.title}
+                {a.name}
                 <Badge variant="secondary" className="ml-2 text-xs">
                   {images.filter((i) => i.album_id === a.id).length}
                 </Badge>
@@ -81,7 +103,7 @@ export function GalleryPage() {
                 onClick={() => setLightbox(img)}
               >
                 <img
-                  src={img.url}
+                  src={img.image_url}
                   alt={img.caption ?? 'Gallery image'}
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
@@ -109,7 +131,7 @@ export function GalleryPage() {
             <X className="h-7 w-7" />
           </button>
           <img
-            src={lightbox.url}
+            src={lightbox.image_url}
             alt={lightbox.caption ?? 'Gallery image'}
             className="max-h-[90vh] max-w-full rounded-lg"
             onClick={(e) => e.stopPropagation()}

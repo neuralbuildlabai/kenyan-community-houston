@@ -243,42 +243,32 @@ export interface Database {
       gallery_albums: {
         Row: {
           id: string
-          title: string
+          name: string
           slug: string
           description: string | null
           cover_url: string | null
-          event_date: string | null
-          category: string
-          status: string
-          is_featured: boolean
-          created_by: string | null
           created_at: string
-          updated_at: string
+          community_id: string | null
         }
         Insert: Partial<Database['public']['Tables']['gallery_albums']['Row']> & {
-          title: string
+          name: string
           slug: string
-          category: string
         }
         Update: Partial<Database['public']['Tables']['gallery_albums']['Row']>
       }
       gallery_images: {
         Row: {
           id: string
-          album_id: string
-          title: string | null
+          album_id: string | null
+          image_url: string
           caption: string | null
-          url: string
-          thumbnail_url: string | null
-          width: number | null
-          height: number | null
-          sort_order: number
-          uploaded_by: string | null
+          taken_at: string | null
+          status: string
           created_at: string
+          community_id: string | null
         }
         Insert: Partial<Database['public']['Tables']['gallery_images']['Row']> & {
-          album_id: string
-          url: string
+          image_url: string
         }
         Update: Partial<Database['public']['Tables']['gallery_images']['Row']>
       }

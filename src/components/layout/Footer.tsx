@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { MapPin, Mail, Facebook, Twitter, Instagram, Youtube, Lock } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
-import { APP_NAME } from '@/lib/constants'
+import { APP_NAME, PUBLIC_CONTACT_EMAIL } from '@/lib/constants'
 import { KighLogo } from '@/components/KighLogo'
 
 // Top-level community destinations.
@@ -90,8 +90,8 @@ export function Footer() {
               </div>
               <div className="flex items-start gap-2">
                 <Mail className="h-4 w-4 shrink-0 text-kenyan-gold-400 mt-0.5" />
-                <a href="mailto:info@kenyancommunityhouston.com" className="hover:text-white transition-colors">
-                  info@kenyancommunityhouston.com
+                <a href={`mailto:${PUBLIC_CONTACT_EMAIL}`} className="hover:text-white transition-colors">
+                  {PUBLIC_CONTACT_EMAIL}
                 </a>
               </div>
             </div>

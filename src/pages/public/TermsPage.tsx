@@ -1,6 +1,6 @@
 import { Scale } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
-import { APP_NAME } from '@/lib/constants'
+import { APP_NAME, PUBLIC_CONTACT_EMAIL } from '@/lib/constants'
 
 export function TermsPage() {
   return (
@@ -70,7 +70,13 @@ export function TermsPage() {
           <p>We may update these terms at any time. Continued use of the platform constitutes acceptance of updated terms.</p>
 
           <h2 className="text-xl font-semibold text-foreground">10. Contact</h2>
-          <p>Questions? Email us at <a href="mailto:info@kenyancommunityhouston.com" className="text-primary hover:underline">info@kenyancommunityhouston.com</a>.</p>
+          <p>
+            Questions? Email us at{' '}
+            <a href={`mailto:${PUBLIC_CONTACT_EMAIL}`} className="text-primary hover:underline">
+              {PUBLIC_CONTACT_EMAIL}
+            </a>
+            .
+          </p>
         </div>
       </div>
     </>
