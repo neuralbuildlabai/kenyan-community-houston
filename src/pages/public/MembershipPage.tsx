@@ -389,7 +389,16 @@ export function MembershipPage() {
   }
 
   return (
-    <>
+    <div className="relative overflow-hidden">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[url('/kigh-media/backgrounds/memberbecome.png')] bg-contain bg-top bg-no-repeat opacity-[0.9]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/45 via-[#faf7ef]/58 to-white/82"
+      />
+      <div className="relative z-10">
       <SEOHead
         title="Membership Registration"
         description="Register as an individual, family, or associate member of Kenyans in Greater Houston."
@@ -416,7 +425,7 @@ export function MembershipPage() {
       />
 
       {/* Benefits band */}
-      <section aria-labelledby="membership-benefits-heading" className="border-b border-border/40 bg-background py-12 sm:py-14">
+      <section aria-labelledby="membership-benefits-heading" className="border-b border-border/40 bg-white/55 py-12 backdrop-blur-[1px] sm:py-14">
         <div className="public-container">
           <header className="mb-8 max-w-2xl">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
@@ -439,7 +448,7 @@ export function MembershipPage() {
               return (
                 <div
                   key={b.title}
-                  className="rounded-2xl border border-border/60 bg-card p-5 transition-colors hover:border-primary/30"
+                  className="rounded-2xl border border-border/60 bg-white/85 p-5 backdrop-blur-sm transition-colors hover:border-primary/30"
                 >
                   <Icon className="h-5 w-5 text-primary" />
                   <h3 className="mt-3 text-base font-semibold tracking-tight text-foreground" dangerouslySetInnerHTML={{ __html: b.title }} />
@@ -452,11 +461,11 @@ export function MembershipPage() {
       </section>
 
       {/* Form */}
-      <section id="membership-form" className="py-12 sm:py-16">
+      <section id="membership-form" className="bg-white/40 py-12 backdrop-blur-[1px] sm:py-16">
         <div className="public-container grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="space-y-6">
             {pendingAccountCreated && (
-              <Card className="border-primary/25 bg-primary/[0.04] shadow-sm">
+              <Card className="border-primary/25 bg-white/90 shadow-sm backdrop-blur-sm">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg">Check your email</CardTitle>
                   <CardDescription>
@@ -471,7 +480,7 @@ export function MembershipPage() {
               </Card>
             )}
 
-            <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm sm:p-6">
+            <div className="rounded-2xl border border-border/60 bg-white/85 p-5 shadow-sm backdrop-blur-sm sm:p-6">
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
                 Annual dues
               </p>
@@ -483,7 +492,7 @@ export function MembershipPage() {
 
             <form onSubmit={onSubmit} className="space-y-6">
               {!user && isGoogleAuthEnabled() ? (
-                <Card className="shadow-sm border-border/80">
+                <Card className="border-border/80 bg-white/85 shadow-sm backdrop-blur-sm">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg">Account setup</CardTitle>
                     <CardDescription className="text-sm">
@@ -504,7 +513,7 @@ export function MembershipPage() {
                   </CardContent>
                 </Card>
               ) : !user ? (
-                <Card className="shadow-sm border-border/80">
+                <Card className="border-border/80 bg-white/85 shadow-sm backdrop-blur-sm">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg">Account setup</CardTitle>
                     <CardDescription className="text-sm">
@@ -514,7 +523,7 @@ export function MembershipPage() {
                 </Card>
               ) : null}
 
-              <Card className="shadow-sm border-border/80">
+              <Card className="border-border/80 bg-white/85 shadow-sm backdrop-blur-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">Your information</CardTitle>
                   <CardDescription className="text-sm">
@@ -572,7 +581,7 @@ export function MembershipPage() {
                 </CardContent>
               </Card>
 
-              <Card className="shadow-sm border-border/80">
+              <Card className="border-border/80 bg-white/85 shadow-sm backdrop-blur-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">Contact &amp; location</CardTitle>
                   <CardDescription className="text-sm">
@@ -653,7 +662,7 @@ export function MembershipPage() {
                 </CardContent>
               </Card>
 
-              <Card className="shadow-sm border-border/80">
+              <Card className="border-border/80 bg-white/85 shadow-sm backdrop-blur-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">Community profile</CardTitle>
                   <CardDescription className="text-sm">
@@ -748,7 +757,7 @@ export function MembershipPage() {
               </Card>
 
               {!user && (
-                <Card className="shadow-sm border-border/80">
+                <Card className="border-border/80 bg-white/85 shadow-sm backdrop-blur-sm">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg">Password *</CardTitle>
                     <CardDescription className="text-sm">
@@ -814,7 +823,7 @@ export function MembershipPage() {
                 </Card>
               )}
 
-              <Card className="shadow-sm border-border/80">
+              <Card className="border-border/80 bg-white/85 shadow-sm backdrop-blur-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">Membership type *</CardTitle>
                   <CardDescription className="text-sm">
@@ -839,7 +848,7 @@ export function MembershipPage() {
               </Card>
 
               {membershipType === 'family_household' && (
-                <Card className="border-dashed border-primary/25 bg-muted/20 shadow-sm">
+                <Card className="border-dashed border-primary/25 bg-white/75 shadow-sm backdrop-blur-sm">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>
                       <CardTitle className="text-lg">Household</CardTitle>
@@ -861,7 +870,7 @@ export function MembershipPage() {
                     {household.map((row, idx) => (
                       <div
                         key={idx}
-                        className="relative space-y-3 rounded-xl border bg-background p-4 shadow-sm sm:p-5"
+                        className="relative space-y-3 rounded-xl border bg-white/85 p-4 shadow-sm backdrop-blur-sm sm:p-5"
                       >
                         {household.length > 1 && (
                           <Button
@@ -946,7 +955,7 @@ export function MembershipPage() {
                 </Card>
               )}
 
-              <Card className="shadow-sm border-border/80">
+              <Card className="border-border/80 bg-white/85 shadow-sm backdrop-blur-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">Consent *</CardTitle>
                 </CardHeader>
@@ -1001,7 +1010,7 @@ export function MembershipPage() {
 
           {/* Trust sidebar */}
           <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
-            <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
+            <div className="rounded-2xl border border-border/60 bg-white/85 p-6 shadow-sm backdrop-blur-sm">
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
                 Trust &amp; privacy
               </p>
@@ -1025,12 +1034,13 @@ export function MembershipPage() {
               </ul>
             </div>
 
-            <div className="rounded-2xl border border-border/50 bg-muted/30 p-5 text-xs text-muted-foreground leading-relaxed">
+            <div className="rounded-2xl border border-border/50 bg-white/70 p-5 text-xs leading-relaxed text-muted-foreground backdrop-blur-sm">
               <p>{KIGH_NONPROFIT_CREDIBILITY_STATEMENT}</p>
             </div>
           </aside>
         </div>
       </section>
-    </>
+      </div>
+    </div>
   )
 }
