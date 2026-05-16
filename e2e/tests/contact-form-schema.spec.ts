@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { DIRTY_PUBLIC_PHONE } from '../helpers/phoneSanitization'
 
 /**
  * Smoke test for the ContactPage schema fix (migration 018). We do
@@ -33,7 +34,7 @@ test.describe('contact form schema', () => {
   test('optional phone strips letters and spaces while typing', async ({ page }) => {
     await page.goto('/contact')
     const phone = page.locator('#phone')
-    await phone.fill('abc 0713 936 343xyz')
+    await phone.fill(DIRTY_PUBLIC_PHONE)
     await expect(phone).toHaveValue('0713936343')
     await phone.fill('+254 713 936 343')
     await expect(phone).toHaveValue('+254713936343')
