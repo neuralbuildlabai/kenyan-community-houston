@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { format, isValid, parseISO } from 'date-fns'
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase'
 import type { Event } from '@/lib/types'
 import { buildHomepageWhatsHappeningList, filterPublishedUpcomingByStartDate } from '@/lib/homepageEvents'
 import { trackClick } from '@/lib/analytics'
+import { KIGH_NONPROFIT_CREDIBILITY_STATEMENT } from '@/lib/constants'
 
 /** Optimized hero (see `public/kigh-media/houstonmainimage-hero.jpg`). */
 const HOME_HERO_IMAGE_JPEG = '/kigh-media/houstonmainimage-hero.jpg'
@@ -25,12 +26,15 @@ function formatEventListDate(ymd: string): string {
   return isValid(d) ? format(d, 'EEE, MMM d') : ymd
 }
 
-const EDITORIAL_LINKS = [
-  { to: '/events', label: 'Events', testId: 'home-editorial-events' },
-  { to: '/chat', label: 'Community Chat', testId: 'home-editorial-chat' },
-  { to: '/resources', label: 'Resources', testId: 'home-editorial-resources' },
-  { to: '/businesses', label: 'Business Directory', testId: 'home-editorial-businesses' },
-  { to: '/gallery', label: 'Gallery', testId: 'home-editorial-gallery' },
+const HERO_QUICK_LINKS = [
+  { to: '/membership', label: 'Join the Community', testId: 'home-quick-join' },
+  { to: '/events', label: 'View Events', testId: 'home-quick-events' },
+  { to: '/chat', label: 'Community Chat', testId: 'home-quick-chat' },
+  { to: '/businesses', label: 'Business Directory', testId: 'home-quick-businesses' },
+  { to: '/new-to-houston', label: 'New to Houston', testId: 'home-quick-new' },
+  { to: '/gallery', label: 'Gallery', testId: 'home-quick-gallery' },
+  { to: '/events/submit', label: 'Submit Event', testId: 'home-quick-submit' },
+  { to: '/chat', label: 'Ask the Community', testId: 'home-quick-ask' },
 ] as const
 
 export function HomePage() {
@@ -154,131 +158,117 @@ export function HomePage() {
                 </Link>
               </Button>
             </div>
-            <p className="mt-8">
-              <Link
-                to="/chat"
-                data-testid="hero-cta-chat"
-                onClick={() => void trackClick('hero_ask_community', '/chat')}
-                className="text-sm font-medium text-white/90 underline decoration-white/35 underline-offset-4 transition hover:text-white hover:decoration-white"
-              >
-                Ask the community
-              </Link>
-            </p>
+
+            <div
+              className="mx-auto mt-10 grid w-full max-w-3xl grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4"
+              aria-label="Quick links"
+            >
+              {HERO_QUICK_LINKS.map((item) => (
+                <Button
+                  key={item.testId}
+                  asChild
+                  variant="quick"
+                  size="sm"
+                  className="h-auto min-h-11 w-full whitespace-normal px-3 py-2 text-center text-xs leading-snug sm:text-sm"
+                >
+                  <Link
+                    to={item.to}
+                    data-testid={item.testId}
+                    onClick={() => void trackClick(`home_quick_${item.testId}`, item.to)}
+                  >
+                    {item.label}
+                  </Link>
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
 
         <div className="relative z-10 mt-auto border-t border-white/10 bg-black/35 px-4 py-3.5 backdrop-blur-md sm:px-6 lg:px-8">
           <p className="mx-auto max-w-3xl text-center text-xs leading-relaxed text-white/75 sm:text-sm">
-            Kenyan Community Houston is a registered{' '}
-            <span className="font-medium text-white">501(c)(3)</span> nonprofit serving Kenyans and
-            friends of Kenya across Greater Houston.
+            {KIGH_NONPROFIT_CREDIBILITY_STATEMENT}
           </p>
         </div>
       </section>
 
-      {/* Editorial link band */}
-      <nav
-        aria-label="Popular destinations"
-        className="border-b border-border/50 bg-background py-10 sm:py-12"
-      >
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-1 gap-y-3 px-4 sm:px-6 lg:px-8">
-          {EDITORIAL_LINKS.map((item, i) => (
-            <Fragment key={item.to}>
-              {i > 0 ? (
-                <span
-                  className="hidden h-4 w-px shrink-0 bg-border/70 sm:inline-block"
-                  aria-hidden
-                />
-              ) : null}
-              <Link
-                to={item.to}
-                data-testid={item.testId}
-                onClick={() => void trackClick(`home_editorial_${item.testId}`, item.to)}
-                className="px-3 text-[15px] font-medium tracking-wide text-foreground/85 transition-colors hover:text-primary sm:px-5 sm:text-base"
-              >
-                {item.label}
-              </Link>
-            </Fragment>
-          ))}
-        </div>
-      </nav>
-
-      {/* What's happening */}
+      {/* What's happening — elevated panel immediately below hero */}
       <section
-        className="border-b border-border/40 py-16 sm:py-20"
+        className="relative z-20 -mt-8 px-4 pb-16 sm:-mt-10 sm:px-6 sm:pb-20 lg:px-8"
         aria-labelledby="home-whats-happening-heading"
         data-testid="home-whats-happening"
       >
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <h2
-              id="home-whats-happening-heading"
-              className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
-            >
-              What's happening
-            </h2>
-            {events.length > 0 ? (
-              <Link
-                to="/events"
-                data-testid="home-cta-events"
-                className="shrink-0 text-sm font-semibold text-primary underline decoration-primary/30 underline-offset-4 transition hover:decoration-primary"
-                onClick={() => void trackClick('home_whats_happening_all', '/events')}
+        <div className="public-container mx-auto rounded-3xl border border-border/50 bg-card/95 px-5 py-10 shadow-xl shadow-black/[0.06] backdrop-blur-sm sm:px-8 sm:py-12">
+          <div className="mx-auto max-w-3xl">
+            <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <h2
+                id="home-whats-happening-heading"
+                className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
               >
-                All events
-              </Link>
-            ) : null}
-          </div>
+                What's happening
+              </h2>
+              {events.length > 0 ? (
+                <Link
+                  to="/events"
+                  data-testid="home-cta-events"
+                  className="shrink-0 text-sm font-semibold text-primary underline decoration-primary/30 underline-offset-4 transition hover:decoration-primary"
+                  onClick={() => void trackClick('home_whats_happening_all', '/events')}
+                >
+                  All events
+                </Link>
+              ) : null}
+            </div>
 
-          {!listsLoaded ? (
-            <p className="text-sm text-muted-foreground">Loading upcoming events…</p>
-          ) : events.length === 0 ? (
-            <p className="text-muted-foreground">
-              New gatherings will appear here when they&apos;re published.{' '}
-              <Link
-                to="/calendar"
-                data-testid="home-whats-happening-calendar"
-                className="font-medium text-primary underline underline-offset-4 decoration-primary/30 hover:decoration-primary"
-                onClick={() => void trackClick('home_whats_happening_calendar', '/calendar')}
-              >
-                View the community calendar
-              </Link>
-            </p>
-          ) : (
-            <ul className="divide-y divide-border/60">
-              {events.map((e) => (
-                <li key={e.id}>
-                  <Link
-                    to={`/events/${e.slug}`}
-                    data-testid="home-event-row"
-                    onClick={() => void trackClick('home_whats_happening_event', `/events/${e.slug}`)}
-                    className="group block py-7 first:pt-0 transition-colors hover:text-primary"
-                  >
-                    <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8">
-                      <time
-                        dateTime={e.start_date}
-                        className="shrink-0 text-sm font-medium uppercase tracking-wide text-muted-foreground group-hover:text-primary sm:w-36"
-                      >
-                        {formatEventListDate(e.start_date)}
-                      </time>
-                      <div className="min-w-0 flex-1">
-                        <span
-                          data-testid="home-event-title"
-                          className="block text-xl font-semibold tracking-tight text-foreground group-hover:text-primary sm:text-2xl"
+            {!listsLoaded ? (
+              <p className="text-sm text-muted-foreground">Loading upcoming events…</p>
+            ) : events.length === 0 ? (
+              <p className="text-muted-foreground">
+                New gatherings will appear here when they&apos;re published.{' '}
+                <Link
+                  to="/calendar"
+                  data-testid="home-whats-happening-calendar"
+                  className="font-medium text-primary underline underline-offset-4 decoration-primary/30 hover:decoration-primary"
+                  onClick={() => void trackClick('home_whats_happening_calendar', '/calendar')}
+                >
+                  View the community calendar
+                </Link>
+              </p>
+            ) : (
+              <ul className="divide-y divide-border/60">
+                {events.map((e) => (
+                  <li key={e.id}>
+                    <Link
+                      to={`/events/${e.slug}`}
+                      data-testid="home-event-row"
+                      onClick={() => void trackClick('home_whats_happening_event', `/events/${e.slug}`)}
+                      className="group block py-7 first:pt-0 transition-colors hover:text-primary"
+                    >
+                      <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8">
+                        <time
+                          dateTime={e.start_date}
+                          className="shrink-0 text-sm font-medium uppercase tracking-wide text-muted-foreground group-hover:text-primary sm:w-36"
                         >
-                          {e.title}
+                          {formatEventListDate(e.start_date)}
+                        </time>
+                        <div className="min-w-0 flex-1">
+                          <span
+                            data-testid="home-event-title"
+                            className="block text-xl font-semibold tracking-tight text-foreground group-hover:text-primary sm:text-2xl"
+                          >
+                            {e.title}
+                          </span>
+                          <span className="mt-1 block text-sm text-muted-foreground">{e.location}</span>
+                        </div>
+                        <span className="mt-2 inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary sm:mt-0">
+                          Details
+                          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
                         </span>
-                        <span className="mt-1 block text-sm text-muted-foreground">{e.location}</span>
                       </div>
-                      <span className="mt-2 inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary sm:mt-0">
-                        Details
-                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
-                      </span>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </section>
 

@@ -9,6 +9,9 @@ import type { FeedPostType } from './types'
 export { COMMUNITY_SUBMISSION_CATEGORIES, canonicalCategory, formatCategoryLabel, categoryValuesMatchingCanonical }
 
 export const APP_NAME = 'Kenyan Community Houston'
+/** Standard nonprofit credibility line for footer, hero, and key public surfaces. */
+export const KIGH_NONPROFIT_CREDIBILITY_STATEMENT =
+  'Kenyan Community Houston is a registered 501(c)(3) nonprofit organization serving Kenyans and friends of Kenya across the Houston area.'
 export const APP_TAGLINE = 'Your trusted home away from home in Houston, Texas.'
 export const APP_DESCRIPTION =
   'The trusted digital hub for Kenyans in Houston and surrounding areas. Discover events, businesses, community news, and more.'

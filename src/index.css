@@ -4,35 +4,37 @@
 
 @layer base {
   :root {
-    --background: 48 30% 98%;
-    --foreground: 220 15% 13%;
+    --background: 46 40% 98%;
+    --foreground: 222 28% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 15% 13%;
+    --card-foreground: 222 28% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 13%;
+    --popover-foreground: 222 28% 12%;
 
-    --primary: 145 60% 24%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 152 58% 22%;
+    --primary-foreground: 0 0% 99%;
 
-    --secondary: 48 25% 94%;
-    --secondary-foreground: 220 15% 13%;
+    --secondary: 44 32% 94%;
+    --secondary-foreground: 222 28% 12%;
 
-    --muted: 48 20% 93%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 44 24% 92%;
+    --muted-foreground: 220 10% 40%;
 
-    --accent: 37 92% 45%;
+    --accent: 32 88% 44%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 44%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 48 15% 87%;
-    --input: 48 15% 87%;
-    --ring: 145 60% 24%;
+    --border: 42 18% 86%;
+    --input: 42 18% 86%;
+    --ring: 152 58% 28%;
 
-    --radius: 0.5rem;
+    --footer: 222 36% 11%;
+
+    --radius: 0.75rem;
   }
 }
 
@@ -42,11 +44,11 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased text-[15px] sm:text-base;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
+    @apply font-semibold tracking-tight text-balance;
   }
 
   /* Accessible focus for native disclosure widgets (e.g. governance accordions) */
@@ -67,13 +69,21 @@
 }
 
 @layer components {
+  .public-container {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .link-editorial {
+    @apply font-medium text-primary underline decoration-primary/25 underline-offset-[5px] transition-colors hover:decoration-primary/70;
+  }
+
   /** Public / admin long-form surfaces — warm card without adding vertical field count */
   .form-page-card {
-    @apply rounded-2xl border border-border/65 bg-gradient-to-b from-card via-card to-secondary/25 p-5 sm:p-7 shadow-[0_2px_28px_-14px_hsl(220_15%_13%/0.14)];
+    @apply rounded-2xl border border-border/50 bg-gradient-to-b from-card via-card to-secondary/30 p-6 sm:p-8 shadow-[0_2px_32px_-16px_hsl(222_28%_12%/0.12)];
   }
 
   .form-field-stack {
-    @apply space-y-2;
+    @apply space-y-2.5;
   }
 }
 

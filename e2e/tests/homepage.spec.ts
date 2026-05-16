@@ -25,15 +25,14 @@ test.describe('homepage', () => {
     await expect(exploreEvents).toBeVisible()
     await expect(exploreEvents).toHaveAttribute('href', '/events')
 
-    const askChat = page.getByTestId('hero-cta-chat')
-    await expect(askChat).toBeVisible()
-    await expect(askChat).toHaveAttribute('href', '/chat')
-
-    await expect(page.getByTestId('home-editorial-events')).toHaveAttribute('href', '/events')
-    await expect(page.getByTestId('home-editorial-chat')).toHaveAttribute('href', '/chat')
-    await expect(page.getByTestId('home-editorial-resources')).toHaveAttribute('href', '/resources')
-    await expect(page.getByTestId('home-editorial-businesses')).toHaveAttribute('href', '/businesses')
-    await expect(page.getByTestId('home-editorial-gallery')).toHaveAttribute('href', '/gallery')
+    await expect(page.getByTestId('home-quick-join')).toHaveAttribute('href', '/membership')
+    await expect(page.getByTestId('home-quick-events')).toHaveAttribute('href', '/events')
+    await expect(page.getByTestId('home-quick-chat')).toHaveAttribute('href', '/chat')
+    await expect(page.getByTestId('home-quick-businesses')).toHaveAttribute('href', '/businesses')
+    await expect(page.getByTestId('home-quick-new')).toHaveAttribute('href', '/new-to-houston')
+    await expect(page.getByTestId('home-quick-gallery')).toHaveAttribute('href', '/gallery')
+    await expect(page.getByTestId('home-quick-submit')).toHaveAttribute('href', '/events/submit')
+    await expect(page.getByTestId('home-quick-ask')).toHaveAttribute('href', '/chat')
 
     await expect(page.getByTestId('home-whats-happening')).toBeVisible()
     await expect(
@@ -52,7 +51,7 @@ test.describe('homepage', () => {
     if (rowCount > 0) {
       await expect(page.getByTestId('home-cta-events')).toHaveAttribute('href', '/events')
       const titles = await eventRows.locator('[data-testid="home-event-title"]').allTextContents()
-    const uniq = new Set(titles.map((t) => t.trim()))
+      const uniq = new Set(titles.map((t) => t.trim()))
       expect(uniq.size, 'no duplicate titles in homepage preview').toBe(titles.length)
       for (const row of await eventRows.all()) {
         const href = await row.getAttribute('href')

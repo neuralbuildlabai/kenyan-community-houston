@@ -7,6 +7,7 @@ import {
   COMMUNITY_MENU,
   RESOURCES_MENU,
   JOIN_MEMBERSHIP_ITEM,
+  NAV_ROUTE_DEDUPE_EXCEPTIONS,
 } from '../../src/lib/publicNav'
 
 /**
@@ -36,13 +37,22 @@ const REQUIRED_DESTINATIONS = [
 ] as const
 
 test.describe('public nav config', () => {
-  test('PRIMARY_NAV lists direct bar links (Events + Gallery)', () => {
-    expect(PRIMARY_NAV.map((i) => i.to)).toEqual(['/events', '/gallery'])
+  test('PRIMARY_NAV lists direct bar links (Events, Business Directory, Gallery)', () => {
+    expect(PRIMARY_NAV.map((i) => i.to)).toEqual(['/events', '/businesses', '/gallery'])
   })
 
-  test('COMMUNITY_MENU and RESOURCES_MENU have unique routes', () => {
+  test('COMMUNITY_MENU and RESOURCES_MENU are unique except /chat (shared label)', () => {
     const tos = [...COMMUNITY_MENU, ...RESOURCES_MENU].map((i) => i.to)
-    expect(new Set(tos).size).toBe(tos.length)
+    const counts = new Map<string, number>()
+    for (const to of tos) {
+      counts.set(to, (counts.get(to) ?? 0) + 1)
+    }
+    for (const [to, n] of counts) {
+      if (n > 1) {
+        expect(to).toBe('/chat')
+        expect(n).toBe(2)
+      }
+    }
   })
 
   test('MORE_NAV_GROUPS is grouped (≥2 sections, all sections labelled, no empty groups)', () => {
@@ -60,12 +70,22 @@ test.describe('public nav config', () => {
     }
   })
 
-  test('no destination is duplicated across bar, dropdowns, join, and more', () => {
+  test('no destination is duplicated across bar, dropdowns, join, and more except allowed overlaps', () => {
     const bar = [...PRIMARY_NAV.map((i) => i.to), JOIN_MEMBERSHIP_ITEM.to]
     const drops = [...COMMUNITY_MENU, ...RESOURCES_MENU].map((i) => i.to)
     const more = MORE_NAV_FLAT.map((i) => i.to)
     const all = [...bar, ...drops, ...more]
-    expect(new Set(all).size).toBe(all.length)
+    const counts = new Map<string, number>()
+    for (const to of all) {
+      counts.set(to, (counts.get(to) ?? 0) + 1)
+    }
+    for (const [to, n] of counts) {
+      if (n > 1) {
+        expect(NAV_ROUTE_DEDUPE_EXCEPTIONS.has(to), `${to} appears ${n} times but is not an allowed overlap`).toBe(
+          true
+        )
+      }
+    }
   })
 
   test('top-tier admin destinations are NOT in the public nav', () => {

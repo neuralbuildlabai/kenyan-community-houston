@@ -15,6 +15,8 @@ const buttonVariants = cva(
         ghost: 'hover:bg-secondary/50 hover:text-foreground',
         link: 'text-primary underline-offset-4 hover:underline shadow-none',
         gold: 'bg-kenyan-gold-600 text-white shadow-sm hover:bg-kenyan-gold-700',
+        /** Compact pill for hero quick links and toolbars. */
+        quick: 'rounded-full border border-primary/20 bg-card/95 px-4 py-2 text-sm font-medium text-primary shadow-sm hover:border-primary/35 hover:bg-primary/[0.06]',
       },
       size: {
         default: 'min-h-11 px-5 py-2',
@@ -28,6 +30,12 @@ const buttonVariants = cva(
       variant: 'default',
       size: 'default',
     },
+    compoundVariants: [
+      {
+        variant: 'quick',
+        class: 'rounded-full',
+      },
+    ],
   }
 )
 

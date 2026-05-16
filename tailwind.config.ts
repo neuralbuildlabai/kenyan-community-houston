@@ -42,6 +42,10 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        footer: {
+          DEFAULT: 'hsl(var(--footer))',
+          foreground: '0 0% 98%',
+        },
         kenyan: {
           green: {
             50: '#f0fdf4',

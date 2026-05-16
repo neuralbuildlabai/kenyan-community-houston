@@ -10,7 +10,7 @@ export function PublicLayout() {
       <AnalyticsRouteListener />
       <StagingBanner />
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 min-w-0 bg-gradient-to-b from-background via-background to-secondary/20">
         <Outlet />
       </main>
       <Footer />

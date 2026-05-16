@@ -20,8 +20,15 @@ import {
   COMMUNITY_MENU,
   RESOURCES_MENU,
   JOIN_MEMBERSHIP_ITEM,
+  PRIMARY_NAV,
 } from '@/lib/publicNav'
 import type { NavItem } from '@/lib/publicNav'
+
+const dropdownPanelClass =
+  'z-50 min-w-[16rem] rounded-2xl border border-border/50 bg-popover p-2.5 shadow-2xl data-[state=open]:animate-in data-[state=closed]:animate-out'
+
+const dropdownItemClass =
+  'cursor-pointer rounded-lg px-3 py-2.5 text-[15px] leading-snug focus:bg-primary/8'
 
 function pathMatchesMenu(pathname: string, items: ReadonlyArray<NavItem>): boolean {
   return items.some(
@@ -70,39 +77,52 @@ export function Header() {
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     cn(
-      'px-3 py-2 text-sm font-medium rounded-md transition-colors',
+      'whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-medium tracking-tight transition-colors xl:text-sm',
       overlayHeader
         ? isActive
           ? 'bg-white/15 text-white'
-          : 'text-white/85 hover:text-white hover:bg-white/10'
+          : 'text-white/88 hover:bg-white/10 hover:text-white'
         : isActive
           ? 'bg-primary/10 text-primary'
-          : 'text-foreground/70 hover:text-foreground hover:bg-muted'
+          : 'text-foreground/75 hover:bg-muted/80 hover:text-foreground'
     )
 
   const dropdownTriggerClass = (active: boolean) =>
     cn(
-      'gap-1 px-3 py-2 text-sm font-medium rounded-md h-auto',
+      'h-auto gap-1 rounded-lg px-3 py-2 text-[13px] font-medium tracking-tight xl:text-sm',
       overlayHeader
         ? active
           ? 'bg-white/15 text-white hover:bg-white/15 hover:text-white'
-          : 'text-white/85 hover:text-white hover:bg-white/10'
+          : 'text-white/88 hover:bg-white/10 hover:text-white'
         : active
           ? 'bg-primary/10 text-primary hover:bg-primary/15'
-          : 'text-foreground/70 hover:text-foreground hover:bg-muted'
+          : 'text-foreground/75 hover:bg-muted/80 hover:text-foreground'
     )
 
   const headerSurface = overlayHeader
-    ? 'border-b border-white/15 bg-black/30 shadow-none backdrop-blur-md supports-[backdrop-filter]:bg-black/25'
-    : 'border-b border-border/50 bg-white/[0.97] backdrop-blur-md supports-[backdrop-filter]:bg-white/88 shadow-[0_1px_3px_rgba(15,40,25,0.06)]'
+    ? 'border-b border-white/12 bg-black/35 shadow-none backdrop-blur-lg supports-[backdrop-filter]:bg-black/28'
+    : 'border-b border-border/40 bg-white/[0.98] shadow-[0_1px_0_rgba(15,40,25,0.04)] backdrop-blur-md supports-[backdrop-filter]:bg-white/92'
 
-  const brandTitleClass = overlayHeader
-    ? 'hidden font-bold text-white sm:block leading-tight text-[15px] truncate'
-    : 'hidden font-bold text-primary sm:block leading-tight text-[15px] truncate'
-
-  const brandSubtitleClass = overlayHeader
-    ? 'text-amber-200/95 font-semibold text-[11px] tracking-wide uppercase'
-    : 'text-kenyan-gold-600 font-semibold text-[11px] tracking-wide uppercase'
+  const brandBlock = (
+    <div className="hidden min-[400px]:flex min-w-0 flex-col leading-tight">
+      <span
+        className={cn(
+          'truncate font-semibold tracking-tight text-[0.9rem] sm:text-[0.95rem]',
+          overlayHeader ? 'text-white' : 'text-primary'
+        )}
+      >
+        Kenyan Community Houston
+      </span>
+      <span
+        className={cn(
+          'truncate text-[11px] font-medium uppercase tracking-[0.12em]',
+          overlayHeader ? 'text-white/72' : 'text-muted-foreground'
+        )}
+      >
+        Kenyans in Greater Houston
+      </span>
+    </div>
+  )
 
   return (
     <header
@@ -111,24 +131,20 @@ export function Header() {
         headerSurface
       )}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="flex items-center gap-2.5 shrink-0 min-w-0">
+      <div className="mx-auto flex h-[4.25rem] max-w-[90rem] items-center gap-3 px-4 sm:gap-4 sm:px-6 lg:px-8">
+        <Link to="/" className="flex min-w-0 shrink-0 items-center gap-2.5 sm:gap-3">
           <KighLogo
             withCard
             className={cn(
-              'h-10 w-10 sm:h-11 sm:w-11 shrink-0',
-              overlayHeader && 'border-white/25 bg-white/95 shadow-md ring-0'
+              'h-10 w-10 shrink-0 sm:h-11 sm:w-11',
+              overlayHeader && 'border-white/30 bg-white shadow-md ring-0'
             )}
             imgClassName="max-h-9 sm:max-h-10"
           />
-          <span className={brandTitleClass}>
-            Kenyan Community
-            <br />
-            <span className={brandSubtitleClass}>Houston · KIGH</span>
-          </span>
+          {brandBlock}
         </Link>
 
-        <nav aria-label="Primary" className="hidden lg:flex items-center gap-0.5">
+        <nav aria-label="Primary" className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 px-2 xl:flex">
           <NavLink to="/events" className={navLinkClass}>
             Events
           </NavLink>
@@ -144,16 +160,16 @@ export function Header() {
               >
                 Community
                 <ChevronDown
-                  className={cn('h-3.5 w-3.5 transition-transform', communityOpen && 'rotate-180')}
+                  className={cn('h-3.5 w-3.5 opacity-80 transition-transform', communityOpen && 'rotate-180')}
                 />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" sideOffset={8} className="w-[17rem] p-2">
-              <DropdownMenuLabel className="px-2 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <DropdownMenuContent align="center" sideOffset={10} className={dropdownPanelClass}>
+              <DropdownMenuLabel className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Community
               </DropdownMenuLabel>
               {COMMUNITY_MENU.map((item) => (
-                <DropdownMenuItem key={item.to} asChild className="px-2 py-2 text-sm rounded-md cursor-pointer">
+                <DropdownMenuItem key={item.to} asChild className={dropdownItemClass}>
                   <Link to={item.to} onClick={() => setCommunityOpen(false)}>
                     {item.label}
                   </Link>
@@ -173,16 +189,16 @@ export function Header() {
               >
                 Resources
                 <ChevronDown
-                  className={cn('h-3.5 w-3.5 transition-transform', resourcesOpen && 'rotate-180')}
+                  className={cn('h-3.5 w-3.5 opacity-80 transition-transform', resourcesOpen && 'rotate-180')}
                 />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" sideOffset={8} className="w-[17rem] p-2">
-              <DropdownMenuLabel className="px-2 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <DropdownMenuContent align="center" sideOffset={10} className={dropdownPanelClass}>
+              <DropdownMenuLabel className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Resources
               </DropdownMenuLabel>
               {RESOURCES_MENU.map((item) => (
-                <DropdownMenuItem key={item.to} asChild className="px-2 py-2 text-sm rounded-md cursor-pointer">
+                <DropdownMenuItem key={item.label + item.to} asChild className={dropdownItemClass}>
                   <Link to={item.to} onClick={() => setResourcesOpen(false)}>
                     {item.label}
                   </Link>
@@ -191,9 +207,11 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <NavLink to="/gallery" className={navLinkClass}>
-            Gallery
-          </NavLink>
+          {PRIMARY_NAV.filter((p) => p.to !== '/events').map((link) => (
+            <NavLink key={link.to} to={link.to} className={navLinkClass}>
+              {link.label}
+            </NavLink>
+          ))}
 
           <DropdownMenu open={moreOpen} onOpenChange={setMoreOpen}>
             <DropdownMenuTrigger asChild>
@@ -205,18 +223,18 @@ export function Header() {
                 aria-expanded={moreOpen}
               >
                 More
-                <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', moreOpen && 'rotate-180')} />
+                <ChevronDown className={cn('h-3.5 w-3.5 opacity-80 transition-transform', moreOpen && 'rotate-180')} />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" sideOffset={8} className="w-[18rem] p-2">
+            <DropdownMenuContent align="end" sideOffset={10} className={cn(dropdownPanelClass, 'min-w-[18rem]')}>
               {MORE_NAV_GROUPS.map((group, idx) => (
                 <div key={group.heading}>
-                  {idx > 0 ? <DropdownMenuSeparator className="my-1.5" /> : null}
-                  <DropdownMenuLabel className="px-2 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {idx > 0 ? <DropdownMenuSeparator className="my-2 bg-border/60" /> : null}
+                  <DropdownMenuLabel className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     {group.heading}
                   </DropdownMenuLabel>
                   {group.items.map((item) => (
-                    <DropdownMenuItem key={item.to} asChild className="px-2 py-2 text-sm rounded-md cursor-pointer">
+                    <DropdownMenuItem key={item.to} asChild className={dropdownItemClass}>
                       <Link to={item.to} onClick={() => setMoreOpen(false)}>
                         {item.label}
                       </Link>
@@ -226,128 +244,149 @@ export function Header() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <Button
-            asChild
-            size="sm"
-            className={cn(
-              'ml-1 shrink-0 font-semibold shadow-sm',
-              overlayHeader && 'bg-kenyan-gold-500 text-white hover:bg-kenyan-gold-400 border-0'
-            )}
-          >
-            <Link to={JOIN_MEMBERSHIP_ITEM.to}>{JOIN_MEMBERSHIP_ITEM.label}</Link>
-          </Button>
         </nav>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
-          <Button
-            asChild
-            size="sm"
-            variant={overlayHeader ? 'secondary' : 'default'}
-            className={cn(
-              'hidden md:inline-flex shrink-0',
-              overlayHeader &&
-                'border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm'
-            )}
-          >
-            <Link to="/events/submit">Submit event</Link>
-          </Button>
-          {!user && (
+        <div className="ml-auto flex items-center gap-2 sm:gap-2.5">
+          <div className="hidden items-center gap-2 xl:flex">
             <Button
               asChild
               size="sm"
-              variant="outline"
+              variant="gold"
+              className={cn('shrink-0 px-5 font-semibold shadow-sm', overlayHeader && 'shadow-md')}
+            >
+              <Link to={JOIN_MEMBERSHIP_ITEM.to}>{JOIN_MEMBERSHIP_ITEM.label}</Link>
+            </Button>
+            <Button
+              asChild
+              size="sm"
+              variant={overlayHeader ? 'secondary' : 'outline'}
               className={cn(
-                'hidden md:inline-flex shrink-0 font-medium gap-1.5',
-                overlayHeader
-                  ? 'border-white/35 bg-transparent text-white hover:bg-white/10 hover:text-white'
-                  : 'border-border/80 text-muted-foreground hover:text-foreground'
+                'shrink-0 font-medium',
+                overlayHeader &&
+                  'border-white/35 bg-white/10 text-white hover:bg-white/18 hover:text-white backdrop-blur-sm'
               )}
             >
-              <Link to="/login">
-                <Lock className="h-3.5 w-3.5" aria-hidden />
-                Login
-              </Link>
+              <Link to="/events/submit">Submit Event</Link>
             </Button>
-          )}
-
-          {user ? (
-            <div className="hidden lg:flex items-center gap-1 shrink-0">
-              <Button asChild variant="ghost" size="sm" className={cn('whitespace-nowrap', overlayHeader && 'text-white hover:bg-white/10 hover:text-white')}>
-                <Link to="/profile" className="gap-1.5">
-                  <UserCircle className="h-4 w-4" />
-                  My Profile
+            {!user && (
+              <Button
+                asChild
+                size="sm"
+                variant="ghost"
+                className={cn(
+                  'shrink-0 gap-1.5 font-medium',
+                  overlayHeader ? 'text-white hover:bg-white/10 hover:text-white' : 'text-foreground/80'
+                )}
+              >
+                <Link to="/login">
+                  <Lock className="h-3.5 w-3.5" aria-hidden />
+                  Login
                 </Link>
               </Button>
-              {isAdmin ? (
-                <Button asChild variant="ghost" size="sm" className={cn('whitespace-nowrap', overlayHeader && 'text-white hover:bg-white/10 hover:text-white')}>
-                  <Link to="/admin/dashboard" className="gap-1.5">
-                    <LayoutDashboard className="h-4 w-4" />
-                    Admin Dashboard
+            )}
+            {user ? (
+              <div className="flex items-center gap-1">
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    'whitespace-nowrap',
+                    overlayHeader && 'text-white hover:bg-white/10 hover:text-white'
+                  )}
+                >
+                  <Link to="/profile" className="gap-1.5">
+                    <UserCircle className="h-4 w-4" />
+                    Profile
                   </Link>
                 </Button>
-              ) : null}
-              <Button
-                variant="outline"
-                size="sm"
-                className={cn(
-                  'whitespace-nowrap',
-                  overlayHeader &&
-                    'border-white/35 text-white hover:bg-white/10 hover:text-white bg-transparent'
-                )}
-                onClick={() => void handleLogout()}
-              >
-                <LogOut className="h-4 w-4 sm:mr-1" />
-                <span className="hidden sm:inline">Logout</span>
-              </Button>
-            </div>
-          ) : null}
+                {isAdmin ? (
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      'whitespace-nowrap',
+                      overlayHeader && 'text-white hover:bg-white/10 hover:text-white'
+                    )}
+                  >
+                    <Link to="/admin/dashboard" className="gap-1.5">
+                      <LayoutDashboard className="h-4 w-4" />
+                      Admin
+                    </Link>
+                  </Button>
+                ) : null}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    'whitespace-nowrap',
+                    overlayHeader &&
+                      'border-white/35 bg-transparent text-white hover:bg-white/10 hover:text-white'
+                  )}
+                  onClick={() => void handleLogout()}
+                >
+                  <LogOut className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Logout</span>
+                </Button>
+              </div>
+            ) : null}
+          </div>
 
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn('lg:hidden shrink-0', overlayHeader && 'text-white hover:bg-white/10')}
+                className={cn('shrink-0 xl:hidden', overlayHeader && 'text-white hover:bg-white/10')}
+                aria-label="Open menu"
               >
                 <Menu className="h-5 w-5" />
-                <span className="sr-only">Open menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-80 pt-10 flex flex-col">
-              <nav aria-label="Mobile navigation" className="flex flex-col gap-1 flex-1 overflow-y-auto">
-                <p className="px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <SheetContent
+              side="right"
+              className="flex w-[min(100vw,22rem)] flex-col border-l border-border/60 bg-background p-0 pt-8"
+            >
+              <nav
+                aria-label="Mobile navigation"
+                className="flex flex-1 flex-col gap-0 overflow-y-auto overscroll-contain px-1 pb-8"
+              >
+                <p className="px-4 pb-2 pt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Explore
                 </p>
-                <NavLink
-                  to="/events"
-                  onClick={() => setMobileOpen(false)}
-                  className={({ isActive }) =>
-                    cn(
-                      'px-4 py-3 text-base font-medium rounded-md transition-colors',
-                      isActive
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-foreground/70 hover:bg-muted hover:text-foreground'
-                    )
-                  }
-                >
-                  Events
-                </NavLink>
-                <div className="mt-3">
-                  <p className="px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {PRIMARY_NAV.map((link) => (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    onClick={() => setMobileOpen(false)}
+                    className={({ isActive }) =>
+                      cn(
+                        'mx-2 rounded-xl px-4 py-3.5 text-base font-medium transition-colors',
+                        isActive
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-foreground hover:bg-muted/90'
+                      )
+                    }
+                  >
+                    {link.label}
+                  </NavLink>
+                ))}
+                <div className="mt-4 border-t border-border/50 pt-3">
+                  <p className="px-4 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     Community
                   </p>
                   {COMMUNITY_MENU.map((link) => (
                     <NavLink
-                      key={link.to}
+                      key={link.to + link.label}
                       to={link.to}
                       onClick={() => setMobileOpen(false)}
                       className={({ isActive }) =>
                         cn(
-                          'px-4 py-2.5 text-[15px] font-medium rounded-md transition-colors',
+                          'mx-2 block rounded-xl px-4 py-3 text-[15px] font-medium leading-snug transition-colors',
                           isActive
                             ? 'bg-primary/10 text-primary'
-                            : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+                            : 'text-foreground hover:bg-muted/90'
                         )
                       }
                     >
@@ -355,45 +394,31 @@ export function Header() {
                     </NavLink>
                   ))}
                 </div>
-                <div className="mt-3">
-                  <p className="px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="mt-4 border-t border-border/50 pt-3">
+                  <p className="px-4 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     Resources
                   </p>
                   {RESOURCES_MENU.map((link) => (
                     <NavLink
-                      key={link.to}
+                      key={link.label + link.to}
                       to={link.to}
                       onClick={() => setMobileOpen(false)}
                       className={({ isActive }) =>
                         cn(
-                          'px-4 py-2.5 text-[15px] font-medium rounded-md transition-colors',
+                          'mx-2 block rounded-xl px-4 py-3 text-[15px] font-medium leading-snug transition-colors',
                           isActive
                             ? 'bg-primary/10 text-primary'
-                            : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+                            : 'text-foreground hover:bg-muted/90'
                         )
                       }
                     >
                       {link.label}
                     </NavLink>
-                    ))}
+                  ))}
                 </div>
-                <NavLink
-                  to="/gallery"
-                  onClick={() => setMobileOpen(false)}
-                  className={({ isActive }) =>
-                    cn(
-                      'mt-1 px-4 py-3 text-base font-medium rounded-md transition-colors',
-                      isActive
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-foreground/70 hover:bg-muted hover:text-foreground'
-                    )
-                  }
-                >
-                  Gallery
-                </NavLink>
                 {MORE_NAV_GROUPS.map((group) => (
-                  <div key={group.heading} className="mt-3">
-                    <p className="px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <div key={group.heading} className="mt-4 border-t border-border/50 pt-3">
+                    <p className="px-4 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       {group.heading}
                     </p>
                     {group.items.map((link) => (
@@ -403,10 +428,10 @@ export function Header() {
                         onClick={() => setMobileOpen(false)}
                         className={({ isActive }) =>
                           cn(
-                            'px-4 py-2.5 text-[15px] font-medium rounded-md transition-colors',
+                            'mx-2 block rounded-xl px-4 py-3 text-[15px] font-medium leading-snug transition-colors',
                             isActive
                               ? 'bg-primary/10 text-primary'
-                              : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+                              : 'text-foreground hover:bg-muted/90'
                           )
                         }
                       >
@@ -415,15 +440,25 @@ export function Header() {
                     ))}
                   </div>
                 ))}
-                <div className="mt-5 border-t pt-4 flex flex-col gap-2">
-                  <Button asChild className="w-full" onClick={() => setMobileOpen(false)}>
-                    <Link to={JOIN_MEMBERSHIP_ITEM.to}>{JOIN_MEMBERSHIP_ITEM.label}</Link>
+                <div className="mt-6 space-y-2.5 border-t border-border/60 px-3 pt-5">
+                  <Button asChild className="h-12 w-full text-base font-semibold" onClick={() => setMobileOpen(false)}>
+                    <Link to={JOIN_MEMBERSHIP_ITEM.to}>Join</Link>
                   </Button>
-                  <Button asChild className="w-full" variant="secondary" onClick={() => setMobileOpen(false)}>
-                    <Link to="/events/submit">Submit an event</Link>
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="h-12 w-full text-base font-medium"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <Link to="/events/submit">Submit Event</Link>
                   </Button>
                   {!user && (
-                    <Button asChild variant="outline" className="w-full gap-2" onClick={() => setMobileOpen(false)}>
+                    <Button
+                      asChild
+                      variant="secondary"
+                      className="h-12 w-full gap-2 text-base font-medium"
+                      onClick={() => setMobileOpen(false)}
+                    >
                       <Link to="/login">
                         <Lock className="h-4 w-4" />
                         Login
@@ -432,21 +467,21 @@ export function Header() {
                   )}
                   {user ? (
                     <>
-                      <Button asChild variant="outline" className="w-full" onClick={() => setMobileOpen(false)}>
+                      <Button asChild variant="outline" className="h-11 w-full" onClick={() => setMobileOpen(false)}>
                         <Link to="/profile" className="gap-2">
                           <UserCircle className="h-4 w-4" />
                           My Profile
                         </Link>
                       </Button>
                       {isAdmin ? (
-                        <Button asChild variant="outline" className="w-full" onClick={() => setMobileOpen(false)}>
+                        <Button asChild variant="outline" className="h-11 w-full" onClick={() => setMobileOpen(false)}>
                           <Link to="/admin/dashboard" className="gap-2">
                             <LayoutDashboard className="h-4 w-4" />
                             Admin Dashboard
                           </Link>
                         </Button>
                       ) : null}
-                      <Button variant="secondary" className="w-full gap-2" onClick={() => void handleLogout()}>
+                      <Button variant="secondary" className="h-11 w-full gap-2" onClick={() => void handleLogout()}>
                         <LogOut className="h-4 w-4" />
                         Logout
                       </Button>
