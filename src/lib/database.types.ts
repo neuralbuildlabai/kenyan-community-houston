@@ -91,6 +91,11 @@ export interface Database {
           published_at: string | null
           created_at: string
           updated_at: string
+          volunteer_signup_enabled?: boolean
+          volunteer_signup_slug?: string | null
+          volunteer_signup_instructions?: string | null
+          volunteer_slots_needed?: number | null
+          volunteer_signup_closes_at?: string | null
         }
         Insert: Partial<Database['public']['Tables']['events']['Row']> & {
           title: string
@@ -358,6 +363,32 @@ export interface Database {
         }
         Update: Partial<Database['public']['Tables']['event_comments']['Row']>
       }
+      event_volunteer_signups: {
+        Row: {
+          id: string
+          event_id: string
+          user_id: string | null
+          full_name: string
+          phone: string
+          email: string | null
+          availability_note: string | null
+          volunteer_role: string | null
+          status: string
+          submitted_at: string
+          updated_at: string
+        }
+        Insert: {
+          event_id: string
+          user_id?: string | null
+          full_name: string
+          phone: string
+          email?: string | null
+          availability_note?: string | null
+          volunteer_role?: string | null
+          status?: string
+        }
+        Update: Partial<Database['public']['Tables']['event_volunteer_signups']['Row']>
+      }
       feed_posts: {
         Row: {
           id: string
@@ -615,6 +646,21 @@ export interface Database {
       kigh_profile_force_password_change: {
         Args: { p_user_id: string }
         Returns: null
+      }
+      create_event_volunteer_signup: {
+        Args: {
+          p_event_id: string
+          p_full_name: string
+          p_phone: string
+          p_email?: string | null
+          p_volunteer_role?: string | null
+          p_availability_note?: string | null
+        }
+        Returns: string
+      }
+      public_event_volunteer_signup_count: {
+        Args: { p_event_slug: string }
+        Returns: number
       }
     },
     Enums: {

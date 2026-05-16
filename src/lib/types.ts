@@ -232,6 +232,33 @@ export interface Event {
   source_announcement_id?: string | null
   recurrence_position?: number | null
   community_id?: string | null
+  volunteer_signup_enabled?: boolean | null
+  volunteer_signup_slug?: string | null
+  volunteer_signup_instructions?: string | null
+  volunteer_slots_needed?: number | null
+  volunteer_signup_closes_at?: string | null
+}
+
+export type VolunteerSignupStatus =
+  | 'submitted'
+  | 'confirmed'
+  | 'waitlisted'
+  | 'cancelled'
+  | 'declined'
+
+/** Row in `public.event_volunteer_signups` (migration 034). */
+export interface EventVolunteerSignup {
+  id: string
+  event_id: string
+  user_id: string | null
+  full_name: string
+  phone: string
+  email: string | null
+  availability_note: string | null
+  volunteer_role: string | null
+  status: VolunteerSignupStatus
+  submitted_at: string
+  updated_at: string
 }
 
 export type MembershipType = 'individual' | 'family_household' | 'associate'

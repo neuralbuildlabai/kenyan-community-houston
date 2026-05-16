@@ -32,6 +32,7 @@ const ADMIN_PROTECTED = [
   '/admin/users',
   '/admin/analytics',
   '/admin/feed',
+  '/admin/volunteers',
   '/admin/system-health',
 ] as const
 

@@ -75,6 +75,7 @@ function buildNavGroups(profileRole: string | null | undefined): NavGroup[] {
         { to: '/admin/contacts', label: 'Contact messages', Icon: MessageSquare },
         { to: '/admin/chat', label: 'Community requests', Icon: MessagesSquare },
         { to: '/admin/event-comments', label: 'Event comments', Icon: ListTree },
+        { to: '/admin/volunteers', label: 'Volunteers', Icon: HeartHandshake },
         { to: '/admin/invites', label: 'WhatsApp invites', Icon: MessageCircle },
         { to: '/admin/feed', label: 'Community Feed', Icon: Newspaper },
         { to: '/admin/service-interests', label: 'Call to Serve', Icon: HeartHandshake },

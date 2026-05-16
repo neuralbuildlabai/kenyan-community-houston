@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Pencil, Eye, Archive, Trash2, Search } from 'lucide-react'
+import { Plus, Pencil, Eye, Archive, Trash2, Search, Copy, ExternalLink, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -30,6 +30,12 @@ import { formatDateShort } from '@/lib/utils'
 import { toast } from 'sonner'
 import { isoNow } from '@/lib/publishLifecycle'
 import type { Event, EventStatus } from '@/lib/types'
+import {
+  buildVolunteerShareMessage,
+  buildVolunteerSignupUrl,
+  buildVolunteerWhatsAppShareUrl,
+  generateVolunteerSignupSlug,
+} from '@/lib/eventVolunteerSignup'
 
 type EventRow = Event
 
@@ -76,7 +82,20 @@ const defaultForm = () => ({
   tags_raw: '',
   /** Preserve first publication time when editing published events */
   published_at_prev: null as string | null,
+  volunteer_signup_enabled: false,
+  volunteer_signup_slug: '' as string,
+  volunteer_signup_instructions: '',
+  volunteer_slots_needed: '' as string,
+  volunteer_signup_closes_at: '' as string,
 })
+
+function toDatetimeLocalValue(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
 
 export function AdminCalendarPage() {
   const [events, setEvents] = useState<EventRow[]>([])
@@ -153,6 +172,11 @@ export function AdminCalendarPage() {
       is_featured: !!e.is_featured,
       tags_raw: (e.tags ?? []).join(', '),
       published_at_prev: e.published_at ?? null,
+      volunteer_signup_enabled: !!e.volunteer_signup_enabled,
+      volunteer_signup_slug: e.volunteer_signup_slug ?? '',
+      volunteer_signup_instructions: e.volunteer_signup_instructions ?? '',
+      volunteer_slots_needed: e.volunteer_slots_needed != null ? String(e.volunteer_slots_needed) : '',
+      volunteer_signup_closes_at: toDatetimeLocalValue(e.volunteer_signup_closes_at ?? undefined),
     })
     setDialogOpen(true)
   }
@@ -160,6 +184,10 @@ export function AdminCalendarPage() {
   async function saveEvent() {
     if (!form.title.trim() || !form.start_date || !form.location.trim()) {
       toast.error('Title, start date, and location are required')
+      return
+    }
+    if (form.volunteer_signup_instructions.trim().length > 500) {
+      toast.error('Volunteer instructions must be 500 characters or less')
       return
     }
     setSaving(true)
@@ -173,6 +201,15 @@ export function AdminCalendarPage() {
     const now = isoNow()
     const published_at =
       form.status === 'published' ? (form.published_at_prev ?? now) : null
+
+    const volunteer_signup_slug = form.volunteer_signup_enabled
+      ? generateVolunteerSignupSlug({
+          eventSlug: slug,
+          eventTitle: form.title.trim(),
+          existing: form.volunteer_signup_slug || null,
+        })
+      : form.volunteer_signup_slug.trim() || null
+
     const row = {
       title: form.title.trim(),
       slug,
@@ -206,6 +243,15 @@ export function AdminCalendarPage() {
       published_at,
       updated_at: now,
       organizer_website: null,
+      volunteer_signup_enabled: form.volunteer_signup_enabled,
+      volunteer_signup_slug,
+      volunteer_signup_instructions: form.volunteer_signup_instructions.trim() || null,
+      volunteer_slots_needed: form.volunteer_slots_needed.trim()
+        ? parseInt(form.volunteer_slots_needed, 10)
+        : null,
+      volunteer_signup_closes_at: form.volunteer_signup_closes_at.trim()
+        ? new Date(form.volunteer_signup_closes_at).toISOString()
+        : null,
     }
 
     if (form.id) {
@@ -257,6 +303,8 @@ export function AdminCalendarPage() {
       status === 'published' ? 'default' : status === 'draft' ? 'secondary' : status === 'cancelled' ? 'destructive' : 'outline'
     return <Badge variant={variant as 'default' | 'secondary' | 'destructive' | 'outline'}>{status}</Badge>
   }
+
+  const volunteerLinkSlugPreview = (form.slug.trim() || generateSlug(form.title) || 'event').trim()
 
   return (
     <div className="space-y-6">
@@ -504,6 +552,91 @@ export function AdminCalendarPage() {
             <div className="form-field-stack sm:col-span-2">
               <Label>Tags (comma separated)</Label>
               <Input value={form.tags_raw} onChange={(e) => setForm((f) => ({ ...f, tags_raw: e.target.value }))} />
+            </div>
+
+            <div className="sm:col-span-2 rounded-xl border border-border/80 bg-muted/20 p-4 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold text-foreground">Volunteer signup</div>
+                  <p className="text-xs text-muted-foreground mt-0.5">Share this link with members who want to volunteer for this event.</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Switch
+                    checked={form.volunteer_signup_enabled}
+                    onCheckedChange={(v) => setForm((f) => ({ ...f, volunteer_signup_enabled: v }))}
+                    id="vol-en"
+                  />
+                  <Label htmlFor="vol-en" className="text-sm">Enable</Label>
+                </div>
+              </div>
+              {form.volunteer_signup_enabled ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="form-field-stack">
+                    <Label>Slots needed</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={form.volunteer_slots_needed}
+                      onChange={(e) => setForm((f) => ({ ...f, volunteer_slots_needed: e.target.value }))}
+                      placeholder="Optional"
+                    />
+                  </div>
+                  <div className="form-field-stack">
+                    <Label>Signup closes</Label>
+                    <Input
+                      type="datetime-local"
+                      value={form.volunteer_signup_closes_at}
+                      onChange={(e) => setForm((f) => ({ ...f, volunteer_signup_closes_at: e.target.value }))}
+                    />
+                  </div>
+                  <div className="form-field-stack sm:col-span-2">
+                    <Label>Instructions (max 500)</Label>
+                    <Textarea
+                      rows={2}
+                      maxLength={500}
+                      value={form.volunteer_signup_instructions}
+                      onChange={(e) => setForm((f) => ({ ...f, volunteer_signup_instructions: e.target.value }))}
+                      placeholder="Shown on the public volunteer page"
+                    />
+                  </div>
+                  <div className="sm:col-span-2 space-y-2">
+                    <Label className="text-xs text-muted-foreground">Shareable link</Label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Input readOnly value={buildVolunteerSignupUrl(volunteerLinkSlugPreview)} className="font-mono text-xs" />
+                      <div className="flex flex-wrap gap-2 shrink-0">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          className="gap-1"
+                          onClick={() => {
+                            const u = buildVolunteerSignupUrl(volunteerLinkSlugPreview)
+                            void navigator.clipboard.writeText(u).then(() => toast.success('Link copied'))
+                          }}
+                        >
+                          <Copy className="h-3.5 w-3.5" /> Copy
+                        </Button>
+                        <Button type="button" size="sm" variant="outline" className="gap-1" asChild>
+                          <a href={buildVolunteerSignupUrl(volunteerLinkSlugPreview)} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-3.5 w-3.5" /> Open
+                          </a>
+                        </Button>
+                        <Button type="button" size="sm" variant="outline" className="gap-1" asChild>
+                          <a
+                            href={buildVolunteerWhatsAppShareUrl(
+                              buildVolunteerShareMessage(form.title.trim() || 'this event', buildVolunteerSignupUrl(volunteerLinkSlugPreview))
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Calendar, MapPin, Clock, Tag, ExternalLink, ArrowLeft, Ticket, Video, FileText } from 'lucide-react'
+import { Calendar, MapPin, Clock, Tag, ExternalLink, ArrowLeft, Ticket, Video, FileText, HeartHandshake } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,7 @@ import { MapLink } from '@/components/MapLink'
 import { trackEntityView } from '@/lib/analytics'
 import { safeExternalHref } from '@/lib/externalUrl'
 import { EventComments } from '@/components/events/EventComments'
+import { volunteerSignupPath } from '@/lib/eventVolunteerSignup'
 
 function resourceHref(r: Resource): string | null {
   // External URLs run through the safe normaliser so unsafe protocols
@@ -40,6 +41,7 @@ export function EventDetailPage() {
   const [event, setEvent] = useState<Event | null>(null)
   const [relatedResources, setRelatedResources] = useState<Resource[]>([])
   const [loading, setLoading] = useState(true)
+  const [volunteerCount, setVolunteerCount] = useState<number | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -68,6 +70,16 @@ export function EventDetailPage() {
     }
     load()
   }, [slug])
+
+  useEffect(() => {
+    if (!event?.slug || !event.volunteer_signup_enabled) {
+      setVolunteerCount(null)
+      return
+    }
+    void supabase.rpc('public_event_volunteer_signup_count', { p_event_slug: event.slug }).then(({ data }) => {
+      setVolunteerCount(typeof data === 'number' ? data : 0)
+    })
+  }, [event?.slug, event?.volunteer_signup_enabled])
 
   useEffect(() => {
     if (!event?.id) return
@@ -228,6 +240,20 @@ export function EventDetailPage() {
             </div>
 
             <div className="space-y-2">
+              {event.volunteer_signup_enabled &&
+                !(event.volunteer_signup_closes_at && new Date(event.volunteer_signup_closes_at) <= new Date()) && (
+                <div className="rounded-lg border border-primary/25 bg-primary/5 p-4 space-y-2">
+                  <div className="text-sm font-medium text-foreground">Volunteer for this event</div>
+                  {volunteerCount != null && volunteerCount > 0 ? (
+                    <p className="text-xs text-muted-foreground">Volunteers signed up: {volunteerCount}</p>
+                  ) : null}
+                  <Button asChild className="w-full gap-2">
+                    <Link to={volunteerSignupPath(event.slug)}>
+                      <HeartHandshake className="h-4 w-4" /> Volunteer signup
+                    </Link>
+                  </Button>
+                </div>
+              )}
               {/* Defence-in-depth: every external URL is normalised
                   through `safeExternalHref` at render time so unsafe
                   protocols never reach the DOM, even if an admin

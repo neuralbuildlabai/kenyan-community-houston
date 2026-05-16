@@ -1,6 +1,12 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('calendar & seeded events', () => {
+  test('submit event path is not captured as event slug', async ({ page }) => {
+    await page.goto('/events/submit', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { name: 'Submit an Event' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Event Not Found' })).toHaveCount(0)
+  })
+
   test('tabs and category filters exist', async ({ page }) => {
     await page.goto('/calendar')
     await expect(page.getByRole('button', { name: 'Upcoming' })).toBeVisible()

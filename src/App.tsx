@@ -11,6 +11,7 @@ import { AdminLayout } from '@/components/layout/AdminLayout'
 import { HomePage } from '@/pages/public/HomePage'
 import { EventsPage } from '@/pages/public/EventsPage'
 import { EventDetailPage } from '@/pages/public/EventDetailPage'
+import { EventVolunteerSignupPage } from '@/pages/public/EventVolunteerSignupPage'
 import { CalendarPage } from '@/pages/public/CalendarPage'
 import { AnnouncementsPage } from '@/pages/public/AnnouncementsPage'
 import { AnnouncementDetailPage } from '@/pages/public/AnnouncementDetailPage'
@@ -66,6 +67,7 @@ import { AdminChatPage } from '@/pages/admin/AdminChatPage'
 import { AdminEventCommentsPage } from '@/pages/admin/AdminEventCommentsPage'
 import { AdminInvitesPage } from '@/pages/admin/AdminInvitesPage'
 import { AdminFeedPage } from '@/pages/admin/AdminFeedPage'
+import { AdminVolunteersPage } from '@/pages/admin/AdminVolunteersPage'
 import { SYSTEM_HEALTH_ADMIN_ROLES } from '@/lib/platformAdmin'
 
 import { RequireAuth } from '@/components/RequireAuth'
@@ -88,21 +90,22 @@ export default function App() {
               <Route index element={<HomePage />} />
 
               <Route path="events" element={<EventsPage />} />
-              <Route path="events/:slug" element={<EventDetailPage />} />
               <Route path="events/submit" element={<SubmitEventPage />} />
+              <Route path="events/:slug/volunteer" element={<EventVolunteerSignupPage />} />
+              <Route path="events/:slug" element={<EventDetailPage />} />
               <Route path="calendar" element={<CalendarPage />} />
 
               <Route path="announcements" element={<AnnouncementsPage />} />
-              <Route path="announcements/:slug" element={<AnnouncementDetailPage />} />
               <Route path="announcements/submit" element={<SubmitAnnouncementPage />} />
+              <Route path="announcements/:slug" element={<AnnouncementDetailPage />} />
 
               <Route path="businesses" element={<BusinessesPage />} />
-              <Route path="businesses/:slug" element={<BusinessDetailPage />} />
               <Route path="businesses/submit" element={<SubmitBusinessPage />} />
+              <Route path="businesses/:slug" element={<BusinessDetailPage />} />
 
               <Route path="community-support" element={<CommunitySupportPage />} />
-              <Route path="community-support/:slug" element={<FundraiserDetailPage />} />
               <Route path="community-support/submit" element={<SubmitFundraiserPage />} />
+              <Route path="community-support/:slug" element={<FundraiserDetailPage />} />
 
               <Route path="sports-youth" element={<SportsYouthPage />} />
               <Route path="sports-youth/:slug" element={<SportsDetailPage />} />
@@ -194,6 +197,7 @@ export default function App() {
               <Route path="contacts" element={<AdminContactsPage />} />
               <Route path="chat" element={<AdminChatPage />} />
               <Route path="event-comments" element={<AdminEventCommentsPage />} />
+              <Route path="volunteers" element={<AdminVolunteersPage />} />
               <Route path="invites" element={<AdminInvitesPage />} />
               <Route path="feed" element={<AdminFeedPage />} />
               <Route path="service-interests" element={<AdminServiceInterestsPage />} />
