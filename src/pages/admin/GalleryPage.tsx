@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Upload, Trash2, Image as ImageIcon, Check, X, Archive, Star, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -18,12 +19,14 @@ import {
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
+import { GALLERY_PUBLIC_BUCKET } from '@/lib/galleryConstants'
 import {
-  GALLERY_PUBLIC_BUCKET,
-  galleryPublicObjectKeys,
-} from '@/lib/galleryConstants'
+  approveGalleryPendingImage,
+  approveGalleryPendingImagesBulk,
+} from '@/lib/galleryAdminApproval'
 import { buildGalleryWebAndThumb, GalleryImageProcessingError } from '@/lib/galleryImageProcessing'
 import { PRIVATE_SIGNED_URL_EXPIRY_SEC } from '@/lib/kighPrivateStorage'
+import { cn } from '@/lib/utils'
 
 const NO_ALBUM = 'unassigned' as const
 
@@ -55,13 +58,12 @@ function albumIdForDb(value: string): string | null {
   return value === NO_ALBUM ? null : value
 }
 
-function extFromPath(p: string | null | undefined): 'webp' | 'jpg' {
-  if (!p) return 'jpg'
-  return p.endsWith('.webp') ? 'webp' : 'jpg'
-}
-
 function contentTypeForExt(ext: 'webp' | 'jpg'): string {
   return ext === 'webp' ? 'image/webp' : 'image/jpeg'
+}
+
+function submitterLabel(row: GalleryImageRow): string {
+  return row.submitted_by_name?.trim() || row.submitted_by_email?.trim() || 'unknown submitter'
 }
 
 export function AdminGalleryPage() {
@@ -80,6 +82,9 @@ export function AdminGalleryPage() {
   const [approveRow, setApproveRow] = useState<GalleryImageRow | null>(null)
   const [approveAlbumId, setApproveAlbumId] = useState<string>('')
   const [approveBusy, setApproveBusy] = useState(false)
+  const [selectedPendingIds, setSelectedPendingIds] = useState<Set<string>>(() => new Set())
+  const [bulkApproveOpen, setBulkApproveOpen] = useState(false)
+  const [bulkApproveAlbumId, setBulkApproveAlbumId] = useState<string>('')
 
   const loadAlbums = useCallback(async () => {
     const { data } = await supabase.from('gallery_albums').select('id, name, slug').order('name')
@@ -103,6 +108,11 @@ export function AdminGalleryPage() {
   const publishedCount = useMemo(() => images.filter((i) => i.status === 'published').length, [images])
 
   const pendingRows = useMemo(() => images.filter((i) => i.status === 'pending'), [images])
+  const selectedPendingCount = selectedPendingIds.size
+  const selectedPendingRows = useMemo(
+    () => pendingRows.filter((r) => selectedPendingIds.has(r.id)),
+    [pendingRows, selectedPendingIds]
+  )
   const publishedRows = useMemo(() => {
     let rows = images.filter((i) => i.status === 'published')
     if (albumFilter === NO_ALBUM) rows = rows.filter((i) => !i.album_id)
@@ -243,6 +253,23 @@ export function AdminGalleryPage() {
     }
   }
 
+  function togglePendingSelection(id: string, checked: boolean) {
+    setSelectedPendingIds((prev) => {
+      const next = new Set(prev)
+      if (checked) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }
+
+  function selectAllVisiblePending() {
+    setSelectedPendingIds(new Set(pendingRows.map((r) => r.id)))
+  }
+
+  function clearPendingSelection() {
+    setSelectedPendingIds(new Set())
+  }
+
   async function confirmApprove() {
     if (!approveRow || !user) return
     const targetAlbum = approveAlbumId || approveRow.album_id
@@ -250,75 +277,62 @@ export function AdminGalleryPage() {
       toast.error('Choose an album before approving.')
       return
     }
-    const bucket = approveRow.submission_storage_bucket
-    const webPath = approveRow.submission_storage_path
-    const thumbPath = approveRow.submission_thumb_path
-    if (!bucket || !webPath || !thumbPath) {
-      toast.error('Missing submission paths.')
+    setApproveBusy(true)
+    try {
+      const result = await approveGalleryPendingImage(supabase, approveRow, targetAlbum, user.id)
+      if (!result.ok) {
+        toast.error(result.error)
+        return
+      }
+      toast.success('Approved and published')
+      setApproveRow(null)
+      setSelectedPendingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(approveRow.id)
+        return next
+      })
+      void loadImages()
+    } finally {
+      setApproveBusy(false)
+    }
+  }
+
+  async function confirmBulkApprove() {
+    if (!user || selectedPendingRows.length === 0) return
+    if (!bulkApproveAlbumId) {
+      toast.error('Choose an album before publishing.')
       return
     }
     setApproveBusy(true)
     try {
-      const ext = extFromPath(webPath)
-      const keys = galleryPublicObjectKeys(targetAlbum, approveRow.id, ext)
-      const ct = contentTypeForExt(ext)
-
-      const { data: webBlob, error: e1 } = await supabase.storage.from(bucket).download(webPath)
-      if (e1 || !webBlob) {
-        toast.error(e1?.message ?? 'Download web image failed')
-        return
-      }
-      const { data: thumbBlob, error: e2 } = await supabase.storage.from(bucket).download(thumbPath)
-      if (e2 || !thumbBlob) {
-        toast.error(e2?.message ?? 'Download thumbnail failed')
-        return
-      }
-
-      const { error: u1 } = await supabase.storage.from(GALLERY_PUBLIC_BUCKET).upload(keys.web, webBlob, {
-        contentType: ct,
-        upsert: true,
+      const result = await approveGalleryPendingImagesBulk(
+        supabase,
+        selectedPendingRows,
+        bulkApproveAlbumId,
+        user.id
+      )
+      const succeededIds = new Set(
+        selectedPendingRows
+          .filter((row) => !result.errors.some((e) => e.id === row.id))
+          .map((r) => r.id)
+      )
+      setSelectedPendingIds((prev) => {
+        const next = new Set(prev)
+        for (const id of succeededIds) next.delete(id)
+        return next
       })
-      if (u1) {
-        toast.error(u1.message)
-        return
-      }
-      const { error: u2 } = await supabase.storage.from(GALLERY_PUBLIC_BUCKET).upload(keys.thumb, thumbBlob, {
-        contentType: ct,
-        upsert: true,
-      })
-      if (u2) {
-        toast.error(u2.message)
-        return
-      }
-
-      const { data: pubWeb } = supabase.storage.from(GALLERY_PUBLIC_BUCKET).getPublicUrl(keys.web)
-      const { data: pubTh } = supabase.storage.from(GALLERY_PUBLIC_BUCKET).getPublicUrl(keys.thumb)
-
-      const { error: upDb } = await supabase
-        .from('gallery_images')
-        .update({
-          status: 'published',
-          album_id: targetAlbum,
-          image_url: pubWeb.publicUrl,
-          thumbnail_url: pubTh.publicUrl,
-          approved_at: new Date().toISOString(),
-          approved_by: user.id,
-          submission_storage_bucket: null,
-          submission_storage_path: null,
-          submission_thumb_path: null,
-        })
-        .eq('id', approveRow.id)
-
-      if (upDb) {
-        toast.error(upDb.message)
-        return
-      }
-
-      await supabase.storage.from(bucket).remove([webPath, thumbPath])
-
-      toast.success('Approved and published')
-      setApproveRow(null)
+      setBulkApproveOpen(false)
       void loadImages()
+
+      if (result.failed === 0) {
+        toast.success(`Published ${result.succeeded} image${result.succeeded === 1 ? '' : 's'}.`)
+      } else if (result.succeeded === 0) {
+        toast.error(`Could not publish ${result.failed} image${result.failed === 1 ? '' : 's'}.`)
+      } else {
+        toast.warning(
+          `Published ${result.succeeded} image${result.succeeded === 1 ? '' : 's'}. ${result.failed} could not be published.`
+        )
+      }
     } finally {
       setApproveBusy(false)
     }
@@ -347,10 +361,77 @@ export function AdminGalleryPage() {
               No pending submissions
             </div>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {pendingRows.map((row) => (
-                <Card key={row.id}>
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={selectAllVisiblePending}
+                  data-testid="gallery-select-all-pending"
+                >
+                  Select all ({pendingRows.length})
+                </Button>
+              </div>
+
+              {selectedPendingCount > 0 ? (
+                <div
+                  className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/25 bg-primary/[0.06] px-4 py-3 shadow-sm backdrop-blur-sm"
+                  data-testid="gallery-bulk-action-bar"
+                >
+                  <p className="text-sm font-medium text-foreground">
+                    {selectedPendingCount} selected
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="gap-1"
+                      data-testid="gallery-bulk-publish-open"
+                      onClick={() => {
+                        const sharedAlbum =
+                          selectedPendingRows.find((r) => r.album_id)?.album_id ?? albums[0]?.id ?? ''
+                        setBulkApproveAlbumId(sharedAlbum)
+                        setBulkApproveOpen(true)
+                      }}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      Publish selected
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      data-testid="gallery-bulk-clear-selection"
+                      onClick={clearPendingSelection}
+                    >
+                      Clear selection
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {pendingRows.map((row) => {
+                const isSelected = selectedPendingIds.has(row.id)
+                return (
+                <Card
+                  key={row.id}
+                  className={cn(
+                    'transition-colors',
+                    isSelected && 'border-primary/50 bg-primary/[0.04] ring-2 ring-primary/25'
+                  )}
+                >
                   <CardContent className="p-4 space-y-3">
+                    <div className="relative">
+                      <div className="absolute right-2 top-2 z-[1] rounded-md bg-background/90 p-1 shadow-sm">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(v) => togglePendingSelection(row.id, v === true)}
+                          aria-label={`Select image from ${submitterLabel(row)}`}
+                          data-testid={`gallery-pending-select-${row.id}`}
+                        />
+                      </div>
                     <div className="aspect-square rounded-lg bg-muted overflow-hidden">
                       {pendingThumbs[row.id] ? (
                         <img src={pendingThumbs[row.id]} alt="" className="h-full w-full object-cover" />
@@ -359,6 +440,7 @@ export function AdminGalleryPage() {
                           <Loader2 className="h-5 w-5 animate-spin" />
                         </div>
                       )}
+                    </div>
                     </div>
                     {(row.submitted_by_name || row.submitted_by_email) && (
                       <p className="text-xs text-muted-foreground">
@@ -427,7 +509,8 @@ export function AdminGalleryPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+              )})}
+              </div>
             </div>
           )}
         </TabsContent>
@@ -553,6 +636,56 @@ export function AdminGalleryPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <Dialog
+        open={bulkApproveOpen}
+        onOpenChange={(open) => {
+          if (!open) setBulkApproveOpen(false)
+        }}
+      >
+        <DialogContent data-testid="gallery-bulk-publish-dialog">
+          <DialogHeader>
+            <DialogTitle>Publish selected images</DialogTitle>
+            <DialogDescription>
+              This will publish {selectedPendingCount} selected image
+              {selectedPendingCount === 1 ? '' : 's'} to the public gallery.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label>Album</Label>
+            <Select value={bulkApproveAlbumId} onValueChange={setBulkApproveAlbumId}>
+              <SelectTrigger data-testid="gallery-bulk-album-select">
+                <SelectValue placeholder="Select album" />
+              </SelectTrigger>
+              <SelectContent>
+                {albums.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setBulkApproveOpen(false)}
+              disabled={approveBusy}
+            >
+              Cancel
+            </Button>
+            <Button
+              data-testid="gallery-bulk-publish-confirm"
+              onClick={() => void confirmBulkApprove()}
+              disabled={approveBusy || !bulkApproveAlbumId || !albums.length || selectedPendingCount === 0}
+            >
+              {approveBusy
+                ? 'Publishing…'
+                : `Publish ${selectedPendingCount} image${selectedPendingCount === 1 ? '' : 's'}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={!!approveRow}
