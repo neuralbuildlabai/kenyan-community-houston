@@ -9,7 +9,7 @@ import { test, expect } from '@playwright/test'
 test.describe('membership registration auth fields', () => {
   test('membership page heading is visible (signup sync is server-side)', async ({ page }) => {
     await page.goto('/membership')
-    await expect(page.getByRole('heading', { level: 1, name: /Membership registration/i })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: /Become a member|Membership registration|Join the community/i })).toBeVisible()
   })
 
   test('logged-out membership hides Google and shows password fields (OAuth disabled)', async ({ page }) => {

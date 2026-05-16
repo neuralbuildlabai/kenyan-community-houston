@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { HelpCircle, Send, Lock } from 'lucide-react'
+import { Send, Lock } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -214,31 +214,22 @@ export function ChatPage() {
         description="Ask the Kenyan Community Houston team for help, referrals, or clarity. Logged-in members can submit one tracked request at a time."
       />
 
-      <div className="border-b bg-gradient-to-br from-primary/[0.07] via-background to-muted/40">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-          <div className="flex flex-col sm:flex-row sm:items-start gap-5">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <HelpCircle className="h-8 w-8" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Ask the Community</p>
-              <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">Community Requests</h1>
-              <p className="mt-3 text-muted-foreground leading-relaxed max-w-2xl">
-                This is a <strong className="text-foreground">tracked help desk</strong>, not an anonymous chatroom. When you start a request, the leadership team can see your thread, respond, and follow up. You may have{' '}
-                <strong className="text-foreground">only one open request at a time</strong> — close it when you are done so someone else’s turn is not delayed.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-border/60 bg-card/80 px-4 py-3 shadow-sm">
-          <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
-            Know someone who would value updates from KIGH? Invite them personally — the site never sends SMS on your behalf.
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="mb-8 max-w-2xl">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+            Ask the community
+          </h1>
+          <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+            A member space for tracked requests. Start a thread and the
+            leadership team will respond. One open request at a time.
           </p>
+        </div>
+
+        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
           <InviteSomeoneDialog />
         </div>
+
+        <div className="space-y-8">
 
         {!user && (
           <Card className="border-primary/20 shadow-sm">
@@ -437,6 +428,7 @@ export function ChatPage() {
             </CardContent>
           </Card>
         )}
+        </div>
       </div>
 
       <ConfirmDialog

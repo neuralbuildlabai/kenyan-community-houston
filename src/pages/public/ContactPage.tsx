@@ -99,22 +99,27 @@ export function ContactPage() {
     <>
       <SEOHead title="Contact / Join" description="Reach out to the Kenyan Community Houston team for inquiries, event submissions, or to get involved." />
 
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold mb-2">Contact / Join Us</h1>
-          <p className="text-muted-foreground">We'd love to hear from you. Fill in the form below and we'll get back to you.</p>
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="mb-10 max-w-2xl">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+            Contact us
+          </h1>
+          <p className="mt-3 text-base text-muted-foreground">
+            Share a question, suggestion, or partnership — we&apos;ll get back
+            to you.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {/* Info */}
-          <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-12">
+          {/* Info — minimal: location + email only. */}
+          <div className="space-y-5">
             <div className="flex items-start gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
                 <MapPin className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <div className="font-medium text-sm">Location</div>
-                <div className="text-sm text-muted-foreground">Houston, Texas, USA</div>
+                <div className="text-sm text-muted-foreground">Houston, Texas</div>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -127,17 +132,6 @@ export function ContactPage() {
                   {PUBLIC_CONTACT_EMAIL}
                 </a>
               </div>
-            </div>
-
-            <div className="rounded-xl border bg-muted/30 p-5">
-              <h3 className="font-semibold mb-2">How to get involved</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>📅 Submit an event for the community</li>
-                <li>🏢 List your business in the directory</li>
-                <li>❤️ Submit a community fundraiser</li>
-                <li>📣 Share a community announcement</li>
-                <li>🤝 Partner with us or volunteer</li>
-              </ul>
             </div>
           </div>
 

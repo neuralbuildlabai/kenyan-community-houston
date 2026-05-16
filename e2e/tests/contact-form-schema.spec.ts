@@ -13,7 +13,7 @@ test.describe('contact form schema', () => {
   test('renders all expected fields', async ({ page }) => {
     await page.goto('/contact')
 
-    await expect(page.getByRole('heading', { name: /Contact \/ Join Us/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Contact us|Contact \/ Join Us/i })).toBeVisible()
     await expect(page.getByLabel(/Full Name/i)).toBeVisible()
     await expect(page.getByLabel(/Email/i)).toBeVisible()
     await expect(page.getByLabel(/Phone \(optional\)/i)).toBeVisible()

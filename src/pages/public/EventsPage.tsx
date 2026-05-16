@@ -52,20 +52,35 @@ export function EventsPage() {
     <>
       <SEOHead title="Events" description="Find upcoming Kenyan community events in Houston and surrounding areas." />
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Community Events</h1>
-          <p className="text-muted-foreground">Upcoming events from the Kenyan community in Houston</p>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        {/* Calmer page header — single heading, no helper paragraph,
+            primary action (Submit) lives in the same row. */}
+        <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+              Community events
+            </h1>
+            <p className="mt-3 text-base text-muted-foreground">
+              Upcoming gatherings across Greater Houston.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild size="sm" variant="ghost" className="text-primary">
+              <Link to="/calendar">Calendar view</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link to="/events/submit">Submit an event</Link>
+            </Button>
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-8">
-          <div className="relative flex-1">
+        {/* Filters — one search input + a single horizontal chip row. */}
+        <div className="mb-8 space-y-3">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search events…"
-              className="pl-9"
+              className="h-11 pl-9 bg-background"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -74,6 +89,7 @@ export function EventsPage() {
             <Button
               variant={category === '' ? 'default' : 'outline'}
               size="sm"
+              className="rounded-full"
               onClick={() => setCategory('')}
             >
               All
@@ -83,6 +99,7 @@ export function EventsPage() {
                 key={cat}
                 variant={category === cat ? 'default' : 'outline'}
                 size="sm"
+                className="rounded-full"
                 onClick={() => setCategory(cat)}
               >
                 {cat}
@@ -91,19 +108,11 @@ export function EventsPage() {
           </div>
         </div>
 
-        <div className="mb-6 flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            {loading ? 'Loading…' : `${displayedEvents.length} event${displayedEvents.length !== 1 ? 's' : ''} found`}
-          </p>
-          <div className="flex flex-wrap gap-2 justify-end">
-            <Button asChild size="sm" variant="outline">
-              <Link to="/calendar">Community calendar</Link>
-            </Button>
-            <Button asChild size="sm" variant="default">
-              <Link to="/events/submit">Submit an Event</Link>
-            </Button>
-          </div>
-        </div>
+        <p className="mb-5 text-sm text-muted-foreground">
+          {loading
+            ? 'Loading…'
+            : `${displayedEvents.length} event${displayedEvents.length !== 1 ? 's' : ''}`}
+        </p>
 
         {loading ? (
           <PageLoader />

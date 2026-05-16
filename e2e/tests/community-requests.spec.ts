@@ -15,7 +15,7 @@ test.describe('Community Requests (/chat)', () => {
 
   test('/chat loads for logged-out visitor', async ({ page }) => {
     await page.goto('/chat', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('heading', { name: 'Community Requests' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Ask the community|Community Requests|Community Chat/i })).toBeVisible()
   })
 
   test('logged-out visitor sees login CTA', async ({ page }) => {
@@ -41,7 +41,7 @@ test.describe('Community Requests (/chat)', () => {
     const tos = ALL_PUBLIC_NAV.map((i) => i.to)
     expect(tos).toContain('/chat')
     const labels = ALL_PUBLIC_NAV.map((i) => i.label)
-    expect(labels.some((l) => /ask the community/i.test(l))).toBeTruthy()
+    expect(labels.some((l) => /ask the community|community chat/i.test(l))).toBeTruthy()
   })
 
   test('public nav does not expose admin chat routes', () => {

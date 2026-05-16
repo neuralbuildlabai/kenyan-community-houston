@@ -15,8 +15,8 @@ test.describe('new to houston', () => {
 
     await expect(page.getByRole('heading', { name: /Community-reviewed services/i })).toBeVisible()
 
-    await expect(page.getByRole('link', { name: 'List Your Service' })).toHaveAttribute('href', '/businesses/submit')
-    await expect(page.getByRole('link', { name: /Browse Business Directory/i })).toHaveAttribute('href', '/businesses')
+    await expect(page.getByRole('link', { name: /List Your Service|List a service/i })).toHaveAttribute('href', '/businesses/submit')
+    await expect(page.getByRole('link', { name: /Browse Business Directory|Business directory|Business Directory|Browse businesses/i }).first()).toHaveAttribute('href', '/businesses')
 
     await page.getByRole('button', { name: /Community & Faith/i }).click()
     await expect(page.getByRole('link', { name: /Community Groups & Institutions/i })).toHaveAttribute('href', '/community-groups')

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { FileText, ExternalLink, Search, Library } from 'lucide-react'
+import { FileText, ExternalLink, Search } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -62,44 +62,36 @@ export function ResourcesPage() {
         description="Public KIGH documents, presentations, and community resources."
       />
 
-      <div className="border-b bg-gradient-to-br from-muted/60 via-background to-primary/[0.06]">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
-          <div className="flex items-start gap-4 max-w-3xl">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
-              <Library className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">Resource library</h1>
-              <p className="mt-3 text-muted-foreground text-base sm:text-lg leading-relaxed">
-                Published KIGH documents and presentations. Internal or sensitive materials are not listed here.
-              </p>
-            </div>
-          </div>
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="mb-10 max-w-2xl">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+            Resource library
+          </h1>
+          <p className="mt-3 text-base text-muted-foreground">
+            Published KIGH documents and presentations.
+          </p>
         </div>
-      </div>
 
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12 space-y-8">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
+        <div className="space-y-3 mb-8">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               className="pl-9 h-11 bg-background"
-              placeholder="Search by title or description…"
+              placeholder="Search resources…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant={category === '' ? 'default' : 'outline'} onClick={() => setCategory('')} className="rounded-full">
-            All categories
-          </Button>
-          {RESOURCE_LIBRARY_CATEGORIES.map((c) => (
-            <Button key={c} size="sm" variant={category === c ? 'default' : 'outline'} onClick={() => setCategory(c)} className="rounded-full">
-              {c}
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant={category === '' ? 'default' : 'outline'} onClick={() => setCategory('')} className="rounded-full">
+              All
             </Button>
-          ))}
+            {RESOURCE_LIBRARY_CATEGORIES.map((c) => (
+              <Button key={c} size="sm" variant={category === c ? 'default' : 'outline'} onClick={() => setCategory(c)} className="rounded-full">
+                {c}
+              </Button>
+            ))}
+          </div>
         </div>
 
         {loading ? (

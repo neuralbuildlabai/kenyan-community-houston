@@ -287,15 +287,16 @@ export function CommunityFeedPage() {
     <div className="mx-auto max-w-3xl px-4 py-10 sm:py-12 space-y-8">
       <SEOHead title="Community Feed" description="Stay connected with the Kenyan community in Houston." />
 
-      <header className="space-y-2 text-center sm:text-left">
-        <h1 className="text-3xl font-bold tracking-tight">Community Feed</h1>
-        <p className="text-muted-foreground text-base leading-relaxed">
-          Stay connected with what&apos;s happening in the Kenyan community in Houston.
+      <header className="space-y-3">
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+          Community feed
+        </h1>
+        <p className="text-base leading-relaxed text-muted-foreground max-w-2xl">
+          Updates and reminders shared by neighbors. Keep posts respectful and
+          avoid sharing private contact details.
         </p>
-        <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
-          Community posts must remain respectful and appropriate. Please do not share private phone numbers, home
-          addresses, or sensitive personal information in public posts or comments. Each comment can be up to 200
-          characters.
+        <p className="text-sm text-muted-foreground">
+          Community posts must remain respectful. Comments are limited to 200 characters.
         </p>
       </header>
 
@@ -323,8 +324,8 @@ export function CommunityFeedPage() {
           <CardHeader>
             <CardTitle className="text-lg">Share with the community</CardTitle>
             <CardDescription>
-              Approved members can post once per day, up to three times per week. Please do not share private phone
-              numbers, home addresses, or sensitive personal information.
+              One post per day, up to three per week. Avoid sharing private
+              contact details.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

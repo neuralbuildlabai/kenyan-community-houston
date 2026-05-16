@@ -9,7 +9,6 @@ import {
   ExternalLink,
   Share2,
   BadgeCheck,
-  ArrowRight,
 } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Input } from '@/components/ui/input'
@@ -75,60 +74,27 @@ export function CommunityGroupsPage() {
         description="Religious institutions, benevolence groups, welfare groups, and community organizations serving Kenyans and friends of Kenya in Greater Houston."
       />
 
-      {/* ─── Hero ─────────────────────────────────────────────── */}
-      <section className="relative border-b bg-gradient-to-br from-primary/[0.08] via-background to-kenyan-gold-50/40">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-          <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-end">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary">
-                <UsersRound className="h-3.5 w-3.5" />
-                Greater Houston
-              </div>
-              <h1 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight leading-tight">
-                Community Groups &{' '}
-                <span className="text-primary">Institutions</span>
-              </h1>
-              <p className="mt-4 text-base sm:text-lg text-muted-foreground leading-relaxed">
-                A non-commercial directory of religious institutions, benevolence
-                and welfare circles, youth and family groups, cultural
-                organizations, and professional networks that serve Kenyans and
-                friends of Kenya across Greater Houston.
-              </p>
-              <div className="mt-6 flex flex-wrap items-center gap-3">
-                <Button asChild size="lg" className="shadow-sm">
-                  <Link to="/community-groups/submit" className="gap-1.5">
-                    Submit a group
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="ghost" className="gap-1.5">
-                  <Link to="/contact">Contact KIGH</Link>
-                </Button>
-              </div>
-            </div>
-            <div className="hidden lg:flex items-end justify-end">
-              <div className="rounded-2xl border bg-white/60 backdrop-blur-sm px-6 py-5 shadow-sm w-full max-w-xs">
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  At a glance
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-3xl font-bold text-foreground">
-                      {loading ? '—' : totalCount}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {filterIsActive ? 'matching' : 'listings'}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-bold text-primary">
-                      {loading ? '—' : verifiedCount}
-                    </div>
-                    <div className="text-xs text-muted-foreground">verified</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+      {/* ─── Hero — calm, single-column ─────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-2xl">
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+              Community groups
+            </h1>
+            <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+              A non-commercial directory of organizations serving Kenyans across
+              Greater Houston.
+              <span className="ml-2 text-sm text-muted-foreground/80">
+                {loading
+                  ? ''
+                  : `${totalCount} ${filterIsActive ? 'matching' : 'listings'} · ${verifiedCount} verified`}
+              </span>
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild size="sm">
+              <Link to="/community-groups/submit">Submit a group</Link>
+            </Button>
           </div>
         </div>
       </section>

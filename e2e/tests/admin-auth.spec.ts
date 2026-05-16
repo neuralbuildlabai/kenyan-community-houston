@@ -27,6 +27,6 @@ test.describe('admin auth', () => {
     await expect(page.getByRole('button', { name: 'Logout' }).first()).toBeVisible()
     await page.getByRole('button', { name: 'Logout' }).first().click()
     await expect(page).not.toHaveURL(/\/admin/)
-    await expect(page.getByRole('heading', { level: 1, name: /Your community hub for life in Houston/i })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: /Your Kenyan community hub in Houston/i })).toBeVisible()
   })
 })

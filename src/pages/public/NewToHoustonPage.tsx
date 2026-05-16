@@ -1,6 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
 import {
-  MapPin,
   Phone,
   BookOpen,
   Heart,
@@ -227,24 +226,25 @@ export function NewToHoustonPage() {
         description="Official Houston and Texas resources, community-reviewed service listings, and practical guidance for Kenyans settling in Greater Houston."
       />
 
-      <div className="border-b bg-gradient-to-br from-primary/[0.07] via-background to-kenyan-gold-500/[0.06]">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 sm:py-14 text-center">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/12 text-primary mb-5 shadow-sm">
-            <MapPin className="h-7 w-7" />
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight mb-3">New to Houston?</h1>
-          <p className="text-muted-foreground max-w-xl mx-auto text-base sm:text-lg leading-relaxed">
-            Welcome to Houston. Use official resources with confidence, explore community-reviewed listings when you are ready, and connect with others who have walked the same path.
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="max-w-2xl">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+            New to Houston?
+          </h1>
+          <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+            Practical next steps for settling in — official resources first,
+            community listings when you&apos;re ready.
           </p>
         </div>
       </div>
 
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12 space-y-14">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 pb-16 space-y-14">
         {/* ── Official resources ───────────────────────────────────── */}
         <section>
-          <h2 className="text-2xl font-bold text-foreground tracking-tight mb-2">Official Houston & Texas resources</h2>
+          <h2 className="text-2xl font-bold text-foreground tracking-tight mb-2">Official Houston &amp; Texas resources</h2>
           <p className="text-sm text-muted-foreground leading-relaxed mb-8 max-w-2xl">
-            These are independent government and public-service sites. Open each in a new tab, read official guidance, and confirm requirements before you visit an office or pay fees.
+            Independent government and public-service sites. Confirm requirements
+            before you visit an office or pay any fees.
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             {OFFICIAL_RESOURCE_GROUPS.map((group) => (
@@ -271,34 +271,31 @@ export function NewToHoustonPage() {
         </section>
 
         {/* ── Community-reviewed services ─────────────────────────── */}
-        <section className="rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.03] via-background to-muted/30 p-6 sm:p-8">
+        <section className="rounded-3xl bg-muted/30 p-7 sm:p-9">
           <h2 className="text-2xl font-bold text-foreground tracking-tight mb-3">Community-reviewed services</h2>
-          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-4 max-w-2xl">
-            Some newcomers need help finding housing, insurance, tax help, legal support, moving services, childcare, or other practical services. KIGH can help organize community-submitted listings so families can compare options and contact providers directly.
+          <p className="text-sm text-muted-foreground leading-relaxed mb-5 max-w-2xl">
+            Browse and submit community-vetted housing, legal, insurance, and
+            childcare listings. Always verify credentials yourself.
           </p>
-          <p className="text-xs text-muted-foreground leading-relaxed mb-5 max-w-2xl border-l-2 border-kenyan-gold-500/60 pl-3">
-            Over time, listings may include verified or featured profiles and community-support placements. Today, submissions are reviewed before publication; always verify credentials, references, and terms yourself.
-          </p>
-          <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2">Categories we organize around</p>
-          <ul className="flex flex-wrap gap-2 mb-6">
+          <ul className="flex flex-wrap gap-2 mb-7">
             {SERVICE_CATEGORIES.map((c) => (
               <li
                 key={c}
-                className="rounded-full border border-border/80 bg-background/90 px-3 py-1 text-xs font-medium text-foreground/90"
+                className="rounded-full bg-background px-3 py-1 text-xs font-medium text-foreground/85 ring-1 ring-border/50"
               >
                 {c}
               </li>
             ))}
           </ul>
-          <div className="flex flex-col sm:flex-row flex-wrap gap-3">
-            <Button asChild className="font-semibold w-full sm:w-auto">
-              <Link to="/businesses/submit">List Your Service</Link>
-            </Button>
-            <Button asChild variant="outline" className="w-full sm:w-auto">
-              <Link to="/businesses" className="inline-flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                Browse Business Directory
+          <div className="flex flex-wrap gap-3">
+            <Button asChild className="font-semibold">
+              <Link to="/businesses">
+                <Building2 className="mr-2 h-4 w-4" />
+                Business directory
               </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/businesses/submit">List a service</Link>
             </Button>
           </div>
         </section>
@@ -321,14 +318,21 @@ export function NewToHoustonPage() {
           </div>
         </section>
 
-        <div className="rounded-2xl bg-gradient-to-r from-primary to-kenyan-green-700 p-8 text-white text-center">
-          <h2 className="text-xl font-bold mb-2">Connect with the community</h2>
-          <p className="text-white/85 mb-5 max-w-md mx-auto text-sm leading-relaxed">
-            You do not have to figure everything out alone. Reach out through KIGH and we will do our best to point you in a helpful direction.
-          </p>
-          <Button asChild className="bg-kenyan-gold-500 hover:bg-kenyan-gold-600 text-white border-0 font-semibold">
-            <Link to="/contact">Contact KIGH</Link>
-          </Button>
+        <div className="rounded-3xl bg-gradient-to-r from-primary to-kenyan-green-700 px-8 py-10 text-white sm:flex sm:items-center sm:justify-between sm:gap-6 text-center sm:text-left">
+          <div className="max-w-md">
+            <h2 className="text-xl font-bold leading-tight">You don&apos;t have to figure this out alone</h2>
+            <p className="mt-2 text-sm leading-relaxed text-white/85">
+              Reach out and we&apos;ll point you in a helpful direction.
+            </p>
+          </div>
+          <div className="mt-5 sm:mt-0 flex flex-wrap justify-center sm:justify-end gap-3">
+            <Button asChild className="bg-kenyan-gold-500 hover:bg-kenyan-gold-600 text-white border-0 font-semibold">
+              <Link to="/contact">Contact KIGH</Link>
+            </Button>
+            <Button asChild variant="outline" className="bg-transparent border-white/70 text-white hover:bg-white/10">
+              <Link to="/chat">Ask the community</Link>
+            </Button>
+          </div>
         </div>
       </div>
     </>

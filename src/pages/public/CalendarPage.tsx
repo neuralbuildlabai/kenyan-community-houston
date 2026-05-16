@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Calendar as CalIcon, MapPin, Video, ExternalLink, Download, CalendarDays } from 'lucide-react'
+import { Calendar as CalIcon, MapPin, Video, ExternalLink, Download } from 'lucide-react'
 import { parseISO } from 'date-fns'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
@@ -81,23 +81,17 @@ export function CalendarPage() {
         description="Live KIGH community calendar — upcoming cultural, youth, sports, and community events."
       />
 
-      <div className="border-b bg-gradient-to-br from-primary/[0.08] via-background to-muted/50">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
-          <div className="flex items-start gap-4 max-w-3xl">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
-              <CalendarDays className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">Community calendar</h1>
-              <p className="mt-3 text-muted-foreground text-base sm:text-lg leading-relaxed">
-                Live events for Kenyans in Greater Houston — curated and published by KIGH. Add sessions to your calendar or open event details.
-              </p>
-            </div>
-          </div>
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="mb-10 max-w-2xl">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+            Community calendar
+          </h1>
+          <p className="mt-3 text-base text-muted-foreground">
+            Upcoming KIGH events across Greater Houston.
+          </p>
         </div>
-      </div>
 
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12 space-y-8">
+        <div className="space-y-8">
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" size="sm" variant={tab === 'upcoming' ? 'default' : 'outline'} onClick={() => setTab('upcoming')} className="rounded-full">
             Upcoming
@@ -225,11 +219,12 @@ export function CalendarPage() {
           )}
         </div>
 
-        <p className="text-xs text-muted-foreground text-center max-w-xl mx-auto leading-relaxed">
-          Community members can suggest events via{' '}
-          <Link to="/events/submit" className="text-primary font-medium underline-offset-4 hover:underline">submit an event</Link>
-          {' '}for review before publication.
-        </p>
+          <p className="text-xs text-muted-foreground text-center max-w-xl mx-auto leading-relaxed">
+            Community members can suggest events via{' '}
+            <Link to="/events/submit" className="text-primary font-medium underline-offset-4 hover:underline">submit an event</Link>
+            {' '}for review before publication.
+          </p>
+        </div>
       </div>
     </>
   )

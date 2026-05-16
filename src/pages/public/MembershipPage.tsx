@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Plus, Trash2, UserPlus } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { KighLogo } from '@/components/KighLogo'
 import { Button } from '@/components/ui/button'
@@ -362,38 +362,23 @@ export function MembershipPage() {
         description="Register as an individual, family, or associate member of Kenyans in Greater Houston."
       />
 
-      <div className="border-b bg-gradient-to-br from-primary/[0.07] via-background to-muted/40">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-          <div className="flex flex-col sm:flex-row sm:items-start gap-5">
-            <KighLogo withCard className="h-[4.5rem] w-[4.5rem] shrink-0 shadow-sm" imgClassName="max-h-16" />
-            <div>
-              <div className="flex items-center gap-2 text-primary mb-1.5">
-                <UserPlus className="h-5 w-5" />
-                <span className="text-xs font-semibold uppercase tracking-wide">KIGH membership</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Membership registration</h1>
-              <p className="mt-2 text-sm text-muted-foreground max-w-xl">
-                Join the Kenyan Community Houston network. Complete the sections below — it only takes a few minutes.
-              </p>
-            </div>
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+          <KighLogo
+            withCard
+            className="h-16 w-16 shrink-0 shadow-sm"
+            imgClassName="max-h-14"
+          />
+          <div className="max-w-xl">
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+              Become a member
+            </h1>
+            <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+              Annual dues are $20 (due Jan 31). The sections below take a few
+              minutes.
+            </p>
           </div>
         </div>
-      </div>
-
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 -mt-2 mb-2">
-        <Card className="border-primary/15 shadow-sm bg-muted/25">
-          <CardContent className="py-3 px-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">$20/year</span> dues (due Jan 31) — pay via official channels.{' '}
-              <Link to="/support" className="text-primary font-medium underline-offset-4 hover:underline">
-                Support
-              </Link>
-            </p>
-            <Button asChild size="sm" variant="default" className="shrink-0 w-full sm:w-auto">
-              <Link to="/serve">Call to Serve</Link>
-            </Button>
-          </CardContent>
-        </Card>
       </div>
 
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-6">

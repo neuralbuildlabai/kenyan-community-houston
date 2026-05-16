@@ -5,10 +5,10 @@
  * `MORE_NAV_GROUPS` for the grouped More dropdown / the mobile
  * sheet. Footer mirrors these where appropriate.
  *
- * Production-readiness UX run (May 2026): the previous header
- * exposed 6 unranked top-level tabs and a flat list of 9 secondary
- * items in More. We trimmed primary nav to 5 high-traffic
- * destinations and grouped the long tail by intent.
+ * May 2026 premium UX cleanup: surface Community Chat directly in
+ * the primary nav (it is the highest-value member entry point) and
+ * group secondary destinations by visitor intent. Calendar and
+ * Gallery move into More to keep the top bar to four primary tabs.
  */
 
 export interface NavItem {
@@ -23,16 +23,19 @@ export interface NavGroup {
 }
 
 /**
- * Top-level desktop nav. Keep this list short — five items leaves
+ * Top-level desktop nav. Keep this list short — four items leaves
  * room for the More menu, the Submit Event CTA, and the Login link
- * affordance without crowding the header on a 1280px viewport.
+ * affordance on a 1280px viewport.
+ *
+ * Community Chat lives here on purpose: the May 2026 cleanup
+ * surfaced it as a top-level destination so members never have to
+ * hunt through More to ask the community a question.
  */
 export const PRIMARY_NAV: ReadonlyArray<NavItem> = [
   { to: '/events', label: 'Events' },
-  { to: '/calendar', label: 'Calendar' },
+  { to: '/chat', label: 'Community Chat' },
+  { to: '/resources', label: 'Resources' },
   { to: '/businesses', label: 'Businesses' },
-  { to: '/community-support', label: 'Community Support' },
-  { to: '/gallery', label: 'Gallery' },
 ]
 
 /**
@@ -42,34 +45,32 @@ export const PRIMARY_NAV: ReadonlyArray<NavItem> = [
  */
 export const MORE_NAV_GROUPS: ReadonlyArray<NavGroup> = [
   {
-    heading: 'Programs',
+    heading: 'Community',
     items: [
-      { to: '/sports-youth', label: 'Sports & Youth' },
-      { to: '/membership', label: 'Membership' },
-      { to: '/serve', label: 'Call to Serve' },
+      { to: '/community-feed', label: 'Community Feed' },
+      { to: '/calendar', label: 'Calendar' },
+      { to: '/community-groups', label: 'Community Groups' },
+      { to: '/gallery', label: 'Gallery' },
     ],
   },
   {
-    heading: 'Discover',
+    heading: 'Programs',
     items: [
-      { to: '/community-groups', label: 'Community Groups' },
-      { to: '/resources', label: 'Resources' },
-      { to: '/chat', label: 'Ask the Community' },
-      { to: '/community-feed', label: 'Community Feed' },
-      { to: '/new-to-houston', label: 'New to Houston' },
+      { to: '/membership', label: 'Membership' },
+      { to: '/sports-youth', label: 'Sports & Youth' },
+      { to: '/serve', label: 'Call to Serve' },
+      { to: '/community-support', label: 'Community Support' },
     ],
   },
   {
     heading: 'About KIGH',
     items: [
+      { to: '/new-to-houston', label: 'New to Houston' },
       { to: '/governance', label: 'Governance' },
       { to: '/about', label: 'About' },
       { to: '/contact', label: 'Contact' },
+      { to: '/support', label: 'Support KIGH' },
     ],
-  },
-  {
-    heading: 'Support',
-    items: [{ to: '/support', label: 'Support KIGH' }],
   },
 ]
 
