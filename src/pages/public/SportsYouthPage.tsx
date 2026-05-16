@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { Trophy, Search, Dribbble, Users2, Flag, ArrowUpRight } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { SportsCard } from '@/components/SportsCard'
-import { PublicPageHero } from '@/components/public/PublicPageHero'
 import { PublicSection } from '@/components/public/PublicSection'
 import { EmptyState } from '@/components/EmptyState'
 import { PageLoader } from '@/components/LoadingSpinner'
@@ -55,19 +54,47 @@ export function SportsYouthPage() {
         description="Sports news, youth programs, and community athletics from the Kenyan community in Houston."
       />
 
-      <PublicPageHero
-        eyebrow="Active &amp; future-facing"
-        title="Sports &amp; youth"
-        subtitle="Athletics, youth development, and family-friendly community activities — soccer, track, basketball, mentoring, and the next generation of leaders. Updates from teams, coaches, and parents across Greater Houston."
-        primaryAction={
-          <Button asChild size="sm">
-            <a href={`mailto:${PUBLIC_CONTACT_EMAIL}?subject=Sports%20%26%20Youth%20update`}>
-              Submit an update
-            </a>
-          </Button>
-        }
-        tone="gold"
-      />
+      <section className="relative overflow-hidden border-b border-border/50 bg-[#f7f2e8]">
+        <div className="absolute inset-y-0 right-0 hidden w-[58%] lg:block">
+          <img
+            src="/kigh-media/backgrounds/sportsyouth.png"
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full object-cover object-center opacity-90"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-r from-[#f7f2e8] via-[#f7f2e8]/55 to-transparent"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-b from-white/15 via-transparent to-[#f7f2e8]/30"
+          />
+        </div>
+
+        <div className="public-container relative z-10 py-20 sm:py-24">
+          <div className="max-w-xl">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-kenyan-gold-700 sm:text-xs dark:text-kenyan-gold-400">
+              Active &amp; future-facing
+            </p>
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-[2.5rem]">
+              Sports &amp; youth
+            </h1>
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
+              Athletics, youth development, and family-friendly community activities — soccer, track,
+              basketball, mentoring, and the next generation of leaders. Updates from teams, coaches,
+              and parents across Greater Houston.
+            </p>
+            <div className="mt-8">
+              <Button asChild size="sm">
+                <a href={`mailto:${PUBLIC_CONTACT_EMAIL}?subject=Sports%20%26%20Youth%20update`}>
+                  Submit an update
+                </a>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <PublicSection className="!py-10 sm:!py-12 lg:!py-14">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
