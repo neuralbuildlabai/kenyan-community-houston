@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/lib/supabase'
 import { SERVICE_AVAILABILITY_OPTIONS } from '@/lib/serveOpportunities'
 import type { ServiceInterestAvailability } from '@/lib/types'
+import { sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
 import { toast } from 'sonner'
 
 export function ServeApplyPage() {
@@ -38,11 +39,16 @@ export function ServeApplyPage() {
       toast.error('Please let us know if you are open to leadership or committee contact.')
       return
     }
+    const phoneRes = validatePhoneNumber(form.phone, { allowEmpty: true })
+    if (!phoneRes.ok) {
+      toast.error(phoneRes.reason)
+      return
+    }
     setSaving(true)
     const { error } = await supabase.from('service_interests').insert({
       full_name: form.full_name.trim(),
       email: form.email.trim().toLowerCase(),
-      phone: form.phone.trim() || null,
+      phone: phoneRes.value,
       area_of_interest: form.area_of_interest.trim() || null,
       how_to_help: form.how_to_help.trim() || null,
       availability: form.availability,
@@ -123,7 +129,7 @@ export function ServeApplyPage() {
                   id="phone"
                   type="tel"
                   value={form.phone}
-                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                  onChange={(e) => setForm((f) => ({ ...f, phone: sanitizePhoneInput(e.target.value) }))}
                   autoComplete="tel"
                 />
               </div>

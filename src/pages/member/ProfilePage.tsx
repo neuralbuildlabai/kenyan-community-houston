@@ -33,7 +33,7 @@ import {
   LOCATION_PROFESSION_VALIDATION_MESSAGE,
   logSupabaseErrorDebug,
 } from '@/lib/profilePayload'
-import { validatePhoneNumber } from '@/lib/phoneValidation'
+import { sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
 import { InviteSomeoneDialog } from '@/components/community/InviteSomeoneDialog'
 import { requiresProfilePasswordRefresh } from '@/lib/profilePasswordGate'
 import { hasEmailPasswordIdentity } from '@/lib/passwordPolicy'
@@ -387,7 +387,7 @@ export function ProfilePage() {
                 id="profile-phone"
                 data-testid="profile-input-phone"
                 value={row.phone ?? ''}
-                onChange={(e) => setRow((r) => ({ ...r, phone: e.target.value }))}
+                onChange={(e) => setRow((r) => ({ ...r, phone: sanitizePhoneInput(e.target.value) }))}
               />
             </div>
             <div className="space-y-1.5">
@@ -533,7 +533,7 @@ export function ProfilePage() {
             </div>
             <div className="space-y-1.5">
               <Label>Emergency contact phone</Label>
-              <Input value={row.emergency_contact_phone ?? ''} onChange={(e) => setRow((r) => ({ ...r, emergency_contact_phone: e.target.value }))} />
+              <Input value={row.emergency_contact_phone ?? ''} onChange={(e) => setRow((r) => ({ ...r, emergency_contact_phone: sanitizePhoneInput(e.target.value) }))} />
             </div>
           </CardContent>
         </Card>
@@ -687,7 +687,7 @@ export function ProfilePage() {
               </div>
               <div className="space-y-1.5">
                 <Label>Phone (optional)</Label>
-                <Input value={hhDialog.draft.phone ?? ''} onChange={(e) => setHhDialog((d) => ({ ...d, draft: { ...d.draft!, phone: e.target.value } }))} />
+                <Input value={hhDialog.draft.phone ?? ''} onChange={(e) => setHhDialog((d) => ({ ...d, draft: { ...d.draft!, phone: sanitizePhoneInput(e.target.value) } }))} />
               </div>
               <div className="space-y-1.5">
                 <Label>Notes (optional)</Label>

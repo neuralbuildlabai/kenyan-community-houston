@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/lib/supabase'
 import { PUBLIC_CONTACT_EMAIL } from '@/lib/constants'
+import { sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
 import { toast } from 'sonner'
 
 const INQUIRY_TYPES = ['General Inquiry', 'Event Submission', 'Business Listing', 'Fundraiser', 'Report Content', 'Partnership', 'Membership / Join', 'Other']
@@ -66,11 +67,17 @@ export function ContactPage() {
       return
     }
 
+    const phoneRes = validatePhoneNumber(form.phone, { allowEmpty: true })
+    if (!phoneRes.ok) {
+      toast.error(phoneRes.reason)
+      return
+    }
+
     setLoading(true)
     const payload = {
       name: form.name.trim(),
       email: form.email.trim(),
-      phone: form.phone.trim() || null,
+      phone: phoneRes.value,
       subject: form.subject.trim() || form.inquiry_type || 'Contact form',
       message: form.message.trim(),
       inquiry_type: form.inquiry_type || null,
@@ -160,7 +167,7 @@ export function ContactPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="phone">Phone (optional)</Label>
-                    <Input id="phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+1 (713) 000-0000" />
+                    <Input id="phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: sanitizePhoneInput(e.target.value) })} placeholder="+1 (713) 000-0000" />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Inquiry Type</Label>

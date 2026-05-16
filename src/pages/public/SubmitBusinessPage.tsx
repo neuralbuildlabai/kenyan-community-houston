@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import { trackSubmissionCreated } from '@/lib/analytics'
 import { BUSINESS_CATEGORIES } from '@/lib/constants'
 import { generateSlug } from '@/lib/utils'
+import { sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
 import { toast } from 'sonner'
 
 export function SubmitBusinessPage() {
@@ -27,9 +28,15 @@ export function SubmitBusinessPage() {
       toast.error('Please fill in all required fields')
       return
     }
+    const phoneRes = validatePhoneNumber(form.phone, { allowEmpty: true })
+    if (!phoneRes.ok) {
+      toast.error(phoneRes.reason)
+      return
+    }
     setLoading(true)
     const { error } = await supabase.from('businesses').insert([{
       ...form,
+      phone: phoneRes.value ?? '',
       slug: generateSlug(form.name),
       status: 'pending',
       tier: 'basic',
@@ -73,7 +80,7 @@ export function SubmitBusinessPage() {
             </div>
             <div className="form-field-stack">
               <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <Input id="phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: sanitizePhoneInput(e.target.value) })} />
             </div>
             <div className="form-field-stack">
               <Label htmlFor="email">Business Email</Label>

@@ -3,6 +3,7 @@ import {
   isValidInternationalPhone,
   normalizePhoneNumber,
   phoneDigitsOnly,
+  sanitizePhoneInput,
   validatePhoneNumber,
 } from './phoneValidation'
 
@@ -13,6 +14,32 @@ describe('normalizePhoneNumber', () => {
     expect(normalizePhoneNumber('+1 713 555 1212')).toBe('+17135551212')
     expect(normalizePhoneNumber('713-555-1212')).toBe('7135551212')
     expect(normalizePhoneNumber('(713) 555-1212')).toBe('7135551212')
+  })
+})
+
+describe('sanitizePhoneInput', () => {
+  it('removes letters, spaces, and punctuation; keeps digits only when no leading +', () => {
+    expect(sanitizePhoneInput('abc 0713 936 343xyz')).toBe('0713936343')
+  })
+
+  it('keeps a single leading + with following digits', () => {
+    expect(sanitizePhoneInput('+254 713 936 343')).toBe('+254713936343')
+  })
+
+  it('collapses multiple leading + to one', () => {
+    expect(sanitizePhoneInput('++254abc713')).toBe('+254713')
+  })
+
+  it('drops non-leading plus signs', () => {
+    expect(sanitizePhoneInput('254++713')).toBe('254713')
+  })
+
+  it('trims outer whitespace', () => {
+    expect(sanitizePhoneInput('  +1 713 555 1212  ')).toBe('+17135551212')
+  })
+
+  it('returns empty for whitespace-only', () => {
+    expect(sanitizePhoneInput('   \t')).toBe('')
   })
 })
 

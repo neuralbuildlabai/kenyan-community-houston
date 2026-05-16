@@ -9,6 +9,27 @@ export function normalizePhoneNumber(input: string): string {
   return input.trim().replace(/[\s().-]/g, '')
 }
 
+/**
+ * Strips typing/paste noise for controlled phone fields: keeps digits and at most one
+ * leading `+` (multiple `+` at the start collapse to one). Does not enforce length;
+ * use {@link validatePhoneNumber} on submit.
+ */
+export function sanitizePhoneInput(input: string): string {
+  const filtered = input.trim().replace(/[^0-9+]/g, '')
+  if (!filtered) return ''
+
+  let i = 0
+  let hadLeadingPlus = false
+  while (i < filtered.length && filtered[i] === '+') {
+    hadLeadingPlus = true
+    i++
+  }
+  const rest = filtered.slice(i)
+  const digitsOnly = rest.replace(/\D/g, '')
+  if (!digitsOnly) return hadLeadingPlus ? '+' : ''
+  return hadLeadingPlus ? `+${digitsOnly}` : digitsOnly
+}
+
 /** True when `value` is non-empty and matches `^\+?[0-9]{7,15}$`. */
 export function isValidInternationalPhone(value: string): boolean {
   const v = value.trim()

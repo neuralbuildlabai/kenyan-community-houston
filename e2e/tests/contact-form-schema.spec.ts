@@ -30,6 +30,17 @@ test.describe('contact form schema', () => {
     await expect(honeypot).toBeHidden()
   })
 
+  test('optional phone strips letters and spaces while typing', async ({ page }) => {
+    await page.goto('/contact')
+    const phone = page.locator('#phone')
+    await phone.fill('abc 0713 936 343xyz')
+    await expect(phone).toHaveValue('0713936343')
+    await phone.fill('+254 713 936 343')
+    await expect(phone).toHaveValue('+254713936343')
+    await phone.fill('++254abc713')
+    await expect(phone).toHaveValue('+254713')
+  })
+
   test('submit is blocked client-side when required fields are empty', async ({ page }) => {
     await page.goto('/contact')
     await page.getByRole('button', { name: /Send Message/i }).click()

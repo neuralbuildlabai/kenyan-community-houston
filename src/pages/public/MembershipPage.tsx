@@ -25,7 +25,7 @@ import {
   PROFESSIONAL_FIELD_VALUES,
 } from '@/lib/memberDemographics'
 import { logSupabaseErrorDebug, normalizeLocationProfession } from '@/lib/profilePayload'
-import { validatePhoneNumber } from '@/lib/phoneValidation'
+import { sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
 import {
   mapPasswordPolicyErrorsToSignupHints,
   passwordRotationAfterChangePayload,
@@ -483,7 +483,7 @@ export function MembershipPage() {
                   type="tel"
                   required
                   value={primary.phone}
-                  onChange={(e) => setPrimary((p) => ({ ...p, phone: e.target.value }))}
+                  onChange={(e) => setPrimary((p) => ({ ...p, phone: sanitizePhoneInput(e.target.value) }))}
                 />
               </div>
               {user ? (
@@ -751,7 +751,7 @@ export function MembershipPage() {
                       </div>
                       <div className="space-y-1.5">
                         <Label>Phone</Label>
-                        <Input type="tel" value={row.phone} onChange={(e) => updateHousehold(idx, { phone: e.target.value })} />
+                        <Input type="tel" value={row.phone} onChange={(e) => updateHousehold(idx, { phone: sanitizePhoneInput(e.target.value) })} />
                       </div>
                     </div>
                   </div>

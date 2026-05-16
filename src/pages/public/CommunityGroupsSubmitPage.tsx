@@ -12,6 +12,7 @@ import { COMMUNITY_GROUP_CATEGORIES } from '@/lib/constants'
 import type { CommunityGroupCategory } from '@/lib/types'
 import { generateSlug } from '@/lib/utils'
 import { normalizeExternalUrl } from '@/lib/externalUrl'
+import { sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
 import { toast } from 'sonner'
 
 const CATEGORY_NONE = '__none__'
@@ -63,6 +64,12 @@ export function CommunityGroupsSubmitPage() {
       return
     }
 
+    const publicPhoneRes = validatePhoneNumber(form.public_phone, { allowEmpty: true })
+    if (!publicPhoneRes.ok) {
+      toast.error(publicPhoneRes.reason)
+      return
+    }
+
     setLoading(true)
     const { error } = await supabase.from('community_groups').insert([
       {
@@ -72,7 +79,7 @@ export function CommunityGroupsSubmitPage() {
         description: form.description.trim() || null,
         website_url: normalizedWebsite,
         public_email: form.public_email.trim() || null,
-        public_phone: form.public_phone.trim() || null,
+        public_phone: publicPhoneRes.value,
         meeting_location: form.meeting_location.trim() || null,
         service_area: form.service_area.trim() || null,
         social_url: normalizedSocial,
@@ -190,7 +197,7 @@ export function CommunityGroupsSubmitPage() {
             </div>
             <div className="form-field-stack">
               <Label htmlFor="public_phone">Public phone</Label>
-              <Input id="public_phone" type="tel" value={form.public_phone} onChange={(e) => setForm((f) => ({ ...f, public_phone: e.target.value }))} />
+              <Input id="public_phone" type="tel" value={form.public_phone} onChange={(e) => setForm((f) => ({ ...f, public_phone: sanitizePhoneInput(e.target.value) }))} />
             </div>
             <div className="form-field-stack">
               <Label htmlFor="meeting_location">Meeting location</Label>

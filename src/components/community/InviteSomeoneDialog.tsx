@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { buildInviteMessage, buildWhatsAppInviteUrl, isValidWhatsAppNormalizedDigits, PUBLIC_SITE_URL } from '@/lib/memberDemographics'
-import { PHONE_VALIDATION_USER_MESSAGE, phoneDigitsOnly, validatePhoneNumber } from '@/lib/phoneValidation'
+import { PHONE_VALIDATION_USER_MESSAGE, phoneDigitsOnly, sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
 import { validatePublicCommunityContent } from '@/lib/communityModeration'
 
 type Props = {
@@ -154,7 +154,7 @@ export function InviteSomeoneDialog({
                 inputMode="tel"
                 required
                 value={recipientPhone}
-                onChange={(e) => setRecipientPhone(e.target.value)}
+                onChange={(e) => setRecipientPhone(sanitizePhoneInput(e.target.value))}
                 autoComplete="tel"
                 placeholder="+17135550100"
                 disabled={submitting}

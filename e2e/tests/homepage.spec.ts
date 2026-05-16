@@ -17,6 +17,15 @@ test.describe('homepage', () => {
     await expect(page.getByText('Start here')).toBeVisible()
     await expect(page.getByRole('link', { name: 'Events' }).first()).toBeVisible()
 
+    const living = page.getByTestId('home-living-community')
+    await expect(living).toBeVisible()
+    await expect(living.getByRole('heading', { name: /A living space for Kenyans in Houston/i })).toBeVisible()
+    await expect(living.getByTestId('home-cta-community-feed')).toHaveAttribute('href', '/community-feed')
+    await expect(living.getByTestId('home-cta-community-chat')).toHaveAttribute('href', '/chat')
+    await expect(living.getByTestId('home-cta-events')).toHaveAttribute('href', '/events')
+    await expect(living.getByTestId('home-cta-join-community')).toHaveAttribute('href', '/membership')
+    await expect(living.getByText(/Sign in required/i)).toBeVisible()
+
     await expect(page.getByText('Why we are here')).toBeVisible()
     await expect(page.getByRole('heading', { name: /One place to find your people/i })).toBeVisible()
 

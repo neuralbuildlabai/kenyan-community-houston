@@ -12,6 +12,8 @@ import {
   HeartHandshake,
   Sparkles,
   Sprout,
+  MessagesSquare,
+  Newspaper,
 } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { EventCard } from '@/components/EventCard'
@@ -256,6 +258,97 @@ export function HomePage() {
                 <span className="leading-tight">{label}</span>
               </Link>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── 2b. Community spaces (feed, chat, events, join) ─── */}
+      <section
+        className="border-y border-border/50 bg-gradient-to-b from-primary/[0.04] via-amber-50/35 to-background py-10 sm:py-14"
+        data-testid="home-living-community"
+      >
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mb-8">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em] mb-2">
+              Together online
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+              A living space for Kenyans in Houston
+            </h2>
+            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed mt-3">
+              The site stays active between in-person gatherings: browse updates, plan around upcoming events, and use
+              member spaces to stay in touch — without exposing private conversations on the homepage.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <Link
+              to="/community-feed"
+              data-testid="home-cta-community-feed"
+              onClick={() => void trackClick('home_living_community_feed', '/community-feed')}
+              className="group flex flex-col rounded-2xl border border-border/55 bg-card p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary mb-3 transition-transform group-hover:scale-105">
+                <Newspaper className="h-4 w-4" aria-hidden />
+              </span>
+              <span className="text-sm font-semibold text-foreground">Community feed</span>
+              <span className="text-xs text-muted-foreground leading-relaxed mt-1.5">
+                Moderated posts and neighbor updates from the directory.
+              </span>
+              <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary">
+                Open feed <ArrowRight className="h-3 w-3" />
+              </span>
+            </Link>
+            <Link
+              to="/chat"
+              data-testid="home-cta-community-chat"
+              onClick={() => void trackClick('home_living_community_chat', '/chat')}
+              className="group flex flex-col rounded-2xl border border-border/55 bg-card p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-kenyan-gold-500/10 text-kenyan-gold-700 mb-3 transition-transform group-hover:scale-105">
+                <MessagesSquare className="h-4 w-4" aria-hidden />
+              </span>
+              <span className="text-sm font-semibold text-foreground">Community chat</span>
+              <span className="text-xs text-muted-foreground leading-relaxed mt-1.5">
+                A member space to ask questions and connect with organizers and neighbors. Sign in required.
+              </span>
+              <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary">
+                Go to chat <ArrowRight className="h-3 w-3" />
+              </span>
+            </Link>
+            <Link
+              to="/events"
+              data-testid="home-cta-events"
+              onClick={() => void trackClick('home_living_events', '/events')}
+              className="group flex flex-col rounded-2xl border border-border/55 bg-card p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary mb-3 transition-transform group-hover:scale-105">
+                <Calendar className="h-4 w-4" aria-hidden />
+              </span>
+              <span className="text-sm font-semibold text-foreground">Events</span>
+              <span className="text-xs text-muted-foreground leading-relaxed mt-1.5">
+                Workshops, cultural days, sports, and community meetings across Greater Houston.
+              </span>
+              <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary">
+                Browse events <ArrowRight className="h-3 w-3" />
+              </span>
+            </Link>
+            <Link
+              to="/membership"
+              data-testid="home-cta-join-community"
+              onClick={() => void trackClick('home_living_join', '/membership')}
+              className="group flex flex-col rounded-2xl border border-border/55 bg-card p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-kenyan-gold-500/10 text-kenyan-gold-700 mb-3 transition-transform group-hover:scale-105">
+                <Users className="h-4 w-4" aria-hidden />
+              </span>
+              <span className="text-sm font-semibold text-foreground">Join the community</span>
+              <span className="text-xs text-muted-foreground leading-relaxed mt-1.5">
+                Membership opens the door to chat, resources, and ways to participate beyond the public site.
+              </span>
+              <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary">
+                Membership info <ArrowRight className="h-3 w-3" />
+              </span>
+            </Link>
           </div>
         </div>
       </section>

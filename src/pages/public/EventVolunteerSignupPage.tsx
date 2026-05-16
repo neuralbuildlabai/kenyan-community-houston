@@ -11,7 +11,7 @@ import { PageLoader } from '@/components/LoadingSpinner'
 import { supabase } from '@/lib/supabase'
 import type { Event } from '@/lib/types'
 import { formatDate, isValidEmail } from '@/lib/utils'
-import { validatePhoneNumber, PHONE_VALIDATION_USER_MESSAGE } from '@/lib/phoneValidation'
+import { sanitizePhoneInput, validatePhoneNumber, PHONE_VALIDATION_USER_MESSAGE } from '@/lib/phoneValidation'
 import { validateCommunityContent, validatePublicCommunityContent } from '@/lib/communityModeration'
 
 function rpcErrorToMessage(err: { message?: string } | null): string {
@@ -243,7 +243,7 @@ export function EventVolunteerSignupPage() {
                   type="tel"
                   inputMode="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(sanitizePhoneInput(e.target.value))}
                   autoComplete="tel"
                   placeholder="e.g. +17135551234"
                   required
