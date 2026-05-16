@@ -191,7 +191,7 @@ function AccordionItem({ section }: { section: AccordionSection }) {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="border rounded-xl overflow-hidden bg-white/85 backdrop-blur-sm">
+    <div className="border rounded-xl overflow-hidden bg-white/90 backdrop-blur-sm">
       <button
         type="button"
         className="w-full flex items-center gap-3 p-4 sm:p-5 text-left hover:bg-muted/40 transition-colors"
@@ -226,19 +226,27 @@ export function NewToHoustonPage() {
         description="Official Houston and Texas resources, community-reviewed service listings, and practical guidance for Kenyans settling in Greater Houston."
       />
 
-      <div className="relative overflow-hidden min-h-screen">
-        <div
+      <section className="relative overflow-hidden min-h-screen">
+        <img
+          src="/kigh-media/backgrounds/newtohouston.png"
+          alt=""
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[url('/kigh-media/backgrounds/newtohouston.png')] bg-cover bg-top opacity-[0.3]"
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover object-[center_top] opacity-70"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/70 via-[#faf7ef]/75 to-white/90"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/65 via-[#faf7ef]/55 to-white/90"
         />
         <div className="relative z-10">
-      <div className="border-b border-amber-300/20 bg-white/50 backdrop-blur-sm">
+
+      <div className="border-b border-amber-300/20">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-          <div className="max-w-2xl">
+          <div className="relative max-w-2xl">
+                        <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -inset-x-3 -inset-y-4 sm:-inset-x-6 rounded-2xl bg-gradient-to-r from-white/85 via-white/65 to-transparent"
+            />
+            <div className="relative">
             <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-900/80 dark:text-amber-200/80">
               Newcomer guide
             </p>
@@ -251,6 +259,7 @@ export function NewToHoustonPage() {
               office, ask better questions, and avoid relying on rumors. Official resources first,
               community-vetted services when you're ready.
             </p>
+            </div>
           </div>
         </div>
       </div>
@@ -269,7 +278,7 @@ export function NewToHoustonPage() {
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             {OFFICIAL_RESOURCE_GROUPS.map((group) => (
-              <Card key={group.title} className="border-border/80 bg-white/85 backdrop-blur-sm shadow-sm hover:border-primary/20 transition-colors">
+              <Card key={group.title} className="border-border/80 bg-white/90 backdrop-blur-sm shadow-sm hover:border-primary/20 transition-colors">
                 <CardHeader className="pb-2">
                   <div className="flex items-center gap-2 text-primary mb-1">
                     <group.Icon className="h-4 w-4 shrink-0" />
@@ -292,7 +301,7 @@ export function NewToHoustonPage() {
         </section>
 
         {/* ── Community-reviewed services ─────────────────────────── */}
-        <section className="rounded-3xl bg-white/80 backdrop-blur-sm p-7 sm:p-9 ring-1 ring-border/40">
+        <section className="rounded-3xl bg-white/88 backdrop-blur-sm p-7 sm:p-9 ring-1 ring-border/40">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-900/85 dark:text-emerald-300/85">
             Step two
           </p>
@@ -362,7 +371,7 @@ export function NewToHoustonPage() {
         </div>
       </div>
       </div>
-      </div>
+      </section>
     </>
   )
 }
