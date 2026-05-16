@@ -227,9 +227,7 @@ export function MembershipPage() {
         email: primary.email.trim(),
         password,
         options: {
-          emailRedirectTo: origin
-            ? `${origin}/auth/callback?next=${encodeURIComponent('/membership')}`
-            : undefined,
+          emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent('/membership')}`,
           data: {
             ...meta,
           },
