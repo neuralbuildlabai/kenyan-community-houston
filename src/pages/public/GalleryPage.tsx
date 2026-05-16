@@ -47,7 +47,7 @@ export function GalleryPage() {
       const withUrl = imgs.filter((i) => (i.thumbnail_url ?? i.image_url)?.trim())
 
       const { data: albRows, error: albErr } = await supabase
-        .from('gallery_albums')
+        .from('gallery_albums_public')
         .select('id, name, slug, description, cover_url, created_at')
         .order('created_at', { ascending: false })
 

@@ -53,19 +53,31 @@ export function GallerySubmitPage() {
 
   const anonBatchId = useMemo(() => newId(), [])
 
+  const canSubmit = useMemo(() => {
+    if (!albumId || !consent || queued.length === 0 || albums.length === 0) return false
+    if (user) return true
+    return guestName.trim().length >= 2 && guestEmail.trim().includes('@')
+  }, [albumId, consent, queued.length, albums.length, user, guestName, guestEmail])
+
   useEffect(() => {
     void (async () => {
       const { data, error } = await supabase
-        .from('gallery_albums')
+        .from('gallery_albums_public')
         .select('id, name, slug')
+        .eq('open_for_submissions', true)
         .order('name')
       if (error) {
         console.warn('[gallery-submit] albums:', error.message)
-        toast.error('Could not load albums. Try again later.')
+        toast.error('Could not load albums for submission. Try again later.')
         return
       }
       const rows = (data ?? []) as Pick<GalleryAlbum, 'id' | 'name' | 'slug'>[]
       setAlbums(rows)
+      if (rows.length === 0) {
+        toast.message('No albums are open for submissions right now.', {
+          description: 'Check back later or contact KIGH via the Contact page.',
+        })
+      }
     })()
   }, [])
 
@@ -215,7 +227,15 @@ export function GallerySubmitPage() {
       if (ins) {
         const msg = ins.message
         setQueued((q) => q.map((x) => (x.id === row.id ? { ...x, status: 'error', error: msg } : x)))
-        toast.error(msg)
+        if (/permission denied|row-level security|42501/i.test(msg)) {
+          toast.error(
+            user
+              ? 'Submission was blocked by permissions. Sign out and submit as a guest with your name and email, or contact KIGH for help.'
+              : 'Submission was blocked. Confirm your name and email, then try again. If this continues, contact KIGH.'
+          )
+        } else {
+          toast.error(msg)
+        }
         setSubmitting(false)
         return
       }
@@ -278,9 +298,10 @@ export function GallerySubmitPage() {
                 {!user && (
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="gname">Your name</Label>
+                      <Label htmlFor="gname">Your name *</Label>
                       <Input
                         id="gname"
+                        required
                         value={guestName}
                         onChange={(e) => setGuestName(e.target.value)}
                         autoComplete="name"
@@ -288,10 +309,11 @@ export function GallerySubmitPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="gemail">Email</Label>
+                      <Label htmlFor="gemail">Email *</Label>
                       <Input
                         id="gemail"
                         type="email"
+                        required
                         value={guestEmail}
                         onChange={(e) => setGuestEmail(e.target.value)}
                         autoComplete="email"
@@ -329,9 +351,13 @@ export function GallerySubmitPage() {
                 </div>
 
                 {queued.length > 0 && (
-                  <ul className="mt-4 space-y-4">
+                  <ul className="mt-4 space-y-4" data-testid="gallery-submit-preview-list">
                     {queued.map((row) => (
-                      <li key={row.id} className="flex gap-3 rounded-xl border border-border/60 bg-background p-3">
+                      <li
+                        key={row.id}
+                        data-testid="gallery-submit-preview-item"
+                        className="flex gap-3 rounded-xl border border-border/60 bg-background p-3"
+                      >
                         <img
                           src={row.previewUrl}
                           alt=""
@@ -408,7 +434,7 @@ export function GallerySubmitPage() {
                 <Button
                   type="submit"
                   size="lg"
-                  disabled={submitting || queued.length === 0 || !albums.length}
+                  disabled={submitting || !canSubmit}
                   data-testid="gallery-submit-button"
                 >
                   {submitting ? (

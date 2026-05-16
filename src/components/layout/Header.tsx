@@ -278,7 +278,7 @@ export function Header() {
                   overlayHeader ? 'text-white hover:bg-white/10 hover:text-white' : 'text-foreground/80'
                 )}
               >
-                <Link to="/login">
+                <Link to="/login" data-testid="header-login">
                   <Lock className="h-3.5 w-3.5" aria-hidden />
                   Login
                 </Link>
@@ -333,6 +333,23 @@ export function Header() {
             ) : null}
           </div>
 
+          {!user ? (
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className={cn(
+                'shrink-0 gap-1.5 px-2 font-medium xl:hidden',
+                overlayHeader ? 'text-white hover:bg-white/10 hover:text-white' : 'text-foreground/85'
+              )}
+            >
+              <Link to="/login" data-testid="header-login-mobile">
+                <Lock className="h-4 w-4" aria-hidden />
+                <span>Login</span>
+              </Link>
+            </Button>
+          ) : null}
+
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button
@@ -352,6 +369,24 @@ export function Header() {
                 aria-label="Mobile navigation"
                 className="flex flex-1 flex-col gap-0 overflow-y-auto overscroll-contain px-1 pb-8"
               >
+                {!user ? (
+                  <div className="border-b border-border/50 px-3 pb-4 pt-2">
+                    <p className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Account
+                    </p>
+                    <Button
+                      asChild
+                      variant="secondary"
+                      className="h-12 w-full gap-2 text-base font-medium"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      <Link to="/login" data-testid="header-login-menu">
+                        <Lock className="h-4 w-4" />
+                        Login
+                      </Link>
+                    </Button>
+                  </div>
+                ) : null}
                 <p className="px-4 pb-2 pt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Explore
                 </p>
@@ -452,19 +487,6 @@ export function Header() {
                   >
                     <Link to="/events/submit">Submit Event</Link>
                   </Button>
-                  {!user && (
-                    <Button
-                      asChild
-                      variant="secondary"
-                      className="h-12 w-full gap-2 text-base font-medium"
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      <Link to="/login">
-                        <Lock className="h-4 w-4" />
-                        Login
-                      </Link>
-                    </Button>
-                  )}
                   {user ? (
                     <>
                       <Button asChild variant="outline" className="h-11 w-full" onClick={() => setMobileOpen(false)}>

@@ -597,6 +597,18 @@ export interface Database {
           updated_at: string
         }
       }
+      gallery_albums_public: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          description: string | null
+          cover_url: string | null
+          created_at: string
+          event_date: string | null
+          open_for_submissions: boolean
+        }
+      }
     }
     Functions: {
       is_admin: {

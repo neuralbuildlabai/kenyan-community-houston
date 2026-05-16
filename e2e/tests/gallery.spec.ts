@@ -29,12 +29,13 @@ test.describe('gallery', () => {
     await page.goto('/gallery/submit', { waitUntil: 'domcontentloaded' })
     const albumsResp = await page
       .waitForResponse(
-        (r) => r.url().includes('/rest/v1/gallery_albums') && r.request().method() === 'GET',
+        (r) =>
+          r.url().includes('/rest/v1/gallery_albums_public') && r.request().method() === 'GET',
         { timeout: 20_000 }
       )
       .catch(() => null)
     if (!albumsResp?.ok()) {
-      test.skip(true, 'gallery_albums request did not succeed (Supabase env / RLS)')
+      test.skip(true, 'gallery_albums_public request did not succeed (Supabase env / RLS)')
     }
     const submit = page.getByTestId('gallery-submit-button')
     const png = Buffer.from(
@@ -46,20 +47,54 @@ test.describe('gallery', () => {
       mimeType: 'image/png',
       buffer: png,
     })
+    await expect(submit).toBeDisabled()
+    await page.getByTestId('gallery-submit-consent').click()
+    if ((await page.getByTestId('gallery-submit-name').count()) > 0) {
+      await page.getByTestId('gallery-submit-name').fill('Test Uploader')
+      await page.getByTestId('gallery-submit-email').fill('uploader@example.com')
+    }
     try {
       await expect(submit).toBeEnabled({ timeout: 15_000 })
     } catch {
-      test.skip(true, 'Submit stayed disabled (no albums to attach submission to)')
+      test.skip(true, 'Submit stayed disabled (no albums open for submissions)')
     }
     await submit.click()
-    await expect(page.getByText(/confirm consent/i)).toBeVisible()
+    await expect(page.getByText(/submitted for review|thank you/i)).toBeVisible({ timeout: 30_000 })
   })
 
-  test('upload form file input accepts images', async ({ page }) => {
+  test('upload form file input accepts multiple images', async ({ page }) => {
     await page.goto('/gallery/submit', { waitUntil: 'domcontentloaded' })
     const input = page.getByTestId('gallery-submit-file-input')
     await expect(input).toHaveAttribute('accept', 'image/*')
     await expect(input).toHaveAttribute('type', 'file')
+    await expect(input).toHaveAttribute('multiple', '')
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64'
+    )
+    await input.setInputFiles([
+      { name: 'a.png', mimeType: 'image/png', buffer: png },
+      { name: 'b.png', mimeType: 'image/png', buffer: png },
+    ])
+    await expect(page.getByTestId('gallery-submit-preview-item')).toHaveCount(2)
+  })
+
+  test('logged-out visitor sees uploader fields', async ({ page }) => {
+    await page.goto('/gallery/submit', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByTestId('gallery-submit-name')).toBeVisible()
+    await expect(page.getByTestId('gallery-submit-email')).toBeVisible()
+    await expect(page.getByTestId('gallery-submit-consent')).toBeVisible()
+  })
+
+  test('/gallery loads albums without gallery_images table errors', async ({ page }) => {
+    const errors: string[] = []
+    page.on('console', (msg) => {
+      if (msg.type() === 'error' && /permission denied for table gallery_images/i.test(msg.text())) {
+        errors.push(msg.text())
+      }
+    })
+    await page.goto('/gallery', { waitUntil: 'networkidle' })
+    expect(errors).toEqual([])
   })
 
   test('public gallery grid is present when published images exist', async ({ page }) => {

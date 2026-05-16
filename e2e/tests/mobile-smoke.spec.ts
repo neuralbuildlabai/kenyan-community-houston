@@ -25,6 +25,11 @@ test.describe('mobile smoke', () => {
     await expectNoHorizontalOverflow(page)
   })
 
+  test('mobile header shows Login without opening menu', async ({ page }) => {
+    await page.goto('/membership')
+    await expect(page.getByTestId('header-login-mobile')).toBeVisible()
+  })
+
   test('member login and profile route', async ({ page }) => {
     await page.goto('/login')
     await expectNoHorizontalOverflow(page)

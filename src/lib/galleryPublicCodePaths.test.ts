@@ -16,10 +16,28 @@ describe('public gallery code paths — submitter PII guard', () => {
     resolve(process.cwd(), 'src/pages/public/HomePage.tsx'),
     'utf8'
   )
+  const gallerySubmitPage = readFileSync(
+    resolve(process.cwd(), 'src/pages/public/GallerySubmitPage.tsx'),
+    'utf8'
+  )
 
   it('GalleryPage reads from gallery_images_public, not gallery_images', () => {
     expect(galleryPage).toContain("from('gallery_images_public')")
     expect(galleryPage).not.toMatch(/from\(\s*['"]gallery_images['"]\s*\)/)
+  })
+
+  it('GalleryPage reads albums from gallery_albums_public, not gallery_albums', () => {
+    expect(galleryPage).toContain("from('gallery_albums_public')")
+    expect(galleryPage).not.toMatch(/from\(\s*['"]gallery_albums['"]\s*\)/)
+  })
+
+  it('GallerySubmitPage reads albums from gallery_albums_public', () => {
+    expect(gallerySubmitPage).toContain("from('gallery_albums_public')")
+    expect(gallerySubmitPage).not.toMatch(/from\(\s*['"]gallery_albums['"]\s*\)/)
+  })
+
+  it('GallerySubmitPage file input allows multiple images', () => {
+    expect(gallerySubmitPage).toMatch(/multiple[\s\S]*gallery-submit-file-input|gallery-submit-file-input[\s\S]*multiple/)
   })
 
   it('HomePage reads from gallery_images_public, not gallery_images', () => {
