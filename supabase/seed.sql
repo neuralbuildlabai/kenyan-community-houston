@@ -19,6 +19,55 @@ insert into gallery_albums (id, slug, name, description) values
   ('00000000-0000-0000-0000-000000000002', 'cultural-celebrations', 'Cultural Celebrations', 'Jamhuri Day, Madaraka Day, and more')
 on conflict (id) do nothing;
 
+insert into gallery_albums (id, slug, name, description, event_date, cover_url, visibility, open_for_submissions) values
+  (
+    '00000000-0000-0000-0000-0000000000c5',
+    'community-park-event-2025',
+    'Community Park Event 2025',
+    'Photos from the 2025 Kenyan Community Houston park gathering.',
+    '2025-05-18',
+    '/kigh-media/gallery/community-park-event-2025/thumbs/IMG_5759.jpg',
+    'public',
+    true
+  )
+on conflict (id) do nothing;
+
+insert into gallery_images (id, album_id, image_url, thumbnail_url, caption, alt_text, status, is_homepage_featured, sort_order) values
+  (
+    '00000000-0000-0000-0000-0000000000d1',
+    '00000000-0000-0000-0000-0000000000c5',
+    '/kigh-media/gallery/community-park-event-2025/web/IMG_5759.jpg',
+    '/kigh-media/gallery/community-park-event-2025/thumbs/IMG_5759.jpg',
+    null,
+    'Kenyan Community Houston park gathering',
+    'published',
+    true,
+    10
+  ),
+  (
+    '00000000-0000-0000-0000-0000000000d2',
+    '00000000-0000-0000-0000-0000000000c5',
+    '/kigh-media/gallery/community-park-event-2025/web/IMG_5762.jpg',
+    '/kigh-media/gallery/community-park-event-2025/thumbs/IMG_5762.jpg',
+    null,
+    'Kenyan Community Houston park gathering',
+    'published',
+    true,
+    20
+  ),
+  (
+    '00000000-0000-0000-0000-0000000000d3',
+    '00000000-0000-0000-0000-0000000000c5',
+    '/kigh-media/gallery/community-park-event-2025/web/IMG_5763.jpg',
+    '/kigh-media/gallery/community-park-event-2025/thumbs/IMG_5763.jpg',
+    null,
+    'Kenyan Community Houston park gathering',
+    'published',
+    false,
+    30
+  )
+on conflict (id) do nothing;
+
 -- ─── Events ─────────────────────────────────────────────────
 insert into events (slug, title, category, description, start_date, location, is_free, status, published_at) values
   (
