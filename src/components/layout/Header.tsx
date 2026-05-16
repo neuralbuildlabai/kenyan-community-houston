@@ -284,58 +284,62 @@ export function Header() {
                 </Link>
               </Button>
             )}
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    data-testid="header-account"
-                    className={cn(
-                      'shrink-0 gap-1.5 font-medium',
-                      overlayHeader && 'text-white hover:bg-white/10 hover:text-white'
-                    )}
-                  >
-                    <UserCircle className="h-4 w-4" />
-                    Account
-                    <ChevronDown className="h-3.5 w-3.5 opacity-70" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" sideOffset={10} className={dropdownPanelClass}>
-                  <DropdownMenuLabel className="px-3 pb-1 text-xs text-muted-foreground">My account</DropdownMenuLabel>
-                  <DropdownMenuItem asChild className={dropdownItemClass}>
-                    <Link to="/" className="flex items-center gap-2">
-                      <Home className="h-4 w-4 opacity-70" />
-                      Home / Public site
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className={dropdownItemClass}>
-                    <Link to="/profile">My profile</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className={dropdownItemClass}>
-                    <Link to="/membership">Membership</Link>
-                  </DropdownMenuItem>
-                  {isAdmin ? (
-                    <DropdownMenuItem asChild className={dropdownItemClass}>
-                      <Link to="/admin/dashboard" data-testid="header-admin-dashboard" className="flex items-center gap-2">
-                        <LayoutDashboard className="h-4 w-4 opacity-70" />
-                        Admin dashboard
-                      </Link>
-                    </DropdownMenuItem>
-                  ) : null}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className={dropdownItemClass} onClick={() => void handleLogout()}>
-                    <span className="flex items-center gap-2">
-                      <LogOut className="h-4 w-4 opacity-70" />
-                      Logout
-                    </span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
           </div>
 
-          {!user ? (
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  data-testid="header-account"
+                  className={cn(
+                    'shrink-0 gap-1.5 font-medium',
+                    overlayHeader && 'text-white hover:bg-white/10 hover:text-white'
+                  )}
+                >
+                  <UserCircle className="h-4 w-4" />
+                  <span className="hidden min-[400px]:inline">Account</span>
+                  <span className="min-[400px]:hidden">My account</span>
+                  <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={10} className={dropdownPanelClass}>
+                <DropdownMenuLabel className="px-3 pb-1 text-xs text-muted-foreground">My account</DropdownMenuLabel>
+                <DropdownMenuItem asChild className={dropdownItemClass}>
+                  <Link to="/" className="flex items-center gap-2">
+                    <Home className="h-4 w-4 opacity-70" />
+                    Home / Public site
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className={dropdownItemClass}>
+                  <Link to="/profile">My profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className={dropdownItemClass}>
+                  <Link to="/membership">Membership</Link>
+                </DropdownMenuItem>
+                {isAdmin ? (
+                  <DropdownMenuItem asChild className={dropdownItemClass}>
+                    <Link to="/admin/dashboard" data-testid="header-admin-dashboard" className="flex items-center gap-2">
+                      <LayoutDashboard className="h-4 w-4 opacity-70" />
+                      Admin dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className={dropdownItemClass}
+                  data-testid="header-account-logout"
+                  onClick={() => void handleLogout()}
+                >
+                  <span className="flex items-center gap-2">
+                    <LogOut className="h-4 w-4 opacity-70" />
+                    Logout
+                  </span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
             <Button
               asChild
               variant="ghost"
@@ -348,21 +352,6 @@ export function Header() {
               <Link to="/login" data-testid="header-login-mobile">
                 <Lock className="h-4 w-4" aria-hidden />
                 <span>Login</span>
-              </Link>
-            </Button>
-          ) : (
-            <Button
-              asChild
-              variant="ghost"
-              size="sm"
-              className={cn(
-                'shrink-0 gap-1.5 px-2 font-medium xl:hidden',
-                overlayHeader ? 'text-white hover:bg-white/10 hover:text-white' : 'text-foreground/85'
-              )}
-            >
-              <Link to="/profile" data-testid="header-account-mobile">
-                <UserCircle className="h-4 w-4" aria-hidden />
-                <span>Account</span>
               </Link>
             </Button>
           )}
@@ -387,7 +376,7 @@ export function Header() {
                 className="flex flex-1 flex-col gap-0 overflow-y-auto overscroll-contain px-1 pb-8"
               >
                 {!user ? (
-                  <div className="border-b border-border/50 px-3 pb-4 pt-2">
+                  <div className="border-b border-border/50 px-3 pb-4 pt-2" data-testid="header-mobile-account-menu">
                     <p className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       Account
                     </p>
@@ -403,7 +392,51 @@ export function Header() {
                       </Link>
                     </Button>
                   </div>
-                ) : null}
+                ) : (
+                  <div
+                    className="border-b border-border/50 px-3 pb-4 pt-2 space-y-2"
+                    data-testid="header-mobile-account-menu"
+                  >
+                    <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      My account
+                    </p>
+                    <Button asChild variant="outline" className="h-11 w-full justify-start gap-2" onClick={() => setMobileOpen(false)}>
+                      <Link to="/">
+                        <Home className="h-4 w-4" />
+                        Home / Public site
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="h-11 w-full justify-start gap-2" onClick={() => setMobileOpen(false)}>
+                      <Link to="/profile">
+                        <UserCircle className="h-4 w-4" />
+                        My profile
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="h-11 w-full justify-start gap-2" onClick={() => setMobileOpen(false)}>
+                      <Link to="/membership">Membership</Link>
+                    </Button>
+                    {isAdmin ? (
+                      <Button asChild variant="outline" className="h-11 w-full justify-start gap-2" onClick={() => setMobileOpen(false)}>
+                        <Link to="/admin/dashboard" data-testid="header-admin-dashboard-mobile">
+                          <LayoutDashboard className="h-4 w-4" />
+                          Admin dashboard
+                        </Link>
+                      </Button>
+                    ) : null}
+                    <Button
+                      variant="secondary"
+                      className="h-11 w-full justify-start gap-2"
+                      data-testid="header-mobile-account-logout"
+                      onClick={() => {
+                        setMobileOpen(false)
+                        void handleLogout()
+                      }}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </Button>
+                  </div>
+                )}
                 <p className="px-4 pb-2 pt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Explore
                 </p>
@@ -504,42 +537,6 @@ export function Header() {
                   >
                     <Link to="/events/submit">Submit Event</Link>
                   </Button>
-                  {user ? (
-                    <>
-                      <p className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        Account
-                      </p>
-                      <Button asChild variant="outline" className="h-11 w-full" onClick={() => setMobileOpen(false)}>
-                        <Link to="/" className="gap-2">
-                          <Home className="h-4 w-4" />
-                          Home / Public site
-                        </Link>
-                      </Button>
-                      <Button asChild variant="outline" className="h-11 w-full" onClick={() => setMobileOpen(false)}>
-                        <Link to="/profile" className="gap-2">
-                          <UserCircle className="h-4 w-4" />
-                          My Profile
-                        </Link>
-                      </Button>
-                      <Button asChild variant="outline" className="h-11 w-full" onClick={() => setMobileOpen(false)}>
-                        <Link to="/membership" className="gap-2">
-                          Membership
-                        </Link>
-                      </Button>
-                      {isAdmin ? (
-                        <Button asChild variant="outline" className="h-11 w-full" onClick={() => setMobileOpen(false)}>
-                          <Link to="/admin/dashboard" className="gap-2" data-testid="header-admin-dashboard-mobile">
-                            <LayoutDashboard className="h-4 w-4" />
-                            Admin Dashboard
-                          </Link>
-                        </Button>
-                      ) : null}
-                      <Button variant="secondary" className="h-11 w-full gap-2" onClick={() => void handleLogout()}>
-                        <LogOut className="h-4 w-4" />
-                        Logout
-                      </Button>
-                    </>
-                  ) : null}
                 </div>
               </nav>
             </SheetContent>

@@ -28,6 +28,7 @@ test.describe('mobile smoke', () => {
   test('mobile header shows Login without opening menu', async ({ page }) => {
     await page.goto('/membership')
     await expect(page.getByTestId('header-login-mobile')).toBeVisible()
+    await expect(page.getByTestId('header-account')).toHaveCount(0)
   })
 
   test('member login and profile route', async ({ page }) => {

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { loginAsMember, skipIfNoMember } from '../helpers/auth'
 
 test.describe('public header login visibility', () => {
   test('desktop header shows Login for logged-out visitors', async ({ page }) => {
@@ -35,6 +36,32 @@ test.describe('auth return links', () => {
     const href = await link.getAttribute('href')
     expect(href).toContain('/login?next=')
     expect(decodeURIComponent(href!.split('next=')[1] ?? '')).toContain('/community-feed')
+  })
+
+  test('logged-in header shows Account menu with Logout', async ({ page }) => {
+    skipIfNoMember()
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await loginAsMember(page)
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByTestId('header-login')).toHaveCount(0)
+    await page.getByTestId('header-account').click()
+    await expect(page.getByTestId('header-account-logout')).toBeVisible()
+    await expect(page.getByTestId('header-admin-dashboard')).toHaveCount(0)
+  })
+
+  test('mobile logged-in menu shows account actions at top', async ({ page }) => {
+    skipIfNoMember()
+    await page.setViewportSize({ width: 390, height: 844 })
+    await loginAsMember(page)
+    await page.goto('/chat', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByTestId('header-account')).toBeVisible()
+    await page.getByRole('button', { name: 'Open menu' }).click()
+    const accountMenu = page.getByTestId('header-mobile-account-menu')
+    await expect(accountMenu).toBeVisible()
+    await expect(accountMenu.getByTestId('header-mobile-account-logout')).toBeVisible()
+    const exploreY = await page.getByText('Explore', { exact: true }).first().evaluate((el) => el.getBoundingClientRect().top)
+    const accountY = await accountMenu.evaluate((el) => el.getBoundingClientRect().top)
+    expect(accountY).toBeLessThan(exploreY)
   })
 
   test('event comments sign-in includes hash when event exists', async ({ page }) => {

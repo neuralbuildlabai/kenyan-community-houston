@@ -212,8 +212,8 @@ export function ChatPage() {
   return (
     <>
       <SEOHead
-        title="Community Requests"
-        description="Ask the Kenyan Community Houston team for help, referrals, or clarity. Logged-in members can submit one tracked request at a time."
+        title="Community Chat"
+        description="Ask questions and connect with the Kenyan community in Houston. Members can start a conversation with the community team."
       />
 
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
@@ -221,17 +221,18 @@ export function ChatPage() {
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80">
             Member space
           </p>
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-            Ask the community
+          <h1
+            data-testid="chat-hero-title"
+            className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground"
+          >
+            Community Chat
           </h1>
           <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-            A private space where members can submit a tracked question or request and the
-            leadership team will respond. One open request at a time, so each one gets the
-            attention it deserves. This is not a live anonymous chat — every message is reviewed.
+            Ask questions, share updates, and connect with the Kenyan community in Houston.
           </p>
         </div>
 
-        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+        <div className="mb-6 flex justify-end">
           <InviteSomeoneDialog />
         </div>
 
@@ -243,12 +244,10 @@ export function ChatPage() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Lock className="h-5 w-5 text-muted-foreground" />
-                  Sign in to start a request
+                  Sign in to join the conversation
                 </CardTitle>
-                <CardDescription className="text-base text-foreground/90 leading-relaxed">
-                  Please log in to start a request so the community team can track and respond properly.
-                  Members sign in so the community team can track each request, follow up
-                  responsibly, and keep a private record of the conversation.
+                <CardDescription className="text-sm text-muted-foreground leading-relaxed">
+                  Log in to ask a question, start a conversation, or follow up with the community team.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -267,39 +266,34 @@ export function ChatPage() {
                 id="chat-about-heading"
                 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl"
               >
-                What members use this for
+                Good topics to start with
               </h2>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Examples of requests that fit well here:
-              </p>
-              <ul className="mt-4 space-y-3 text-sm text-foreground/85">
+              <ul className="mt-4 space-y-3 text-sm text-foreground/85" data-testid="chat-topic-list">
                 <li className="flex gap-3">
                   <ClipboardList className="h-4 w-4 mt-0.5 shrink-0 text-primary/80" aria-hidden />
                   <span>
-                    Newcomer questions about driver licenses, schools, housing, healthcare, or
-                    finding a church or community group.
+                    Newcomer questions about schools, housing, licenses, healthcare, or community groups.
                   </span>
                 </li>
                 <li className="flex gap-3">
                   <MessageSquare className="h-4 w-4 mt-0.5 shrink-0 text-primary/80" aria-hidden />
                   <span>
-                    Questions about an upcoming event, RSVP details, accessibility needs, or what
-                    to bring.
+                    Event questions, RSVP details, accessibility needs, or what to bring.
                   </span>
                 </li>
                 <li className="flex gap-3">
                   <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0 text-primary/80" aria-hidden />
                   <span>
-                    Looking for a referral to a community-recommended service — realtor, attorney,
-                    tax help, mover, caterer — when you would rather ask people than rely on
-                    rumors.
+                    Referrals for trusted local services, family support, or community guidance.
                   </span>
                 </li>
+                <li className="flex gap-3">
+                  <MessageSquare className="h-4 w-4 mt-0.5 shrink-0 text-primary/80" aria-hidden />
+                  <span>Ideas, updates, and conversations that help members stay connected.</span>
+                </li>
               </ul>
-              <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
-                Urgent or safety-sensitive concerns belong with the right authority first (911 for
-                emergencies, 211 for social services). Use this space for community questions and
-                non-urgent guidance.
+              <p className="mt-5 text-xs leading-relaxed text-muted-foreground" data-testid="chat-safety-note">
+                For emergencies, call 911. For social services, call 211.
               </p>
             </section>
           </div>

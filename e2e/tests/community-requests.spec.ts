@@ -15,13 +15,15 @@ test.describe('Community Requests (/chat)', () => {
 
   test('/chat loads for logged-out visitor', async ({ page }) => {
     await page.goto('/chat', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('heading', { name: /Ask the community|Community Requests|Community Chat/i })).toBeVisible()
+    await expect(page.getByTestId('chat-hero-title')).toHaveText('Community Chat')
+    await expect(page.getByText(/connect with the Kenyan community in Houston/i)).toBeVisible()
   })
 
   test('logged-out visitor sees login CTA', async ({ page }) => {
     await page.goto('/chat')
-    await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible()
-    await expect(page.getByText(/Please log in to start a request/i)).toBeVisible()
+    await expect(page.getByTestId('chat-sign-in')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Sign in to join the conversation' })).toBeVisible()
+    await expect(page.getByText(/Log in to ask a question, start a conversation/i)).toBeVisible()
   })
 
   test('logged-out visitor does not see Start a Request form', async ({ page }) => {
@@ -33,8 +35,14 @@ test.describe('Community Requests (/chat)', () => {
 
   test('login CTA points to login with return path', async ({ page }) => {
     await page.goto('/chat')
-    const link = page.getByRole('link', { name: /sign in/i }).first()
-    await expect(link).toHaveAttribute('href', /\/login\?next=%2Fchat/)
+    await expect(page.getByTestId('chat-sign-in')).toHaveAttribute('href', /\/login\?next=%2Fchat/)
+  })
+
+  test('logged-out chat shows good topics list', async ({ page }) => {
+    await page.goto('/chat')
+    await expect(page.getByRole('heading', { name: 'Good topics to start with' })).toBeVisible()
+    await expect(page.getByTestId('chat-topic-list')).toBeVisible()
+    await expect(page.getByTestId('chat-safety-note')).toContainText('911')
   })
 
   test('public nav includes Ask the Community', () => {
