@@ -106,6 +106,67 @@ test.describe('gallery', () => {
     }
   })
 
+  test.describe('gallery slideshow lightbox', () => {
+    async function openFirstGridImage(page: import('@playwright/test').Page) {
+      await page.goto('/gallery', { waitUntil: 'domcontentloaded' })
+      await expectNoPermanentLoading(page)
+      const grid = page.getByTestId('gallery-public-grid')
+      if ((await grid.count()) === 0) {
+        test.skip(true, 'No published gallery images in grid')
+      }
+      const first = grid.locator('button').first()
+      await expect(first).toBeVisible()
+      await first.click()
+      const lightbox = page.getByTestId('gallery-lightbox')
+      await expect(lightbox).toBeVisible()
+      return { grid, lightbox }
+    }
+
+    test('opens lightbox when a grid image is clicked', async ({ page }) => {
+      await openFirstGridImage(page)
+    })
+
+    test('lightbox shows the selected image with object-contain', async ({ page }) => {
+      await openFirstGridImage(page)
+      const img = page.getByTestId('gallery-lightbox-image')
+      await expect(img).toBeVisible()
+      await expect(img).toHaveClass(/object-contain/)
+    })
+
+    test('next and previous buttons advance the slideshow', async ({ page }) => {
+      const { grid } = await openFirstGridImage(page)
+      const buttons = grid.locator('button')
+      if ((await buttons.count()) < 2) {
+        test.skip(true, 'Need at least two images for next/previous')
+      }
+      const counter = page.getByTestId('gallery-lightbox-counter')
+      await expect(counter).toHaveText(/^1 \/ \d+$/)
+      await page.getByTestId('gallery-lightbox-next').click()
+      await expect(counter).toHaveText(/^2 \/ \d+$/)
+      await page.getByTestId('gallery-lightbox-prev').click()
+      await expect(counter).toHaveText(/^1 \/ \d+$/)
+    })
+
+    test('close button closes the lightbox', async ({ page }) => {
+      await openFirstGridImage(page)
+      await page.getByTestId('gallery-lightbox-close').click()
+      await expect(page.getByTestId('gallery-lightbox')).toHaveCount(0)
+    })
+
+    test('play/pause control toggles aria-label', async ({ page }) => {
+      await openFirstGridImage(page)
+      const toggle = page.getByTestId('gallery-lightbox-play-pause')
+      if ((await toggle.count()) === 0) {
+        test.skip(true, 'Single-image gallery has no play/pause control')
+      }
+      await expect(toggle).toHaveAttribute('aria-label', 'Pause slideshow')
+      await toggle.click()
+      await expect(toggle).toHaveAttribute('aria-label', 'Play slideshow')
+      await toggle.click()
+      await expect(toggle).toHaveAttribute('aria-label', 'Pause slideshow')
+    })
+  })
+
   test('homepage community moments section respects featured cap', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     const section = page.getByTestId('home-community-moments')

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Image as ImageIcon, X } from 'lucide-react'
+import { Image as ImageIcon } from 'lucide-react'
+import { GallerySlideshowLightbox } from '@/components/gallery/GallerySlideshowLightbox'
 import { Link } from 'react-router-dom'
 import { SEOHead } from '@/components/SEOHead'
 import { PublicPageHero } from '@/components/public/PublicPageHero'
@@ -29,7 +30,7 @@ export function GalleryPage() {
   const [images, setImages] = useState<GalleryImageRow[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedAlbum, setSelectedAlbum] = useState<string | null>(null)
-  const [lightbox, setLightbox] = useState<GalleryImageRow | null>(null)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -66,6 +67,11 @@ export function GalleryPage() {
   }, [])
 
   const filtered = selectedAlbum ? images.filter((i) => i.album_id === selectedAlbum) : images
+
+  const openLightbox = (img: GalleryImageRow) => {
+    const idx = filtered.findIndex((i) => i.id === img.id)
+    if (idx >= 0) setLightboxIndex(idx)
+  }
 
   // Featured album: most recent album with photos when no filter is active.
   const featuredAlbum = useMemo<GalleryAlbum | null>(() => {
@@ -143,7 +149,7 @@ export function GalleryPage() {
                         key={img.id}
                         type="button"
                         className={`group relative overflow-hidden rounded-xl bg-muted ${span}`}
-                        onClick={() => setLightbox(img)}
+                        onClick={() => openLightbox(img)}
                       >
                         <img
                           src={thumb}
@@ -225,7 +231,7 @@ export function GalleryPage() {
                         key={img.id}
                         type="button"
                         className="group relative aspect-square cursor-pointer overflow-hidden rounded-xl bg-muted"
-                        onClick={() => setLightbox(img)}
+                        onClick={() => openLightbox(img)}
                       >
                         <img
                           src={thumb}
@@ -269,34 +275,17 @@ export function GalleryPage() {
         )}
       </PublicSection>
 
-      {lightbox && (lightbox.image_url ?? lightbox.thumbnail_url) ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
-          onClick={() => setLightbox(null)}
-          role="presentation"
-        >
-          <button
-            type="button"
-            className="absolute right-4 top-4 text-white/80 hover:text-white"
-            onClick={() => setLightbox(null)}
-            aria-label="Close"
-          >
-            <X className="h-7 w-7" />
-          </button>
-          <img
-            src={lightbox.image_url ?? lightbox.thumbnail_url ?? ''}
-            alt={displayAlt(lightbox)}
-            className="max-h-[90vh] max-w-full rounded-lg"
-            loading="eager"
-            onClick={(e) => e.stopPropagation()}
-          />
-          {lightbox.caption?.trim() ? (
-            <p className="absolute bottom-6 left-1/2 max-w-prose -translate-x-1/2 px-4 text-center text-sm text-white/80">
-              {lightbox.caption}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
+      <GallerySlideshowLightbox
+        images={filtered}
+        initialIndex={lightboxIndex ?? 0}
+        open={lightboxIndex !== null && filtered.length > 0}
+        onOpenChange={(open) => {
+          if (!open) setLightboxIndex(null)
+        }}
+        getImageSrc={(img) => img.image_url ?? img.thumbnail_url ?? ''}
+        getAlt={displayAlt}
+        getCaption={(img) => img.caption?.trim() || null}
+      />
     </>
   )
 }
