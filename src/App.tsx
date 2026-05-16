@@ -22,6 +22,7 @@ import { FundraiserDetailPage } from '@/pages/public/FundraiserDetailPage'
 import { SportsYouthPage } from '@/pages/public/SportsYouthPage'
 import { SportsDetailPage } from '@/pages/public/SportsDetailPage'
 import { GalleryPage } from '@/pages/public/GalleryPage'
+import { GallerySubmitPage } from '@/pages/public/GallerySubmitPage'
 import { NewToHoustonPage } from '@/pages/public/NewToHoustonPage'
 import { AboutPage } from '@/pages/public/AboutPage'
 import { ContactPage } from '@/pages/public/ContactPage'
@@ -111,6 +112,7 @@ export default function App() {
               <Route path="sports-youth/:slug" element={<SportsDetailPage />} />
 
               <Route path="gallery" element={<GalleryPage />} />
+              <Route path="gallery/submit" element={<GallerySubmitPage />} />
               <Route path="new-to-houston" element={<NewToHoustonPage />} />
               <Route path="about" element={<AboutPage />} />
               <Route path="contact" element={<ContactPage />} />

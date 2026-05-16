@@ -51,6 +51,7 @@ export const MORE_NAV_GROUPS: ReadonlyArray<NavGroup> = [
       { to: '/calendar', label: 'Calendar' },
       { to: '/community-groups', label: 'Community Groups' },
       { to: '/gallery', label: 'Gallery' },
+      { to: '/gallery/submit', label: 'Submit photos' },
     ],
   },
   {

@@ -20,6 +20,11 @@ test.describe('mobile smoke', () => {
     await expectNoHorizontalOverflow(page)
   })
 
+  test('gallery submit fits viewport', async ({ page }) => {
+    await page.goto('/gallery/submit')
+    await expectNoHorizontalOverflow(page)
+  })
+
   test('member login and profile route', async ({ page }) => {
     await page.goto('/login')
     await expectNoHorizontalOverflow(page)

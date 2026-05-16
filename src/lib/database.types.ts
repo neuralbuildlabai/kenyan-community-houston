@@ -275,6 +275,10 @@ export interface Database {
           cover_url: string | null
           created_at: string
           community_id: string | null
+          event_date: string | null
+          visibility: string
+          open_for_submissions: boolean
+          updated_at: string
         }
         Insert: Partial<Database['public']['Tables']['gallery_albums']['Row']> & {
           name: string
@@ -286,16 +290,27 @@ export interface Database {
         Row: {
           id: string
           album_id: string | null
-          image_url: string
+          image_url: string | null
+          thumbnail_url: string | null
           caption: string | null
+          alt_text: string | null
           taken_at: string | null
           status: string
           created_at: string
           community_id: string | null
+          submitted_by_user_id: string | null
+          submitted_by_name: string | null
+          submitted_by_email: string | null
+          approved_by: string | null
+          approved_at: string | null
+          is_homepage_featured: boolean
+          sort_order: number
+          updated_at: string
+          submission_storage_bucket: string | null
+          submission_storage_path: string | null
+          submission_thumb_path: string | null
         }
-        Insert: Partial<Database['public']['Tables']['gallery_images']['Row']> & {
-          image_url: string
-        }
+        Insert: Partial<Database['public']['Tables']['gallery_images']['Row']>
         Update: Partial<Database['public']['Tables']['gallery_images']['Row']>
       }
       chat_threads: {

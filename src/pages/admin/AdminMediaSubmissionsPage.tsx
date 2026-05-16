@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Eye, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -70,7 +71,8 @@ export function AdminMediaSubmissionsPage() {
       <div>
         <h1 className="text-2xl font-bold">Media submissions</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Review member-submitted photos and videos. Files stay in private storage until you approve for possible gallery use.
+          Review member-submitted photos and videos. Files stay in private storage until you approve for possible gallery
+          use. For the public event gallery queue, use <Link to="/admin/gallery" className="text-primary underline-offset-4 hover:underline">Admin → Gallery</Link>.
         </p>
       </div>
 

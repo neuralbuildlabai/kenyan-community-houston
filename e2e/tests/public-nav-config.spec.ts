@@ -20,6 +20,7 @@ const REQUIRED_DESTINATIONS = [
   '/community-support',
   '/sports-youth',
   '/gallery',
+  '/gallery/submit',
   '/membership',
   '/resources',
   '/community-groups',

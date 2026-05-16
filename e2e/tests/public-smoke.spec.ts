@@ -19,6 +19,7 @@ const ROUTES = [
   '/announcements',
   '/community-support',
   '/gallery',
+  '/gallery/submit',
   '/terms',
   '/privacy',
   '/disclaimer',

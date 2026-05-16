@@ -511,7 +511,7 @@ export interface SportsPost {
   updated_at: string
 }
 
-/** Row shape for `public.gallery_albums` (see migration 001 + 014). */
+/** Row shape for `public.gallery_albums` (see migration 001 + 014 + 035). */
 export interface GalleryAlbum {
   id: string
   name: string
@@ -520,18 +520,35 @@ export interface GalleryAlbum {
   cover_url: string | null
   created_at: string
   community_id?: string | null
+  event_date?: string | null
+  visibility?: 'public' | 'members' | 'hidden' | string
+  open_for_submissions?: boolean
+  updated_at?: string
 }
 
-/** Row shape for `public.gallery_images` (see migration 001 + 019). */
+/** Row shape for `public.gallery_images` (see migration 001 + 019 + 035). */
 export interface GalleryImage {
   id: string
   album_id: string | null
-  image_url: string
+  image_url: string | null
+  thumbnail_url?: string | null
   caption: string | null
+  alt_text?: string | null
   taken_at?: string | null
   status?: ContentStatus | string
   created_at: string
   community_id?: string | null
+  submitted_by_user_id?: string | null
+  submitted_by_name?: string | null
+  submitted_by_email?: string | null
+  approved_by?: string | null
+  approved_at?: string | null
+  is_homepage_featured?: boolean
+  sort_order?: number
+  updated_at?: string
+  submission_storage_bucket?: string | null
+  submission_storage_path?: string | null
+  submission_thumb_path?: string | null
 }
 
 export interface ContactSubmission {

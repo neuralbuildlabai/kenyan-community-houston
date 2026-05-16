@@ -34,8 +34,16 @@ import { trackClick } from '@/lib/analytics'
  *   E. Updates & ways to help — two cards only.
  *   F. New-to-Houston band — slimmed orange section, two CTAs.
  */
+type HomeMoment = {
+  id: string
+  thumbnail_url: string | null
+  image_url: string | null
+  alt_text: string | null
+}
+
 export function HomePage() {
   const [events, setEvents] = useState<Event[]>([])
+  const [moments, setMoments] = useState<HomeMoment[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -52,6 +60,15 @@ export function HomePage() {
         const raw = (ev as Event[]) ?? []
         const deduped = dedupeToNextOccurrenceOnly(raw).slice(0, 3)
         setEvents(deduped)
+        const { data: momentsRows } = await supabase
+          .from('gallery_images')
+          .select('id, thumbnail_url, image_url, alt_text')
+          .eq('status', 'published')
+          .eq('is_homepage_featured', true)
+          .order('sort_order', { ascending: true })
+          .order('created_at', { ascending: false })
+          .limit(6)
+        setMoments(((momentsRows ?? []) as HomeMoment[]).filter((m) => (m.thumbnail_url ?? m.image_url)?.trim()))
       } finally {
         setLoading(false)
       }
@@ -224,6 +241,57 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      {moments.length > 0 && (
+        <section
+          className="border-y bg-muted/20 py-12 sm:py-16"
+          data-testid="home-community-moments"
+          aria-labelledby="home-community-moments-heading"
+        >
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2
+                  id="home-community-moments-heading"
+                  className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+                >
+                  Community moments
+                </h2>
+                <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+                  Curated highlights from recent gatherings. Visit the gallery for the full collection.
+                </p>
+              </div>
+              <Button asChild variant="ghost" size="sm" className="w-fit shrink-0 gap-1.5 text-primary">
+                <Link
+                  to="/gallery"
+                  data-testid="home-cta-gallery-moments"
+                  onClick={() => void trackClick('home_community_moments_gallery', '/gallery')}
+                >
+                  View gallery <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-6">
+              {moments.map((m) => (
+                <Link
+                  key={m.id}
+                  to="/gallery"
+                  className="block aspect-square overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-shadow hover:ring-primary/30"
+                  data-testid="home-gallery-moment"
+                >
+                  <img
+                    src={m.thumbnail_url ?? m.image_url ?? ''}
+                    alt={m.alt_text?.trim() || 'Community moment'}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover"
+                  />
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ─── C. Connect with the community ───────────────────────
           Two large premium cards. Chat shows static preview text
