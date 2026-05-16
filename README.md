@@ -266,3 +266,12 @@ supabase/
 ## License
 
 Private project – all rights reserved.
+
+## Deployment safety
+
+Production deployment is guarded and requires double confirmation.
+
+- Preview/UAT deploy: `npm run deploy:preview`
+- Production deploy: `npm run deploy:prod`
+
+See: [KIGH Production Deployment Safety Guide](docs/production-deployment-safety.md)
