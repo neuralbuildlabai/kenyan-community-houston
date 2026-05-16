@@ -240,7 +240,7 @@ export function GallerySubmitPage() {
       <PublicPageHero
         eyebrow="Community gallery"
         title="Submit photos"
-        subtitle="Share photos from KIGH events and gatherings. Uploads are reviewed before publication — only approved photos appear in the public gallery."
+        subtitle="Share moments from KIGH events and community gatherings. Please upload only community-safe photos — no images of children without guardian consent, and nothing private or sensitive. Approved photos appear in the public gallery."
         primaryAction={
           <Button asChild variant="ghost" size="sm" className="-ml-3 gap-1">
             <Link to="/gallery">
@@ -248,7 +248,7 @@ export function GallerySubmitPage() {
             </Link>
           </Button>
         }
-        tone="muted"
+        tone="cream"
       />
 
       <section className="py-10 sm:py-14 lg:py-16">

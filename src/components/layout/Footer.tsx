@@ -3,6 +3,18 @@ import { MapPin, Mail, Facebook, Twitter, Instagram, Youtube, Lock } from 'lucid
 import { APP_NAME, KIGH_NONPROFIT_CREDIBILITY_STATEMENT, PUBLIC_CONTACT_EMAIL } from '@/lib/constants'
 import { KighLogo } from '@/components/KighLogo'
 
+/**
+ * Live social links. Only entries with a real URL render in the footer — placeholder
+ * `#` href values are deliberately omitted so the public footer never shows links
+ * that lead nowhere. Replace `href` with a real profile URL to enable an icon.
+ */
+const SOCIAL_LINKS: { Icon: typeof Facebook; label: string; href: string | null }[] = [
+  { Icon: Facebook, label: 'Facebook', href: null },
+  { Icon: Twitter, label: 'Twitter', href: null },
+  { Icon: Instagram, label: 'Instagram', href: null },
+  { Icon: Youtube, label: 'YouTube', href: null },
+]
+
 const explore = [
   { to: '/events', label: 'Events' },
   { to: '/calendar', label: 'Calendar' },
@@ -117,23 +129,22 @@ export function Footer() {
                 </a>
               </div>
             </div>
-            <div className="mt-8 flex flex-wrap gap-2.5">
-              {[
-                { Icon: Facebook, label: 'Facebook', href: '#' },
-                { Icon: Twitter, label: 'Twitter', href: '#' },
-                { Icon: Instagram, label: 'Instagram', href: '#' },
-                { Icon: Youtube, label: 'YouTube', href: '#' },
-              ].map(({ Icon, label, href }) => (
-                <a
-                  key={label}
-                  href={href}
-                  aria-label={label}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-colors hover:border-kenyan-gold-400/50 hover:bg-white/10"
-                >
-                  <Icon className="h-4 w-4" />
-                </a>
-              ))}
-            </div>
+            {SOCIAL_LINKS.some((s) => s.href) ? (
+              <div className="mt-8 flex flex-wrap gap-2.5">
+                {SOCIAL_LINKS.filter((s) => s.href).map(({ Icon, label, href }) => (
+                  <a
+                    key={label}
+                    href={href as string}
+                    aria-label={label}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-colors hover:border-kenyan-gold-400/50 hover:bg-white/10"
+                  >
+                    <Icon className="h-4 w-4" />
+                  </a>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:col-span-8 lg:grid-cols-4">

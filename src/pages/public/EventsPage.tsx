@@ -77,7 +77,7 @@ export function EventsPage() {
       <PublicPageHero
         eyebrow="Community calendar"
         title="Events"
-        subtitle="Upcoming gatherings, cultural celebrations, and community moments across Greater Houston."
+        subtitle="Cultural celebrations, faith gatherings, fundraisers, youth and family programs, and community moments hosted across Greater Houston. Open to the public — please respect each host's instructions."
         primaryAction={
           <Button asChild size="sm">
             <Link to="/events/submit">Submit an event</Link>

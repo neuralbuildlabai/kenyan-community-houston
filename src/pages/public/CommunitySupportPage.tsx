@@ -63,7 +63,7 @@ export function CommunitySupportPage() {
       <PublicPageHero
         eyebrow="Standing with neighbors"
         title="Community support"
-        subtitle="Updates from families and neighbors the community is rallying around, volunteer opportunities, and how to ask for help when you need it."
+        subtitle="Welfare check-ins, volunteer coordination, and updates from families the community is rallying around. A place to ask for help when you need it and to lend a hand when you can."
         primaryAction={
           <Button asChild size="sm">
             <Link to="/community-support/submit">Submit a support update</Link>
@@ -74,7 +74,7 @@ export function CommunitySupportPage() {
             <Link to="/serve">Volunteer with KIGH</Link>
           </Button>
         }
-        tone="tint"
+        tone="amber"
       />
 
       <PublicSection className="!py-10 sm:!py-12 lg:!py-14">

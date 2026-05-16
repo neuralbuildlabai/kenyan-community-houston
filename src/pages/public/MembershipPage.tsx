@@ -396,9 +396,9 @@ export function MembershipPage() {
       />
 
       <PublicPageHero
-        eyebrow="Join the community"
+        eyebrow="Belonging in Greater Houston"
         title="Become a member"
-        subtitle="Annual dues are $20 per member (due January 31). Join as an individual, family, or associate member — the form takes a few minutes."
+        subtitle="Membership is how neighbors stand with one another — families, individuals, students, and friends of Kenya who want to belong to a trusted community institution. Annual dues are $20 per member (due January 31). The form takes a few minutes; the relationships last."
         primaryAction={
           <a
             href="#membership-form"
@@ -412,7 +412,7 @@ export function MembershipPage() {
             <Link to="/governance">Read the constitution</Link>
           </Button>
         }
-        tone="tint"
+        tone="gold"
       />
 
       {/* Benefits band */}

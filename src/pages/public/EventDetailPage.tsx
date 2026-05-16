@@ -100,52 +100,81 @@ export function EventDetailPage() {
     )
   }
 
+  const cover = event.image_url || event.flyer_url
+
   return (
     <>
       <SEOHead
         title={event.title}
         description={event.description?.slice(0, 160)}
-        image={(event.image_url || event.flyer_url) ?? undefined}
+        image={cover ?? undefined}
         type="article"
       />
 
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-10">
-        <Button asChild variant="ghost" size="sm" className="mb-6 gap-1">
-          <Link to="/events"><ArrowLeft className="h-4 w-4" /> All Events</Link>
-        </Button>
-
-        {(event.image_url || event.flyer_url) && (
-          <div className="mb-8 rounded-2xl overflow-hidden max-h-96 bg-muted">
-            <img
-              src={event.image_url || event.flyer_url || ''}
-              alt={event.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main content */}
-          <div className="lg:col-span-2">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">{formatCategoryLabel(event.category)}</Badge>
-              {past ? (
+      {/* Editorial header — visible to the public, no login required to view */}
+      <section
+        data-testid="event-detail-header"
+        className="border-b border-primary/10 bg-gradient-to-br from-primary/[0.06] via-background to-kenyan-gold-500/[0.05]"
+      >
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+          <Button asChild variant="ghost" size="sm" className="-ml-2 mb-5 gap-1">
+            <Link to="/events">
+              <ArrowLeft className="h-4 w-4" /> All events
+            </Link>
+          </Button>
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80">
+            {past ? 'Past gathering' : 'Upcoming gathering'}
+          </p>
+          <h1
+            data-testid="event-detail-title"
+            className="text-3xl sm:text-4xl lg:text-[2.5rem] font-semibold tracking-tight text-foreground"
+          >
+            {event.title}
+          </h1>
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">{formatCategoryLabel(event.category)}</Badge>
+            {past ? (
               <Badge variant="muted" className="font-normal">
                 Past event
               </Badge>
             ) : null}
-              {event.is_virtual ? (
-                <Badge variant="outline" className="gap-1 border-primary/40">
-                  <Video className="h-3.5 w-3.5" /> Virtual / Online
-                </Badge>
-              ) : null}
-              {event.is_featured && <Badge variant="gold" className="gap-1">⭐ Featured</Badge>}
-              {event.is_free && <Badge variant="success">Free Event</Badge>}
-            </div>
+            {event.is_virtual ? (
+              <Badge variant="outline" className="gap-1 border-primary/40">
+                <Video className="h-3.5 w-3.5" /> Virtual / Online
+              </Badge>
+            ) : null}
+            {event.is_featured ? (
+              <Badge variant="gold" className="gap-1">⭐ Featured</Badge>
+            ) : null}
+            {event.is_free ? <Badge variant="success">Free event</Badge> : null}
+          </div>
+        </div>
+      </section>
 
-            <h1 className="text-3xl font-bold text-foreground mb-4">{event.title}</h1>
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10">
+        {cover ? (
+          <div
+            data-testid="event-detail-flyer"
+            className="mb-8 rounded-2xl overflow-hidden max-h-[28rem] bg-muted border border-border/50 shadow-sm"
+          >
+            <img
+              src={cover}
+              alt={`${event.title} flyer`}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ) : null}
 
-            <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap mb-6">{event.description}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main content */}
+          <div className="lg:col-span-2">
+            <h2 className="sr-only">About this event</h2>
+            <p
+              data-testid="event-detail-description"
+              className="text-foreground/85 leading-relaxed whitespace-pre-wrap mb-6 text-[15px]"
+            >
+              {event.description}
+            </p>
 
             {relatedResources.length > 0 && (
               <div className="rounded-xl border border-border/80 bg-muted/20 p-5 mb-6 space-y-3">
@@ -190,13 +219,15 @@ export function EventDetailPage() {
           </div>
 
           {/* Sidebar details */}
-          <aside className="space-y-4">
+          <aside className="space-y-4" data-testid="event-detail-sidebar">
             <div className="rounded-xl border p-5 space-y-4 bg-muted/30">
               <div className="flex items-start gap-3">
                 <Calendar className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div>
                   <div className="font-medium text-sm">Date</div>
-                  <div className="text-sm text-muted-foreground">{formatDate(event.start_date, 'EEEE, MMMM d, yyyy')}</div>
+                  <div data-testid="event-detail-date" className="text-sm text-muted-foreground">
+                    {formatDate(event.start_date, 'EEEE, MMMM d, yyyy')}
+                  </div>
                   {event.end_date && (
                     <div className="text-sm text-muted-foreground">to {formatDate(event.end_date, 'MMMM d, yyyy')}</div>
                   )}
@@ -208,7 +239,7 @@ export function EventDetailPage() {
                   <Clock className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                   <div>
                     <div className="font-medium text-sm">Time</div>
-                    <div className="text-sm text-muted-foreground">{event.start_time}{event.end_time ? ` – ${event.end_time}` : ''}</div>
+                    <div data-testid="event-detail-time" className="text-sm text-muted-foreground">{event.start_time}{event.end_time ? ` – ${event.end_time}` : ''}</div>
                   </div>
                 </div>
               )}
@@ -217,7 +248,7 @@ export function EventDetailPage() {
                 <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div className="space-y-1.5">
                   <div className="font-medium text-sm">{event.is_virtual ? 'Format' : 'Location'}</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div data-testid="event-detail-location" className="text-sm text-muted-foreground">
                     {event.is_virtual ? 'Virtual / Online' : event.location}
                   </div>
                   {!event.is_virtual && event.address && (

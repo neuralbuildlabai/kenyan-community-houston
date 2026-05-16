@@ -58,7 +58,7 @@ export function SportsYouthPage() {
       <PublicPageHero
         eyebrow="Active &amp; future-facing"
         title="Sports &amp; youth"
-        subtitle="Athletics, youth development, and family-friendly community activities. Updates from teams, coaches, and parents across Greater Houston."
+        subtitle="Athletics, youth development, and family-friendly community activities — soccer, track, basketball, mentoring, and the next generation of leaders. Updates from teams, coaches, and parents across Greater Houston."
         primaryAction={
           <Button asChild size="sm">
             <a href={`mailto:${PUBLIC_CONTACT_EMAIL}?subject=Sports%20%26%20Youth%20update`}>
@@ -66,7 +66,7 @@ export function SportsYouthPage() {
             </a>
           </Button>
         }
-        tone="tint"
+        tone="gold"
       />
 
       <PublicSection className="!py-10 sm:!py-12 lg:!py-14">

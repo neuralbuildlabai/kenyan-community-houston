@@ -85,7 +85,7 @@ export function GalleryPage() {
       <PublicPageHero
         eyebrow="Community gallery"
         title="Gallery"
-        subtitle="Photos and memories from gatherings, celebrations, and everyday community moments."
+        subtitle="Photos and memories from KIGH gatherings, cultural celebrations, family days, and the quiet moments in between. Submissions are reviewed before publication so the gallery stays community-safe."
         primaryAction={
           <Button asChild size="sm">
             <Link to="/gallery/submit" data-testid="gallery-cta-submit">
@@ -93,7 +93,7 @@ export function GalleryPage() {
             </Link>
           </Button>
         }
-        tone="muted"
+        tone="cream"
       />
 
       <PublicSection className="!py-10 sm:!py-12 lg:!py-14">

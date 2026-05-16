@@ -226,25 +226,36 @@ export function NewToHoustonPage() {
         description="Official Houston and Texas resources, community-reviewed service listings, and practical guidance for Kenyans settling in Greater Houston."
       />
 
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <div className="max-w-2xl">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-            New to Houston?
-          </h1>
-          <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-            Practical next steps for settling in — official resources first,
-            community listings when you&apos;re ready.
-          </p>
+      <div className="border-b border-amber-300/20 bg-gradient-to-br from-amber-50/60 via-background to-emerald-900/[0.04] dark:from-amber-950/15">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <div className="max-w-2xl">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-900/80 dark:text-amber-200/80">
+              Newcomer guide
+            </p>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+              New to Houston?
+            </h1>
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+              Starting over in a new city is easier when the basic steps are clear. This guide
+              brings common Houston-area services into one place so members can find the right
+              office, ask better questions, and avoid relying on rumors. Official resources first,
+              community-vetted services when you're ready.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 pb-16 space-y-14">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 sm:py-14 space-y-14">
         {/* ── Official resources ───────────────────────────────────── */}
         <section>
-          <h2 className="text-2xl font-bold text-foreground tracking-tight mb-2">Official Houston &amp; Texas resources</h2>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-900/85 dark:text-emerald-300/85">
+            Step one
+          </p>
+          <h2 className="mt-1 text-2xl font-bold text-foreground tracking-tight mb-2 sm:text-3xl">Official Houston &amp; Texas resources</h2>
           <p className="text-sm text-muted-foreground leading-relaxed mb-8 max-w-2xl">
-            Independent government and public-service sites. Confirm requirements
-            before you visit an office or pay any fees.
+            Independent government and public-service websites — driver licensing, vehicle
+            registration, schools, healthcare, transit, and emergency contacts. Confirm
+            requirements directly with each office before paying any fees or making the trip.
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             {OFFICIAL_RESOURCE_GROUPS.map((group) => (
@@ -272,10 +283,15 @@ export function NewToHoustonPage() {
 
         {/* ── Community-reviewed services ─────────────────────────── */}
         <section className="rounded-3xl bg-muted/30 p-7 sm:p-9">
-          <h2 className="text-2xl font-bold text-foreground tracking-tight mb-3">Community-reviewed services</h2>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-900/85 dark:text-emerald-300/85">
+            Step two
+          </p>
+          <h2 className="mt-1 text-2xl font-bold text-foreground tracking-tight mb-3 sm:text-3xl">Community-reviewed services</h2>
           <p className="text-sm text-muted-foreground leading-relaxed mb-5 max-w-2xl">
-            Browse and submit community-vetted housing, legal, insurance, and
-            childcare listings. Always verify credentials yourself.
+            Community members regularly recommend trusted realtors, lenders, insurers, tax help,
+            immigration attorneys, movers, and childcare providers. Reviewed submissions help keep
+            this directory accurate, respectful, and useful — and you should still verify licenses,
+            fees, and references directly with any provider before engaging them.
           </p>
           <ul className="flex flex-wrap gap-2 mb-7">
             {SERVICE_CATEGORIES.map((c) => (

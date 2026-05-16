@@ -55,12 +55,22 @@ export function EditorialEventRow({ event, presentation = 'default', className }
           </span>
         </div>
 
-        {/* Optional cover for featured */}
+        {/* Cover image — larger for featured rows, compact thumbnail for default rows. */}
         {featured && cover ? (
           <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-muted sm:aspect-auto sm:h-auto sm:w-56 sm:flex-shrink-0">
             <img
               src={cover}
               alt={event.title}
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+            />
+          </div>
+        ) : !featured && !archive && cover ? (
+          <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg bg-muted sm:aspect-[4/3] sm:h-20 sm:w-28 sm:flex-shrink-0">
+            <img
+              src={cover}
+              alt=""
+              aria-hidden="true"
               loading="lazy"
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
             />

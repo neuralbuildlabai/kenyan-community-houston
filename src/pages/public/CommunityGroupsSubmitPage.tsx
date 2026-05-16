@@ -128,7 +128,7 @@ export function CommunityGroupsSubmitPage() {
       <PublicPageHero
         eyebrow="Community directory"
         title="Submit a group / institution"
-        subtitle="Add your church, association, nonprofit, welfare or cultural group to the trusted Greater Houston directory. Non-commercial listings only."
+        subtitle="Add a church, association, nonprofit, welfare circle, youth or cultural group so members can find you. Public-safe contact information only — submissions are reviewed before publication, and commercial businesses belong in the Business directory."
         primaryAction={
           <Button asChild variant="ghost" size="sm" className="gap-1 -ml-3">
             <Link to="/community-groups">
@@ -136,7 +136,7 @@ export function CommunityGroupsSubmitPage() {
             </Link>
           </Button>
         }
-        tone="tint"
+        tone="sage"
       />
 
       <section className="py-10 sm:py-14 lg:py-16">

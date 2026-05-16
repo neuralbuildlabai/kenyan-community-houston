@@ -64,11 +64,16 @@ export function ResourcesPage() {
 
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="mb-10 max-w-2xl">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80">
+            Public reference shelf
+          </p>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             Resource library
           </h1>
-          <p className="mt-3 text-base text-muted-foreground">
-            Published KIGH documents and presentations.
+          <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+            Governance documents, presentation handouts from past KIGH sessions, member forms, and
+            other materials published for the community. Use the search and filters to find what
+            you need without scrolling through everything.
           </p>
         </div>
 

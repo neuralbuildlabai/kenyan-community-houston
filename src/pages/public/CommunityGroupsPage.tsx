@@ -74,13 +74,13 @@ export function CommunityGroupsPage() {
       <PublicPageHero
         eyebrow="Trusted directory"
         title="Community groups &amp; institutions"
-        subtitle="Churches, associations, benevolence and welfare groups, cultural organizations, and nonprofits serving Kenyans and friends of Kenya across Greater Houston."
+        subtitle="Churches, associations, benevolence and welfare circles, youth and family groups, cultural organizations, and nonprofits serving Kenyans and friends of Kenya across Greater Houston. Non-commercial listings — reviewed before publication."
         primaryAction={
           <Button asChild size="sm">
             <Link to="/community-groups/submit">Submit a group</Link>
           </Button>
         }
-        tone="tint"
+        tone="sage"
       />
 
       {/* Editorial intro / counts */}

@@ -8,7 +8,6 @@ import { supabase } from '@/lib/supabase'
 import type { Event } from '@/lib/types'
 import { buildHomepageWhatsHappeningList, filterPublishedUpcomingByStartDate } from '@/lib/homepageEvents'
 import { trackClick } from '@/lib/analytics'
-import { KIGH_NONPROFIT_CREDIBILITY_STATEMENT } from '@/lib/constants'
 
 /** Optimized hero (see `public/kigh-media/houstonmainimage-hero.jpg`). */
 const HOME_HERO_IMAGE_JPEG = '/kigh-media/houstonmainimage-hero.jpg'
@@ -113,7 +112,7 @@ export function HomePage() {
           className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-black/55 via-black/50 to-black/75"
           aria-hidden
         />
-        <div className="relative z-10 flex flex-1 flex-col justify-center px-4 pb-10 pt-24 sm:px-6 sm:pt-28 lg:px-8">
+        <div className="relative z-10 flex flex-1 flex-col justify-center px-4 pb-16 pt-24 sm:px-6 sm:pb-20 sm:pt-28 lg:px-8 lg:pb-24">
           <div className="mx-auto w-full max-w-3xl text-center text-white">
             <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.28em] text-white/75 sm:text-xs">
               Kenyan Community Houston
@@ -125,8 +124,9 @@ export function HomePage() {
               Your Kenyan community hub in Houston
             </h1>
             <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed text-white/88 sm:text-lg sm:leading-relaxed">
-              Connect with community, discover events, find resources, and stay close to home while
-              building life in Greater Houston.
+              A trusted place to find what is happening, who is serving, and how to stay connected
+              across Greater Houston. Built for families, newcomers, professionals, youth, elders,
+              churches, businesses, and friends of Kenya.
             </p>
             <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
               <Button
@@ -184,28 +184,28 @@ export function HomePage() {
           </div>
         </div>
 
-        <div className="relative z-10 mt-auto border-t border-white/10 bg-black/35 px-4 py-3.5 backdrop-blur-md sm:px-6 lg:px-8">
-          <p className="mx-auto max-w-3xl text-center text-xs leading-relaxed text-white/75 sm:text-sm">
-            {KIGH_NONPROFIT_CREDIBILITY_STATEMENT}
-          </p>
-        </div>
       </section>
 
-      {/* What's happening — elevated panel immediately below hero */}
+      {/* What's happening — elevated editorial panel that breathes below the hero */}
       <section
-        className="relative z-20 -mt-8 px-4 pb-16 sm:-mt-10 sm:px-6 sm:pb-20 lg:px-8"
+        className="relative z-20 -mt-12 px-4 pb-16 sm:-mt-14 sm:px-6 sm:pb-20 lg:-mt-16 lg:px-8 lg:pb-24"
         aria-labelledby="home-whats-happening-heading"
         data-testid="home-whats-happening"
       >
-        <div className="public-container mx-auto rounded-3xl border border-border/50 bg-card/95 px-5 py-10 shadow-xl shadow-black/[0.06] backdrop-blur-sm sm:px-8 sm:py-12">
+        <div className="public-container mx-auto rounded-3xl border border-border/50 bg-card/95 px-5 py-10 shadow-xl shadow-black/[0.06] backdrop-blur-sm sm:px-8 sm:py-12 lg:px-10 lg:py-14">
           <div className="mx-auto max-w-3xl">
-            <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <h2
-                id="home-whats-happening-heading"
-                className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
-              >
-                What's happening
-              </h2>
+            <div className="mb-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80">
+                  Community calendar
+                </p>
+                <h2
+                  id="home-whats-happening-heading"
+                  className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
+                >
+                  What's happening
+                </h2>
+              </div>
               {events.length > 0 ? (
                 <Link
                   to="/events"
@@ -324,7 +324,9 @@ export function HomePage() {
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">New to Houston?</h2>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-white/90">
-            Practical guidance from neighbors who remember their first months in the city.
+            Starting over in a new city is easier when the basic steps are clear. Find official
+            offices, practical guidance, and answers from neighbors who remember their first months
+            here.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-6">
             <Link

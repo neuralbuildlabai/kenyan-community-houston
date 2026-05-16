@@ -95,7 +95,7 @@ export function SubmitBusinessPage() {
       <PublicPageHero
         eyebrow="Local guide"
         title="List Your Business"
-        subtitle="Get discovered by the Kenyan community in Houston. Free basic listing — reviewed before publication."
+        subtitle="Help neighbors across Greater Houston find Kenyan-owned and community-friendly businesses they can trust. Free basic listings — reviewed before publication so the directory stays accurate and respectful."
         primaryAction={
           <Button asChild variant="ghost" size="sm" className="-ml-3 gap-1">
             <Link to="/businesses">
@@ -103,7 +103,7 @@ export function SubmitBusinessPage() {
             </Link>
           </Button>
         }
-        tone="tint"
+        tone="forest"
       />
 
       <section className="py-10 sm:py-14 lg:py-16">

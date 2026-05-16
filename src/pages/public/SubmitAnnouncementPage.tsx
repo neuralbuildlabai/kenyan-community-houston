@@ -210,9 +210,9 @@ export function SubmitAnnouncementPage() {
       />
 
       <PublicPageHero
-        eyebrow="Community news"
+        eyebrow="Community noticeboard"
         title="Submit an Announcement"
-        subtitle="Share community news, official updates, or notices. All submissions are reviewed before publication."
+        subtitle="Share a short, useful notice with the community — an event reminder, a leadership update, a deadline, or an opportunity members should not miss. Submissions are reviewed for clarity, relevance, and tone before publication."
         primaryAction={
           <Button asChild variant="ghost" size="sm" className="-ml-3 gap-1">
             <Link to="/announcements">
@@ -220,7 +220,7 @@ export function SubmitAnnouncementPage() {
             </Link>
           </Button>
         }
-        tone="default"
+        tone="navy"
       />
 
       <section className="py-10 sm:py-14 lg:py-16">

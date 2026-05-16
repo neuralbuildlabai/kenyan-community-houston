@@ -64,15 +64,15 @@ export function AnnouncementsPage() {
       />
 
       <PublicPageHero
-        eyebrow="Community news"
+        eyebrow="Community noticeboard"
         title="Announcements"
-        subtitle="Official updates, community notices, and important news from Kenyan Community Houston."
+        subtitle="Official updates, leadership notices, event reminders, opportunities, and important community news from Kenyan Community Houston. Reviewed before publication so members can trust what they read here."
         primaryAction={
           <Button asChild size="sm">
             <Link to="/announcements/submit">Submit an announcement</Link>
           </Button>
         }
-        tone="default"
+        tone="navy"
       />
 
       <section className="sticky top-16 z-20 border-b border-border/50 bg-background/85 backdrop-blur">
@@ -178,12 +178,51 @@ export function AnnouncementsPage() {
                   {filterIsActive ? 'Matching announcements' : 'More from the community'}
                 </h2>
               </header>
-              <div className="space-y-3">
-                {rest.map((a) => (
-                  <EditorialAnnouncementRow key={a.id} announcement={a} />
-                ))}
-              </div>
+              {rest.length > 0 ? (
+                <div className="space-y-3">
+                  {rest.map((a) => (
+                    <EditorialAnnouncementRow key={a.id} announcement={a} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  More notices appear here as leadership and community moderators publish them.
+                </p>
+              )}
             </section>
+
+            {!filterIsActive ? (
+              <section
+                aria-labelledby="announcements-about-heading"
+                data-testid="announcements-about"
+                className="rounded-3xl border border-slate-900/15 bg-gradient-to-br from-slate-900/[0.05] via-card to-kenyan-gold-500/[0.06] p-7 sm:p-9"
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-700 dark:text-slate-300">
+                  About this noticeboard
+                </p>
+                <h2
+                  id="announcements-about-heading"
+                  className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl"
+                >
+                  What gets posted here
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                  Announcements are short, reviewed notices for the whole community. You'll find
+                  upcoming gatherings, event reminders, leadership updates, volunteer opportunities,
+                  membership and AGM notices, safety advisories, and time-sensitive information
+                  that members should not miss. Submissions are reviewed for clarity and relevance
+                  before publication.
+                </p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <Button asChild size="sm">
+                    <Link to="/announcements/submit">Submit an announcement</Link>
+                  </Button>
+                  <Button asChild size="sm" variant="outline">
+                    <Link to="/contact">Contact leadership</Link>
+                  </Button>
+                </div>
+              </section>
+            ) : null}
           </div>
         )}
       </PublicSection>

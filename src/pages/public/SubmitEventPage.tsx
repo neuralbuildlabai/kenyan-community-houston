@@ -145,7 +145,7 @@ export function SubmitEventPage() {
       <PublicPageHero
         eyebrow="Community calendar"
         title="Submit an Event"
-        subtitle="Share an upcoming gathering with the Kenyan community in Houston. All submissions are reviewed by KIGH moderators before publication."
+        subtitle="Share an upcoming gathering with neighbors across Greater Houston. A strong listing tells visitors clearly when, where, who it's for, and how to take part. Reviewed by KIGH moderators before publication."
         primaryAction={
           <Button asChild variant="ghost" size="sm" className="-ml-3 gap-1">
             <Link to="/events">
@@ -392,28 +392,31 @@ export function SubmitEventPage() {
                 Before you submit
               </p>
               <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                What makes a great event listing
+                What makes a strong listing
               </h2>
               <ul className="mt-4 space-y-4 text-sm text-muted-foreground">
                 <li className="flex gap-3">
                   <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0 text-primary/70" />
                   <span>
-                    <span className="font-medium text-foreground">Accurate venue &amp; time.</span>{' '}
-                    Double-check the address and start time so neighbors arrive at the right place.
+                    <span className="font-medium text-foreground">Accurate date, time, and venue.</span>{' '}
+                    Confirm the full address and start time so neighbors arrive at the right place
+                    on the right day.
                   </span>
                 </li>
                 <li className="flex gap-3">
                   <Eye className="h-4 w-4 mt-0.5 shrink-0 text-primary/70" />
                   <span>
-                    <span className="font-medium text-foreground">Clear description.</span> A few
-                    sentences about the host, audience, and what to expect goes a long way.
+                    <span className="font-medium text-foreground">Clear description.</span> A short
+                    paragraph about who is hosting, who the event is for, and what to expect helps
+                    families decide whether to attend.
                   </span>
                 </li>
                 <li className="flex gap-3">
                   <Sparkles className="h-4 w-4 mt-0.5 shrink-0 text-primary/70" />
                   <span>
-                    <span className="font-medium text-foreground">Public flyer image.</span> A
-                    flyer (or even a simple poster) makes the listing more inviting.
+                    <span className="font-medium text-foreground">Flyer if available.</span> A
+                    flyer or simple poster makes the listing more inviting and helps members
+                    recognize the event when they share it.
                   </span>
                 </li>
               </ul>

@@ -107,10 +107,10 @@ export function ContactPage() {
       />
 
       <PublicPageHero
-        eyebrow="We&apos;d love to hear from you"
+        eyebrow="Official channel"
         title="Contact us"
-        subtitle="Share a question, suggestion, or partnership idea — KIGH volunteers respond to community inquiries personally."
-        tone="tint"
+        subtitle="Share a question, a suggestion, a community concern, or a partnership idea. KIGH volunteers respond to community inquiries personally, and sensitive matters can be flagged for the right person to follow up."
+        tone="navy"
       />
 
       <section className="py-10 sm:py-14 lg:py-16">

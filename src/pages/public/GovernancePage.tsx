@@ -1,10 +1,29 @@
 import { Link } from 'react-router-dom'
-import { FileText, Download, Scale, Shield, HeartHandshake } from 'lucide-react'
+import {
+  FileText,
+  Download,
+  Scale,
+  Shield,
+  HeartHandshake,
+  Users,
+  Landmark,
+  Vote,
+  CalendarCheck,
+  Wallet,
+  ShieldCheck,
+  Users2,
+  Gavel,
+  Lock,
+  Pencil,
+  HelpingHand,
+  Compass,
+} from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { KighLogo } from '@/components/KighLogo'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { KIGH_NONPROFIT_CREDIBILITY_STATEMENT } from '@/lib/constants'
 
 const CONSTITUTION_VIEW = encodeURI('/kigh-documents/governance/KIGH Constitution and Bylaws.docx')
 const CONSTITUTION_DOWNLOAD = CONSTITUTION_VIEW
@@ -13,87 +32,114 @@ const RELATED_DOCS = [
   {
     title: 'KIGH Rules and Regulations',
     href: encodeURI('/kigh-documents/governance/KIGH Rules and Regulations .docx'),
-    blurb: 'Community rules and standards.',
+    blurb: 'Standards that keep community gatherings safe, respectful, and well-organized.',
   },
   {
     title: 'KIGH Roles and Responsibilities',
     href: encodeURI('/kigh-documents/governance/KIGH Roles and Responsibilities.docx'),
-    blurb: 'Leadership roles and expectations.',
+    blurb: 'How leadership, committees, and volunteers share the work of serving the community.',
   },
 ] as const
 
-const SECTIONS: { id: string; title: string; body: string }[] = [
+type SectionIcon =
+  | typeof Compass
+  | typeof Landmark
+  | typeof Users
+  | typeof Vote
+  | typeof CalendarCheck
+  | typeof Wallet
+  | typeof Lock
+  | typeof Users2
+  | typeof Gavel
+  | typeof Pencil
+  | typeof HelpingHand
+  | typeof ShieldCheck
+  | typeof FileText
+
+const SECTIONS: { id: string; title: string; Icon: SectionIcon; body: string }[] = [
   {
-    id: 'purpose',
-    title: 'Purpose & Mission',
+    id: 'overview',
+    title: 'Governance overview',
+    Icon: Compass,
     body:
-      'KIGH exists to unite, serve, and celebrate Kenyans across Greater Houston through cultural connection, mutual support, civic engagement, and programs that strengthen families and youth.',
+      'KIGH is guided by its constitution, bylaws, leadership responsibilities, membership expectations, and transparent community decision-making. These documents describe how the organization operates day to day, how members are heard, and how community trust is protected over the long term.',
+  },
+  {
+    id: 'nonprofit',
+    title: 'Nonprofit identity',
+    Icon: Landmark,
+    body:
+      `${KIGH_NONPROFIT_CREDIBILITY_STATEMENT} The organization operates for community benefit — culture, mutual support, youth and family programs, civic education, and welfare — and is not affiliated with any political party or campaign.`,
   },
   {
     id: 'membership',
-    title: 'Membership',
+    title: 'Membership and good standing',
+    Icon: Users,
     body:
-      'Membership is open to individuals and households who support KIGH’s mission and agree to the constitution, bylaws, and code of conduct. Good standing includes timely dues and respectful participation in community spaces.',
+      'Membership is open to individuals and households who support KIGH\'s mission and agree to the constitution, bylaws, and code of conduct. Good standing reflects active participation, respectful conduct in community spaces, and — where applicable — confirmation of membership through the process described in the bylaws. Membership is about belonging and shared responsibility, not fundraising.',
   },
   {
-    id: 'conduct',
-    title: 'Code of Conduct',
+    id: 'agm',
+    title: 'AGM and quorum',
+    Icon: CalendarCheck,
     body:
-      'Members and participants are expected to treat one another with dignity, avoid harassment or discrimination, respect event hosts and volunteers, and represent the community positively in public settings and online.',
+      'The Annual General Meeting (AGM) is held in November. Members in good standing are invited to attend, hear updates, and participate in decisions specified by the bylaws. Quorum for the AGM is 25% of members in good standing. Meeting notices, agendas, and supporting documents are shared in advance so members can come prepared.',
   },
   {
     id: 'leadership',
-    title: 'Leadership & Committees',
+    title: 'Leadership and committees',
+    Icon: Users2,
     body:
-      'Leadership is structured to balance transparency with practical decision-making. Committees may focus on events, youth, welfare, communications, finance oversight, and other priorities defined by the board and membership.',
+      'Leadership stewards the organization on behalf of the community. Committees may be formed to support events, youth and family programs, welfare, communications, finance oversight, membership, sports, newcomer support, and other community priorities. Specific officers and committee chairs are listed on the organization\'s leadership directory when published — this page does not name individuals to keep public information accurate over time.',
   },
   {
     id: 'elections',
     title: 'Elections',
+    Icon: Vote,
     body:
-      'Elections follow timelines and eligibility rules described in the bylaws, with fair notice to members and orderly nomination and voting procedures.',
-  },
-  {
-    id: 'meetings',
-    title: 'Meetings & AGM',
-    body:
-      'Regular meetings keep the community informed and engaged. The Annual General Meeting (AGM) is held in November. Quorum for the AGM is 25% of members in good standing, as defined in the bylaws.',
+      'Elections follow the timelines, eligibility rules, and procedures described in the bylaws. Notices are given to members in advance, nominations are collected in an orderly way, and voting is conducted so that every member in good standing has a fair opportunity to participate.',
   },
   {
     id: 'financial',
-    title: 'Financial Management',
+    title: 'Financial stewardship',
+    Icon: Wallet,
     body:
-      'Treasury practices emphasize accountability, approved signatories, documented approvals for major expenses, and alignment with the organization’s nonprofit community mission.',
-  },
-  {
-    id: 'privacy',
-    title: 'Privacy & Data Protection',
-    body:
-      'Personal information collected for membership, events, or programs is used for legitimate community purposes, safeguarded against unnecessary disclosure, and handled in line with applicable privacy expectations.',
+      'Community funds are handled with care. KIGH maintains proper records, uses approved signatories for disbursements, requires appropriate approvals for major expenses, and aims to make financial summaries available to members in line with the bylaws. The goal is straightforward: money raised for the community is spent for the community, with documentation that members can trust.',
   },
   {
     id: 'coi',
-    title: 'Conflict of Interest',
+    title: 'Conflict of interest',
+    Icon: ShieldCheck,
     body:
-      'Leaders and volunteers disclose conflicts that could affect decisions involving money, contracts, or reputational risk, and recuse themselves when appropriate.',
+      'Leaders and volunteers disclose conflicts that could affect decisions involving money, contracts, hiring, vendor selection, or reputational risk. Where appropriate, they recuse themselves from the decision so that the community\'s interest comes first. Disclosure protects both the individual and the organization.',
   },
   {
-    id: 'disputes',
-    title: 'Dispute Resolution',
+    id: 'privacy',
+    title: 'Privacy and data protection',
+    Icon: Lock,
     body:
-      'Disputes should first seek good-faith resolution through designated leaders or mediation channels described in the bylaws before escalation.',
+      'Member information collected for membership, events, programs, or community requests is used responsibly for legitimate community purposes. Access is limited to authorized administrators. Public pages do not display sensitive member data, and members can ask for their information to be reviewed or corrected through the contact channels listed on the site.',
+  },
+  {
+    id: 'conduct',
+    title: 'Code of conduct',
+    Icon: Gavel,
+    body:
+      'Members and participants are expected to treat one another with respect, avoid harassment or discrimination of any kind, follow the direction of event hosts and volunteers, keep children and elders safe at community spaces, and represent the community responsibly in public and online. Concerns can be raised through the leadership channels described in the bylaws.',
   },
   {
     id: 'amendments',
-    title: 'Amendments & Dissolution',
+    title: 'Amendments and member participation',
+    Icon: Pencil,
     body:
-      'Amendments follow the voting thresholds and notice periods in the bylaws. Any dissolution process would prioritize lawful distribution of assets consistent with the organization’s purpose.',
+      'Members are informed of proposed amendments to the constitution and bylaws in advance, in line with the notice and voting thresholds described in the bylaws. Community input matters — proposals should reach members early enough to be discussed openly, not voted on under pressure.',
   },
   {
-    id: 'nonpolitical',
-    title: 'Non-Political and Non-Lobbying Clause',
+    id: 'documents',
+    title: 'Document access',
+    Icon: FileText,
     body:
-      'KIGH is a community organization focused on culture, mutual aid, and civic education at a non-partisan community level. It does not endorse candidates for office or conduct lobbying as defined by law.',
+      'The constitution, bylaws, and related governance documents are available below to view or download. These documents may be updated from time to time through the amendment process. If a section is unclear or you spot an inconsistency, please reach out — accuracy matters.',
   },
 ]
 
@@ -105,7 +151,7 @@ export function GovernancePage() {
         description="Community standards, leadership structure, membership rules, and governance guidelines for Kenyans in Greater Houston."
       />
 
-      <div className="border-b bg-gradient-to-br from-primary/[0.07] via-background to-muted/50">
+      <div className="border-b border-slate-900/15 bg-gradient-to-br from-slate-900/[0.07] via-background to-kenyan-gold-500/[0.06]">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
           <div className="flex flex-col md:flex-row md:items-start gap-8">
             <KighLogo
@@ -121,12 +167,20 @@ export function GovernancePage() {
                 <Badge variant="outline" className="gap-1 font-normal">
                   <Shield className="h-3 w-3" /> Transparency
                 </Badge>
+                <Badge variant="outline" className="gap-1 font-normal">
+                  <Landmark className="h-3 w-3" /> 501(c)(3) nonprofit
+                </Badge>
               </div>
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-700 dark:text-slate-300">
+                Official documents
+              </p>
               <h1 className="text-3xl sm:text-4xl lg:text-[2.5rem] font-bold text-foreground tracking-tight">
                 Constitution & Bylaws
               </h1>
               <p className="mt-4 text-lg text-muted-foreground leading-relaxed max-w-3xl">
-                Community standards, leadership structure, membership rules, and governance guidelines for Kenyans in Greater Houston.
+                How Kenyan Community Houston is organized, led, funded, and held accountable to its
+                members. Transparent governance is what turns a group of neighbors into a trusted
+                community institution.
               </p>
             </div>
           </div>
@@ -138,16 +192,25 @@ export function GovernancePage() {
           <CardHeader className="bg-primary/[0.04] pb-4">
             <CardTitle className="text-xl">About these documents</CardTitle>
             <CardDescription className="text-base text-foreground/85 leading-relaxed">
-              Kenyans in Greater Houston is guided by a constitution and bylaws that outline the organization’s purpose, membership structure, leadership roles, elections, financial management, privacy standards, conflict-of-interest rules, and community conduct expectations.
+              Kenyans in Greater Houston is guided by a constitution and bylaws that describe the
+              organization's purpose, membership structure, leadership roles, elections, financial
+              management, privacy standards, conflict-of-interest rules, and community conduct
+              expectations. The summaries below explain each topic in plain language so members can
+              understand how the organization is meant to work without reading the full document
+              front to back.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-muted-foreground pt-6">
             <p>
-              <strong className="text-foreground">Transparency:</strong> This document is provided for community transparency. It may be updated from time to time in accordance with the amendment process described in the bylaws.
+              <strong className="text-foreground">Transparency.</strong> These pages are provided
+              for community transparency. The full governing documents take precedence over the
+              summaries shown here, and the constitution and bylaws may be updated from time to time
+              through the amendment process they describe.
             </p>
             <div className="flex flex-wrap gap-2">
               <Badge variant="outline" className="font-normal">AGM month: November</Badge>
               <Badge variant="outline" className="font-normal">AGM quorum: 25% of members in good standing</Badge>
+              <Badge variant="outline" className="font-normal">Nonpartisan community organization</Badge>
             </div>
           </CardContent>
         </Card>
@@ -166,30 +229,54 @@ export function GovernancePage() {
         </div>
 
         <div>
-          <h2 className="text-xl font-semibold text-foreground mb-4">Topics at a glance</h2>
+          <div className="mb-5 max-w-2xl">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-700/90 dark:text-slate-300/85">
+              Topics at a glance
+            </p>
+            <h2 className="mt-1 text-xl font-semibold text-foreground sm:text-2xl">
+              How the organization is run
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+              Each topic below summarizes part of the constitution and bylaws in plain language.
+              Use these to orient yourself before reading the full document.
+            </p>
+          </div>
           <div className="rounded-xl border bg-card shadow-sm divide-y overflow-hidden">
-            {SECTIONS.map((s) => (
-              <details key={s.id} className="group px-4 sm:px-5 py-3 open:bg-muted/25 transition-colors">
-                <summary className="cursor-pointer list-none font-medium flex items-center justify-between gap-3 py-1.5 text-foreground">
-                  <span>{s.title}</span>
-                  <span className="text-muted-foreground text-xs tabular-nums shrink-0 group-open:rotate-180 transition-transform duration-200">▼</span>
-                </summary>
-                <p className="text-sm text-muted-foreground leading-relaxed pb-2 pt-3 border-t border-border/60 mt-2">
-                  {s.body}
-                </p>
-              </details>
-            ))}
+            {SECTIONS.map((s) => {
+              const Icon = s.Icon
+              return (
+                <details key={s.id} id={s.id} className="group px-4 sm:px-5 py-3 open:bg-muted/25 transition-colors">
+                  <summary className="cursor-pointer list-none font-medium flex items-start justify-between gap-3 py-1.5 text-foreground">
+                    <span className="flex items-start gap-3">
+                      <Icon className="h-4 w-4 mt-0.5 text-primary/70 shrink-0" aria-hidden />
+                      <span>{s.title}</span>
+                    </span>
+                    <span
+                      aria-hidden
+                      className="text-muted-foreground text-xs tabular-nums shrink-0 group-open:rotate-180 transition-transform duration-200 mt-1"
+                    >
+                      ▼
+                    </span>
+                  </summary>
+                  <p className="text-sm text-muted-foreground leading-relaxed pb-3 pt-3 pl-7 border-t border-border/60 mt-2">
+                    {s.body}
+                  </p>
+                </details>
+              )
+            })}
           </div>
         </div>
 
         <Card className="border-primary/20 bg-gradient-to-br from-primary/[0.04] to-kenyan-gold-500/[0.05] shadow-sm overflow-hidden">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <HeartHandshake className="h-5 w-5 text-primary shrink-0" />
+              <HelpingHand className="h-5 w-5 text-primary shrink-0" />
               Volunteer with KIGH
             </CardTitle>
             <CardDescription className="text-base text-foreground/85 leading-relaxed">
-              Leadership and committee work is voluntary and community-led. If you are interested in helping KIGH serve the community, let us know.
+              Most of what KIGH does is carried by volunteers — committee work, event hosts, youth
+              and family programs, welfare check-ins, communications, and quiet help behind the
+              scenes. If you would like to serve, the community will welcome the time you can give.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -200,7 +287,14 @@ export function GovernancePage() {
         </Card>
 
         <div>
-          <h2 className="text-xl font-semibold text-foreground mb-4">Related governance files</h2>
+          <div className="mb-5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-700/90 dark:text-slate-300/85">
+              Reference library
+            </p>
+            <h2 className="mt-1 text-xl font-semibold text-foreground sm:text-2xl">
+              Related governance files
+            </h2>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {RELATED_DOCS.map((doc) => (
               <Card key={doc.title} className="border-border/90 shadow-sm hover:border-primary/35 hover:shadow-md transition-all">
@@ -221,10 +315,17 @@ export function GovernancePage() {
           </div>
         </div>
 
-        <Card className="shadow-sm">
-          <CardContent className="pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <p className="text-sm text-muted-foreground max-w-lg">
-              Ready to join? Register as a member and agree to these standards on the membership form.
+        <Card className="shadow-sm border-primary/15">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <HeartHandshake className="h-5 w-5 text-primary shrink-0" />
+              Become a member
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <p className="text-sm text-muted-foreground max-w-lg leading-relaxed">
+              Joining KIGH means standing with neighbors across Greater Houston and agreeing to the
+              standards described in the constitution, bylaws, and code of conduct.
             </p>
             <Button asChild>
               <Link to="/membership">Membership registration</Link>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Send, Lock } from 'lucide-react'
+import { Send, Lock, MessageSquare, ShieldCheck, ClipboardList } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -216,12 +216,16 @@ export function ChatPage() {
 
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="mb-8 max-w-2xl">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80">
+            Member space
+          </p>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             Ask the community
           </h1>
-          <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-            A member space for tracked requests. Start a thread and the
-            leadership team will respond. One open request at a time.
+          <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+            A private space where members can submit a tracked question or request and the
+            leadership team will respond. One open request at a time, so each one gets the
+            attention it deserves. This is not a live anonymous chat — every message is reviewed.
           </p>
         </div>
 
@@ -232,22 +236,71 @@ export function ChatPage() {
         <div className="space-y-8">
 
         {!user && (
-          <Card className="border-primary/20 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Lock className="h-5 w-5 text-muted-foreground" />
-                Sign in to start a request
-              </CardTitle>
-              <CardDescription className="text-base text-foreground/90 leading-relaxed">
-                Please log in to start a request so the community team can track and respond properly.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button asChild>
-                <Link to="/login?next=%2Fchat">Sign in</Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card className="border-primary/20 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Lock className="h-5 w-5 text-muted-foreground" />
+                  Sign in to start a request
+                </CardTitle>
+                <CardDescription className="text-base text-foreground/90 leading-relaxed">
+                  Please log in to start a request so the community team can track and respond properly.
+                  Members sign in so the community team can track each request, follow up
+                  responsibly, and keep a private record of the conversation.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild>
+                  <Link to="/login?next=%2Fchat">Sign in</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <section
+              data-testid="chat-about-public"
+              aria-labelledby="chat-about-heading"
+              className="rounded-2xl border border-border/60 bg-card p-6 sm:p-7 shadow-sm"
+            >
+              <h2
+                id="chat-about-heading"
+                className="text-lg font-semibold tracking-tight text-foreground sm:text-xl"
+              >
+                What members use this for
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Examples of requests that fit well here:
+              </p>
+              <ul className="mt-4 space-y-3 text-sm text-foreground/85">
+                <li className="flex gap-3">
+                  <ClipboardList className="h-4 w-4 mt-0.5 shrink-0 text-primary/80" aria-hidden />
+                  <span>
+                    Newcomer questions about driver licenses, schools, housing, healthcare, or
+                    finding a church or community group.
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <MessageSquare className="h-4 w-4 mt-0.5 shrink-0 text-primary/80" aria-hidden />
+                  <span>
+                    Questions about an upcoming event, RSVP details, accessibility needs, or what
+                    to bring.
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0 text-primary/80" aria-hidden />
+                  <span>
+                    Looking for a referral to a community-recommended service — realtor, attorney,
+                    tax help, mover, caterer — when you would rather ask people than rely on
+                    rumors.
+                  </span>
+                </li>
+              </ul>
+              <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
+                Urgent or safety-sensitive concerns belong with the right authority first (911 for
+                emergencies, 211 for social services). Use this space for community questions and
+                non-urgent guidance.
+              </p>
+            </section>
+          </div>
         )}
 
         {user && loadingThreads && (
