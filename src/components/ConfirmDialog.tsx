@@ -18,6 +18,8 @@ interface ConfirmDialogProps {
   variant?: 'default' | 'destructive'
   loading?: boolean
   onConfirm: () => void
+  /** Applied to DialogContent for e2e targeting */
+  contentTestId?: string
 }
 
 export function ConfirmDialog({
@@ -30,10 +32,11 @@ export function ConfirmDialog({
   variant = 'default',
   loading = false,
   onConfirm,
+  contentTestId,
 }: ConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" data-testid={contentTestId}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}

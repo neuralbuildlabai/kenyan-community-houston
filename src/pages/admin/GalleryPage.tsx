@@ -1,6 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Upload, Trash2, Image as ImageIcon, Check, X, Archive, Star, Loader2 } from 'lucide-react'
+import {
+  Upload,
+  Trash2,
+  Image as ImageIcon,
+  Check,
+  X,
+  Archive,
+  Star,
+  Loader2,
+  Eye,
+  Undo2,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -25,6 +36,12 @@ import {
   approveGalleryPendingImage,
   approveGalleryPendingImagesBulk,
 } from '@/lib/galleryAdminApproval'
+import {
+  archiveGalleryImage,
+  deleteGalleryImagePermanently,
+  unpublishGalleryImage,
+  unpublishGalleryImagesBulk,
+} from '@/lib/galleryAdminPublished'
 import { buildGalleryWebAndThumb, GalleryImageProcessingError } from '@/lib/galleryImageProcessing'
 import { PRIVATE_SIGNED_URL_EXPIRY_SEC } from '@/lib/kighPrivateStorage'
 import { cn } from '@/lib/utils'
@@ -67,17 +84,42 @@ function submitterLabel(row: GalleryImageRow): string {
   return row.submitted_by_name?.trim() || row.submitted_by_email?.trim() || 'unknown submitter'
 }
 
+type GalleryAdminTab = 'review' | 'library' | 'albums'
+
+function tabFromSearchParams(tabParam: string | null, statusParam: string | null): GalleryAdminTab {
+  if (tabParam === 'published' || tabParam === 'library') return 'library'
+  if (tabParam === 'albums') return 'albums'
+  if (tabParam === 'review' || statusParam === 'pending') return 'review'
+  return 'review'
+}
+
+function tabToQueryValue(tab: GalleryAdminTab): string | null {
+  if (tab === 'library') return 'published'
+  if (tab === 'albums') return 'albums'
+  return null
+}
+
 export function AdminGalleryPage() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
   const tabParam = searchParams.get('tab')
   const statusParam = searchParams.get('status')
-  const activeGalleryTab =
-    tabParam === 'library' || tabParam === 'albums'
-      ? tabParam
-      : tabParam === 'review' || statusParam === 'pending'
-        ? 'review'
-        : 'review'
+  const activeGalleryTab = tabFromSearchParams(tabParam, statusParam)
+
+  const setGalleryTab = (tab: string) => {
+    const nextTab = tab as GalleryAdminTab
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        const queryTab = tabToQueryValue(nextTab)
+        if (queryTab) next.set('tab', queryTab)
+        else next.delete('tab')
+        if (nextTab !== 'review') next.delete('status')
+        return next
+      },
+      { replace: true }
+    )
+  }
   const [albums, setAlbums] = useState<Album[]>([])
   const [images, setImages] = useState<GalleryImageRow[]>([])
   const [albumFilter, setAlbumFilter] = useState('all')
@@ -95,6 +137,12 @@ export function AdminGalleryPage() {
   const [selectedPendingIds, setSelectedPendingIds] = useState<Set<string>>(() => new Set())
   const [bulkApproveOpen, setBulkApproveOpen] = useState(false)
   const [bulkApproveAlbumId, setBulkApproveAlbumId] = useState<string>('')
+  const [selectedPublishedIds, setSelectedPublishedIds] = useState<Set<string>>(() => new Set())
+  const [viewPublished, setViewPublished] = useState<GalleryImageRow | null>(null)
+  const [unpublishTarget, setUnpublishTarget] = useState<GalleryImageRow | null>(null)
+  const [archiveTarget, setArchiveTarget] = useState<GalleryImageRow | null>(null)
+  const [bulkUnpublishOpen, setBulkUnpublishOpen] = useState(false)
+  const [publishedActionBusy, setPublishedActionBusy] = useState(false)
 
   const loadAlbums = useCallback(async () => {
     const { data } = await supabase.from('gallery_albums').select('id, name, slug').order('name')
@@ -129,6 +177,12 @@ export function AdminGalleryPage() {
     else if (albumFilter !== 'all') rows = rows.filter((i) => i.album_id === albumFilter)
     return rows
   }, [images, albumFilter])
+
+  const selectedPublishedCount = selectedPublishedIds.size
+  const selectedPublishedRows = useMemo(
+    () => publishedRows.filter((r) => selectedPublishedIds.has(r.id)),
+    [publishedRows, selectedPublishedIds]
+  )
 
   useEffect(() => {
     void loadAlbums()
@@ -222,10 +276,15 @@ export function AdminGalleryPage() {
 
   async function deleteImage() {
     if (!deleteId) return
-    const { error } = await supabase.from('gallery_images').delete().eq('id', deleteId)
-    if (error) toast.error('Delete failed')
+    const result = await deleteGalleryImagePermanently(supabase, deleteId)
+    if (!result.ok) toast.error(result.error)
     else {
-      toast.success('Image deleted')
+      toast.success('Image deleted permanently')
+      setSelectedPublishedIds((prev) => {
+        const next = new Set(prev)
+        next.delete(deleteId)
+        return next
+      })
       void loadImages()
     }
     setDeleteId(null)
@@ -307,6 +366,102 @@ export function AdminGalleryPage() {
     }
   }
 
+  function togglePublishedSelection(id: string, checked: boolean) {
+    setSelectedPublishedIds((prev) => {
+      const next = new Set(prev)
+      if (checked) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }
+
+  function selectAllVisiblePublished() {
+    setSelectedPublishedIds(new Set(publishedRows.map((r) => r.id)))
+  }
+
+  function clearPublishedSelection() {
+    setSelectedPublishedIds(new Set())
+  }
+
+  async function confirmUnpublish() {
+    if (!unpublishTarget) return
+    setPublishedActionBusy(true)
+    try {
+      const result = await unpublishGalleryImage(supabase, unpublishTarget.id)
+      if (!result.ok) {
+        toast.error(result.error)
+        return
+      }
+      toast.success('Image unpublished')
+      setUnpublishTarget(null)
+      setSelectedPublishedIds((prev) => {
+        const next = new Set(prev)
+        next.delete(unpublishTarget.id)
+        return next
+      })
+      void loadImages()
+    } finally {
+      setPublishedActionBusy(false)
+    }
+  }
+
+  async function confirmArchive() {
+    if (!archiveTarget) return
+    setPublishedActionBusy(true)
+    try {
+      const result = await archiveGalleryImage(supabase, archiveTarget.id)
+      if (!result.ok) {
+        toast.error(result.error)
+        return
+      }
+      toast.success('Image archived')
+      setArchiveTarget(null)
+      setSelectedPublishedIds((prev) => {
+        const next = new Set(prev)
+        next.delete(archiveTarget.id)
+        return next
+      })
+      void loadImages()
+    } finally {
+      setPublishedActionBusy(false)
+    }
+  }
+
+  async function confirmBulkUnpublish() {
+    if (selectedPublishedRows.length === 0) return
+    setPublishedActionBusy(true)
+    try {
+      const result = await unpublishGalleryImagesBulk(
+        supabase,
+        selectedPublishedRows.map((r) => r.id)
+      )
+      const succeededIds = new Set(
+        selectedPublishedRows
+          .filter((row) => !result.errors.some((e) => e.id === row.id))
+          .map((r) => r.id)
+      )
+      setSelectedPublishedIds((prev) => {
+        const next = new Set(prev)
+        for (const id of succeededIds) next.delete(id)
+        return next
+      })
+      setBulkUnpublishOpen(false)
+      void loadImages()
+
+      if (result.failed === 0) {
+        toast.success(`Unpublished ${result.succeeded} image${result.succeeded === 1 ? '' : 's'}.`)
+      } else if (result.succeeded === 0) {
+        toast.error(`Could not unpublish ${result.failed} image${result.failed === 1 ? '' : 's'}.`)
+      } else {
+        toast.warning(
+          `Unpublished ${result.succeeded} image${result.succeeded === 1 ? '' : 's'}. ${result.failed} could not be unpublished.`
+        )
+      }
+    } finally {
+      setPublishedActionBusy(false)
+    }
+  }
+
   async function confirmBulkApprove() {
     if (!user || selectedPendingRows.length === 0) return
     if (!bulkApproveAlbumId) {
@@ -358,11 +513,17 @@ export function AdminGalleryPage() {
         </p>
       </div>
 
-      <Tabs value={activeGalleryTab}>
+      <Tabs value={activeGalleryTab} onValueChange={setGalleryTab}>
         <TabsList>
-          <TabsTrigger value="review">Review queue ({pendingRows.length})</TabsTrigger>
-          <TabsTrigger value="library">Published ({publishedCount})</TabsTrigger>
-          <TabsTrigger value="albums">Albums</TabsTrigger>
+          <TabsTrigger value="review" data-testid="gallery-tab-review">
+            Review queue ({pendingRows.length})
+          </TabsTrigger>
+          <TabsTrigger value="library" data-testid="gallery-tab-published">
+            Published ({publishedCount})
+          </TabsTrigger>
+          <TabsTrigger value="albums" data-testid="gallery-tab-albums">
+            Albums
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="review" className="space-y-6 pt-4">
@@ -577,39 +738,156 @@ export function AdminGalleryPage() {
           </div>
 
           {publishedRows.length === 0 ? (
-            <div className="rounded-xl border-2 border-dashed py-16 text-center text-muted-foreground">
+            <div
+              className="rounded-xl border-2 border-dashed py-16 text-center text-muted-foreground"
+              data-testid="gallery-published-empty"
+            >
               <ImageIcon className="h-10 w-10 mx-auto mb-3 opacity-40" />
               <p>No published images in this filter</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={selectAllVisiblePublished}
+                  data-testid="gallery-select-all-published"
+                >
+                  Select all ({publishedRows.length})
+                </Button>
+              </div>
+              {selectedPublishedCount > 0 ? (
+                <div
+                  className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/25 bg-primary/[0.06] px-4 py-3 shadow-sm backdrop-blur-sm"
+                  data-testid="gallery-published-bulk-action-bar"
+                >
+                  <p className="text-sm font-medium text-foreground">{selectedPublishedCount} selected</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="gap-1"
+                      data-testid="gallery-published-bulk-unpublish-open"
+                      onClick={() => setBulkUnpublishOpen(true)}
+                    >
+                      <Undo2 className="h-3.5 w-3.5" />
+                      Unpublish selected
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      data-testid="gallery-published-bulk-clear"
+                      onClick={clearPublishedSelection}
+                    >
+                      Clear selection
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+              <div
+                className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                data-testid="gallery-published-grid"
+              >
               {publishedRows.map((img) => {
                 const thumb = img.thumbnail_url ?? img.image_url
                 const full = img.image_url ?? img.thumbnail_url
                 if (!thumb || !full) return null
+                const isSelected = selectedPublishedIds.has(img.id)
                 return (
-                  <div key={img.id} className="group relative rounded-xl overflow-hidden bg-muted aspect-square">
+                  <div
+                    key={img.id}
+                    className={cn(
+                      'relative rounded-xl overflow-hidden bg-muted aspect-square ring-2',
+                      isSelected ? 'ring-primary/50' : 'ring-transparent'
+                    )}
+                  >
+                    <div className="absolute right-2 top-2 z-[1] rounded-md bg-background/90 p-1 shadow-sm">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={(v) => togglePublishedSelection(img.id, v === true)}
+                        aria-label="Select published image"
+                        data-testid={`gallery-published-select-${img.id}`}
+                      />
+                    </div>
                     <img src={thumb} alt="" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 p-2">
-                      <Button size="sm" variant="secondary" className="gap-1" onClick={() => void saveMeta(img.id, { is_homepage_featured: !img.is_homepage_featured })}>
-                        <Star className="h-3.5 w-3.5" />
-                        {img.is_homepage_featured ? 'Unfeature' : 'Homepage'}
+                    
+                    <div className="absolute inset-x-0 bottom-0 flex flex-wrap gap-1 bg-black/80 p-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="h-7 gap-1 px-2 text-xs"
+                        data-testid="gallery-published-view"
+                        onClick={() => setViewPublished(img)}
+                      >
+                        <Eye className="h-3 w-3" />
+                        View
                       </Button>
-                      {img.album_id && (
-                        <Button size="sm" variant="secondary" onClick={() => void setAlbumCover(img.album_id!, img.thumbnail_url, img.image_url)}>
-                          Set cover
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="h-7 gap-1 px-2 text-xs"
+                        data-testid="gallery-published-unpublish"
+                        onClick={() => setUnpublishTarget(img)}
+                      >
+                        <Undo2 className="h-3 w-3" />
+                        Unpublish
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="h-7 gap-1 px-2 text-xs"
+                        data-testid="gallery-published-archive"
+                        onClick={() => setArchiveTarget(img)}
+                      >
+                        <Archive className="h-3 w-3" />
+                        Archive
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="h-7 gap-1 px-2 text-xs"
+                        onClick={() => void saveMeta(img.id, { is_homepage_featured: !img.is_homepage_featured })}
+                      >
+                        <Star className="h-3 w-3" />
+                        {img.is_homepage_featured ? 'Unfeature' : 'Home'}
+                      </Button>
+                      {img.album_id ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => void setAlbumCover(img.album_id!, img.thumbnail_url, img.image_url)}
+                        >
+                          Cover
                         </Button>
-                      )}
-                      <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => setDeleteId(img.id)}>
-                        <Trash2 className="h-4 w-4" />
+                      ) : null}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        className="h-7 gap-1 px-2 text-xs"
+                        onClick={() => setDeleteId(img.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Delete
                       </Button>
                     </div>
-                    {img.caption && (
-                      <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-xs px-2 py-1 truncate">{img.caption}</div>
-                    )}
+                    {img.caption ? (
+                      <div className="absolute top-2 left-2 max-w-[70%] rounded bg-black/60 px-2 py-0.5 text-[10px] text-white truncate">{img.caption}</div>
+                    ) : null}
                   </div>
                 )
               })}
+            </div>
             </div>
           )}
         </TabsContent>
@@ -734,7 +1012,69 @@ export function AdminGalleryPage() {
         </DialogContent>
       </Dialog>
 
-      <ConfirmDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)} title="Delete Image" description="This action cannot be undone." onConfirm={deleteImage} />
+      <Dialog open={!!viewPublished} onOpenChange={(open) => !open && setViewPublished(null)}>
+        <DialogContent className="sm:max-w-3xl" data-testid="gallery-published-view-dialog">
+          <DialogHeader>
+            <DialogTitle>Published image</DialogTitle>
+            <DialogDescription>{viewPublished?.caption || 'No caption'}</DialogDescription>
+          </DialogHeader>
+          {viewPublished ? (
+            <img
+              src={viewPublished.image_url ?? viewPublished.thumbnail_url ?? ''}
+              alt={viewPublished.alt_text ?? viewPublished.caption ?? 'Gallery image'}
+              className="max-h-[70vh] w-full rounded-lg object-contain"
+            />
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewPublished(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={!!unpublishTarget}
+        onOpenChange={(open) => !open && setUnpublishTarget(null)}
+        title="Unpublish image?"
+        description="This removes the image from the public gallery but keeps it in admin records."
+        confirmLabel="Unpublish"
+        loading={publishedActionBusy}
+        onConfirm={() => void confirmUnpublish()}
+        contentTestId="gallery-unpublish-dialog"
+      />
+
+      <ConfirmDialog
+        open={!!archiveTarget}
+        onOpenChange={(open) => !open && setArchiveTarget(null)}
+        title="Archive image?"
+        description="This hides the image from the public gallery and the published list, but keeps it for audit."
+        confirmLabel="Archive"
+        loading={publishedActionBusy}
+        onConfirm={() => void confirmArchive()}
+      />
+
+      <ConfirmDialog
+        open={bulkUnpublishOpen}
+        onOpenChange={(open) => !open && setBulkUnpublishOpen(false)}
+        title="Unpublish selected images?"
+        description="This removes the selected images from the public gallery but keeps them in admin records."
+        confirmLabel="Unpublish"
+        loading={publishedActionBusy}
+        onConfirm={() => void confirmBulkUnpublish()}
+        contentTestId="gallery-bulk-unpublish-dialog"
+      />
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Delete image permanently?"
+        description="This permanently deletes the database record. Files in storage may remain until cleaned up separately."
+        confirmLabel="Delete permanently"
+        variant="destructive"
+        loading={publishedActionBusy}
+        onConfirm={() => void deleteImage()}
+      />
     </div>
   )
 }

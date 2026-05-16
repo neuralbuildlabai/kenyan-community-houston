@@ -25,4 +25,23 @@ test.describe('admin gallery bulk publish', () => {
     await page.getByTestId('gallery-bulk-clear-selection').click()
     await expect(page.getByTestId('gallery-bulk-action-bar')).toHaveCount(0)
   })
+
+  test('published tab shows grid and unpublish dialog can be cancelled', async ({ page }) => {
+    await page.goto('/admin/gallery?tab=published', { waitUntil: 'domcontentloaded' })
+    await page.getByTestId('gallery-tab-published').click()
+    const grid = page.getByTestId('gallery-published-grid')
+    if ((await grid.count()) === 0) {
+      await expect(page.getByTestId('gallery-published-empty')).toBeVisible()
+      return
+    }
+    await expect(grid).toBeVisible()
+    const unpublish = page.getByTestId('gallery-published-unpublish').first()
+    await expect(unpublish).toBeEnabled()
+    await unpublish.click()
+    const dialog = page.getByTestId('gallery-unpublish-dialog')
+    await expect(dialog).toBeVisible()
+    await expect(dialog.getByText('Unpublish image?')).toBeVisible()
+    await dialog.getByRole('button', { name: 'Cancel' }).click()
+    await expect(dialog).toHaveCount(0)
+  })
 })
