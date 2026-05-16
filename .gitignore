@@ -57,3 +57,4 @@ scripts/admin/clear-uat-password-force.mjs
 scripts/admin/local-*.mjs
 scripts/admin/*.local.mjs
 public/kigh-media/gallery/**/source/
+.env.vercel.*

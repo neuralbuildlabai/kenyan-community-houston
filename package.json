@@ -14,7 +14,10 @@
     "test:e2e:auth": "playwright test e2e/tests/membership-auth.spec.ts e2e/tests/auth-routes.spec.ts e2e/tests/homepage.spec.ts e2e/tests/non-admin-access.spec.ts e2e/tests/staging-banner.spec.ts",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "deploy:preview": "vercel",
+    "deploy:prod": "node scripts/deploy-production-guard.mjs",
+    "deploy:production": "node scripts/deploy-production-guard.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
