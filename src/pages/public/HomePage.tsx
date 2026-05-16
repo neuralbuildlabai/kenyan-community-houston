@@ -10,6 +10,7 @@ import {
   BookOpen,
   Megaphone,
   HeartHandshake,
+  ShieldCheck,
 } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { EventCard } from '@/components/EventCard'
@@ -169,6 +170,28 @@ export function HomePage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ─── A2. Nonprofit trust line ────────────────────────────
+          A small, calm credibility statement directly under the
+          hero. Intentionally non-fundraising: no donate CTA, no
+          payment link, no tax-receipt language. */}
+      <section
+        className="border-y border-border/40 bg-card/30"
+        aria-label="Nonprofit status"
+      >
+        <div className="mx-auto flex max-w-7xl items-center justify-center gap-2.5 px-4 py-3.5 text-center sm:gap-3 sm:px-6 sm:py-4 lg:px-8">
+          <ShieldCheck
+            className="h-4 w-4 shrink-0 text-kenyan-gold-600 sm:h-[18px] sm:w-[18px]"
+            aria-hidden
+          />
+          <p className="max-w-3xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
+            Kenyan Community Houston is a registered{' '}
+            <span className="font-semibold text-foreground">501(c)(3)</span>{' '}
+            nonprofit organization serving Kenyans and friends of Kenya across
+            the Houston area.
+          </p>
         </div>
       </section>
 

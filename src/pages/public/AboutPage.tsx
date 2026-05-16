@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Users, Target, Heart, Shield } from 'lucide-react'
+import { Users, Target, Heart, Shield, ShieldCheck } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
 import { APP_NAME } from '@/lib/constants'
@@ -37,6 +37,25 @@ export function AboutPage() {
           <p>
             We are not a government entity and do not represent any official body. We are a grassroots effort by community members for community members.
           </p>
+        </div>
+
+        {/* Nonprofit credibility — small, calm, non-fundraising */}
+        <div className="mb-14 rounded-2xl border border-border/60 bg-muted/30 p-6 sm:p-7">
+          <div className="flex items-start gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <ShieldCheck className="h-5 w-5" aria-hidden />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-foreground sm:text-lg">
+                Registered 501(c)(3) nonprofit
+              </h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
+                Kenyan Community Houston is a registered 501(c)(3) nonprofit
+                organization serving Kenyans and friends of Kenya across the
+                Houston area.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Values */}

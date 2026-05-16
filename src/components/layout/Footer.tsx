@@ -82,8 +82,11 @@ export function Footer() {
                 <div className="text-xs text-white/55 mt-0.5">Kenyans in Greater Houston</div>
               </div>
             </div>
-            <p className="text-sm text-white/70 leading-relaxed max-w-sm mb-6">
+            <p className="text-sm text-white/70 leading-relaxed max-w-sm mb-3">
               Your trusted hub for events, businesses, resources, and community connection across Greater Houston.
+            </p>
+            <p className="text-xs text-white/60 leading-relaxed max-w-sm mb-6">
+              A registered 501(c)(3) nonprofit organization serving Kenyans and friends of Kenya across the Houston area.
             </p>
             <div className="space-y-2 text-sm text-white/60">
               <div className="flex items-start gap-2">
