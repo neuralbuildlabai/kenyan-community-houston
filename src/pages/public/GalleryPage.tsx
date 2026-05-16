@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
-import { Image, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Image as ImageIcon, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { SEOHead } from '@/components/SEOHead'
+import { PublicPageHero } from '@/components/public/PublicPageHero'
+import { PublicSection } from '@/components/public/PublicSection'
 import { EmptyState } from '@/components/EmptyState'
 import { PageLoader } from '@/components/LoadingSpinner'
 import { Badge } from '@/components/ui/badge'
@@ -31,8 +33,6 @@ export function GalleryPage() {
 
   useEffect(() => {
     async function load() {
-      // Reads from the public-safe view (migration 036). The view exposes
-      // only non-PII columns and is already filtered to status='published'.
       const { data: imgRows, error: imgErr } = await supabase
         .from('gallery_images_public')
         .select('id, album_id, image_url, thumbnail_url, caption, alt_text, created_at, status')
@@ -67,88 +67,217 @@ export function GalleryPage() {
 
   const filtered = selectedAlbum ? images.filter((i) => i.album_id === selectedAlbum) : images
 
+  // Featured album: most recent album with photos when no filter is active.
+  const featuredAlbum = useMemo<GalleryAlbum | null>(() => {
+    if (selectedAlbum) return null
+    return albums[0] ?? null
+  }, [albums, selectedAlbum])
+
+  const featuredAlbumImages = useMemo(() => {
+    if (!featuredAlbum) return [] as GalleryImageRow[]
+    return images.filter((i) => i.album_id === featuredAlbum.id).slice(0, 5)
+  }, [featuredAlbum, images])
+
   return (
     <>
       <SEOHead title="Gallery" description="Photos and memories from the Kenyan community in Houston." />
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Gallery</h1>
-            <p className="text-muted-foreground">Photos and memories from the community</p>
-          </div>
-          <Button asChild variant="outline" className="w-fit shrink-0">
+      <PublicPageHero
+        eyebrow="Community gallery"
+        title="Gallery"
+        subtitle="Photos and memories from gatherings, celebrations, and everyday community moments."
+        primaryAction={
+          <Button asChild size="sm">
             <Link to="/gallery/submit" data-testid="gallery-cta-submit">
               Submit photos
             </Link>
           </Button>
-        </div>
+        }
+        tone="muted"
+      />
 
-        {albums.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-8">
-            <Button variant={selectedAlbum === null ? 'default' : 'outline'} size="sm" onClick={() => setSelectedAlbum(null)}>
-              All Photos
-            </Button>
-            {albums.map((a) => (
-              <Button
-                key={a.id}
-                variant={selectedAlbum === a.id ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedAlbum(a.id)}
-                data-testid={a.slug === 'community-park-event-2025' ? 'gallery-album-community-park-2025' : undefined}
-              >
-                {a.name}
-                <Badge variant="secondary" className="ml-2 text-xs">
-                  {images.filter((i) => i.album_id === a.id).length}
-                </Badge>
-              </Button>
-            ))}
-          </div>
-        )}
-
+      <PublicSection className="!py-10 sm:!py-12 lg:!py-14">
         {loading ? (
           <PageLoader />
-        ) : filtered.length === 0 ? (
-          <EmptyState icon={Image} title="No photos yet" description="Check back for community photos and event galleries." />
+        ) : images.length === 0 ? (
+          <EmptyState
+            icon={ImageIcon}
+            title="No photos yet"
+            description="Check back for community photos and event galleries — or share your own."
+            action={
+              <Button asChild>
+                <Link to="/gallery/submit">Submit photos</Link>
+              </Button>
+            }
+          />
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2" data-testid="gallery-public-grid">
-            {filtered.map((img) => {
-              const thumb = img.thumbnail_url ?? img.image_url ?? ''
-              return (
-                <button
-                  key={img.id}
-                  type="button"
-                  className="group relative overflow-hidden rounded-lg aspect-square bg-muted cursor-pointer"
-                  onClick={() => setLightbox(img)}
+          <div className="space-y-12">
+            {/* Featured album hero */}
+            {featuredAlbum && featuredAlbumImages.length > 0 ? (
+              <section aria-labelledby="gallery-featured-heading">
+                <header className="mb-5 max-w-2xl">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
+                    Featured album
+                  </p>
+                  <h2
+                    id="gallery-featured-heading"
+                    className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
+                  >
+                    {featuredAlbum.name}
+                  </h2>
+                  {featuredAlbum.description ? (
+                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                      {featuredAlbum.description}
+                    </p>
+                  ) : null}
+                </header>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:grid-rows-2">
+                  {featuredAlbumImages.map((img, idx) => {
+                    const thumb = img.thumbnail_url ?? img.image_url ?? ''
+                    const span =
+                      idx === 0
+                        ? 'col-span-2 row-span-2 aspect-square sm:aspect-auto'
+                        : 'aspect-square'
+                    return (
+                      <button
+                        key={img.id}
+                        type="button"
+                        className={`group relative overflow-hidden rounded-xl bg-muted ${span}`}
+                        onClick={() => setLightbox(img)}
+                      >
+                        <img
+                          src={thumb}
+                          alt={displayAlt(img)}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                      </button>
+                    )
+                  })}
+                </div>
+              </section>
+            ) : null}
+
+            {/* Album filter chips */}
+            {albums.length > 0 ? (
+              <section aria-label="Browse by album">
+                <header className="mb-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
+                    Browse
+                  </p>
+                  <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                    All albums
+                  </h2>
+                </header>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={selectedAlbum === null ? 'default' : 'outline'}
+                    size="sm"
+                    className="rounded-full h-8 px-3.5"
+                    onClick={() => setSelectedAlbum(null)}
+                  >
+                    All photos
+                    <Badge variant="secondary" className="ml-2 text-[11px]">{images.length}</Badge>
+                  </Button>
+                  {albums.map((a) => (
+                    <Button
+                      key={a.id}
+                      variant={selectedAlbum === a.id ? 'default' : 'outline'}
+                      size="sm"
+                      className="rounded-full h-8 px-3.5"
+                      onClick={() => setSelectedAlbum(a.id)}
+                      data-testid={
+                        a.slug === 'community-park-event-2025'
+                          ? 'gallery-album-community-park-2025'
+                          : undefined
+                      }
+                    >
+                      {a.name}
+                      <Badge variant="secondary" className="ml-2 text-[11px]">
+                        {images.filter((i) => i.album_id === a.id).length}
+                      </Badge>
+                    </Button>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {/* Photo grid */}
+            <section aria-labelledby="gallery-grid-heading">
+              <header className="mb-5">
+                <h2 id="gallery-grid-heading" className="sr-only">
+                  Photos
+                </h2>
+              </header>
+              {filtered.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No photos in this album yet.</p>
+              ) : (
+                <div
+                  className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4"
+                  data-testid="gallery-public-grid"
                 >
-                  <img
-                    src={thumb}
-                    alt={displayAlt(img)}
-                    loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  {img.caption?.trim() && (
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <p className="text-white text-xs truncate">{img.caption}</p>
-                    </div>
-                  )}
-                </button>
-              )
-            })}
+                  {filtered.map((img) => {
+                    const thumb = img.thumbnail_url ?? img.image_url ?? ''
+                    return (
+                      <button
+                        key={img.id}
+                        type="button"
+                        className="group relative aspect-square cursor-pointer overflow-hidden rounded-xl bg-muted"
+                        onClick={() => setLightbox(img)}
+                      >
+                        <img
+                          src={thumb}
+                          alt={displayAlt(img)}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                        />
+                        {img.caption?.trim() ? (
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100">
+                            <p className="truncate text-xs text-white">{img.caption}</p>
+                          </div>
+                        ) : null}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
+
+            {/* Submit CTA strip */}
+            <section className="rounded-2xl border border-border/60 bg-gradient-to-br from-primary/[0.06] via-card to-kenyan-gold-500/[0.05] p-6 sm:p-8 lg:p-10">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="max-w-2xl">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
+                    Share a moment
+                  </p>
+                  <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                    Add your photos to the community archive
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    Submissions are reviewed by the KIGH media team before they appear here.
+                  </p>
+                </div>
+                <Button asChild size="lg" className="shrink-0">
+                  <Link to="/gallery/submit">Submit photos</Link>
+                </Button>
+              </div>
+            </section>
           </div>
         )}
-      </div>
+      </PublicSection>
 
-      {lightbox && (lightbox.image_url ?? lightbox.thumbnail_url) && (
+      {lightbox && (lightbox.image_url ?? lightbox.thumbnail_url) ? (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
           onClick={() => setLightbox(null)}
           role="presentation"
         >
           <button
             type="button"
-            className="absolute top-4 right-4 text-white/80 hover:text-white"
+            className="absolute right-4 top-4 text-white/80 hover:text-white"
             onClick={() => setLightbox(null)}
             aria-label="Close"
           >
@@ -161,13 +290,13 @@ export function GalleryPage() {
             loading="eager"
             onClick={(e) => e.stopPropagation()}
           />
-          {lightbox.caption?.trim() && (
-            <p className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/80 text-sm max-w-prose text-center px-4">
+          {lightbox.caption?.trim() ? (
+            <p className="absolute bottom-6 left-1/2 max-w-prose -translate-x-1/2 px-4 text-center text-sm text-white/80">
               {lightbox.caption}
             </p>
-          )}
+          ) : null}
         </div>
-      )}
+      ) : null}
     </>
   )
 }

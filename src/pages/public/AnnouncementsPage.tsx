@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Megaphone, Search } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
-import { AnnouncementCard } from '@/components/AnnouncementCard'
+import { EditorialAnnouncementRow } from '@/components/public/EditorialAnnouncementRow'
+import { PublicPageHero } from '@/components/public/PublicPageHero'
+import { PublicSection } from '@/components/public/PublicSection'
 import { EmptyState } from '@/components/EmptyState'
 import { PageLoader } from '@/components/LoadingSpinner'
 import { Button } from '@/components/ui/button'
@@ -37,42 +39,154 @@ export function AnnouncementsPage() {
     load()
   }, [search, category])
 
+  const filterIsActive = category !== '' || search.trim().length > 0
+
+  const { featured, rest } = useMemo(() => {
+    if (filterIsActive || items.length === 0) {
+      return { featured: null as Announcement | null, rest: items }
+    }
+    const pinnedOrFeatured =
+      items.find((a) => a.is_pinned) ??
+      items.find((a) => a.is_featured) ??
+      items[0] ??
+      null
+    return {
+      featured: pinnedOrFeatured,
+      rest: pinnedOrFeatured ? items.filter((a) => a.id !== pinnedOrFeatured.id) : items,
+    }
+  }, [items, filterIsActive])
+
   return (
     <>
-      <SEOHead title="Announcements" description="Community news, updates, and important announcements from the Kenyan community in Houston." />
+      <SEOHead
+        title="Announcements"
+        description="Community news, updates, and important announcements from the Kenyan community in Houston."
+      />
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Announcements</h1>
-          <p className="text-muted-foreground">Stay up to date with community news and updates</p>
-        </div>
+      <PublicPageHero
+        eyebrow="Community news"
+        title="Announcements"
+        subtitle="Official updates, community notices, and important news from Kenyan Community Houston."
+        primaryAction={
+          <Button asChild size="sm">
+            <Link to="/announcements/submit">Submit an announcement</Link>
+          </Button>
+        }
+        tone="default"
+      />
 
-        <div className="flex flex-col sm:flex-row gap-3 mb-8">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search announcements…" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+      <section className="sticky top-16 z-20 border-b border-border/50 bg-background/85 backdrop-blur">
+        <div className="public-container py-4 space-y-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search announcements…"
+              className="h-11 pl-9 bg-background"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search announcements"
+            />
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant={category === '' ? 'default' : 'outline'} size="sm" onClick={() => setCategory('')}>All</Button>
+          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter by category">
+            <Button
+              variant={category === '' ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-full h-8 px-3.5"
+              onClick={() => setCategory('')}
+              role="tab"
+              aria-selected={category === ''}
+            >
+              All
+            </Button>
             {ANNOUNCEMENT_CATEGORIES.map((cat) => (
-              <Button key={cat} variant={category === cat ? 'default' : 'outline'} size="sm" onClick={() => setCategory(cat)}>{cat}</Button>
+              <Button
+                key={cat}
+                variant={category === cat ? 'default' : 'outline'}
+                size="sm"
+                className="rounded-full h-8 px-3.5"
+                onClick={() => setCategory(cat)}
+                role="tab"
+                aria-selected={category === cat}
+              >
+                {cat}
+              </Button>
             ))}
           </div>
         </div>
+      </section>
 
-        <div className="mb-5 flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">{loading ? 'Loading…' : `${items.length} announcement${items.length !== 1 ? 's' : ''}`}</p>
-          <Button asChild size="sm"><Link to="/announcements/submit">Submit Announcement</Link></Button>
-        </div>
+      <PublicSection className="!py-10 sm:!py-12 lg:!py-14">
+        <p className="mb-6 text-sm text-muted-foreground">
+          {loading
+            ? 'Loading announcements…'
+            : `${items.length} announcement${items.length === 1 ? '' : 's'}`}
+        </p>
 
-        {loading ? <PageLoader /> : items.length === 0 ? (
-          <EmptyState icon={Megaphone} title="No announcements found" description="Check back soon for community updates." />
+        {loading ? (
+          <PageLoader />
+        ) : items.length === 0 ? (
+          <EmptyState
+            icon={Megaphone}
+            title="No announcements found"
+            description={
+              filterIsActive
+                ? 'Try a different category or clear the search box.'
+                : 'Check back soon for community updates.'
+            }
+            action={
+              filterIsActive ? (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearch('')
+                    setCategory('')
+                  }}
+                >
+                  Clear filters
+                </Button>
+              ) : null
+            }
+          />
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((a) => <AnnouncementCard key={a.id} announcement={a} />)}
+          <div className="space-y-10">
+            {featured ? (
+              <section aria-labelledby="announcements-latest-heading">
+                <header className="mb-5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
+                    Latest
+                  </p>
+                  <h2
+                    id="announcements-latest-heading"
+                    className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
+                  >
+                    Featured announcement
+                  </h2>
+                </header>
+                <EditorialAnnouncementRow announcement={featured} presentation="featured" />
+              </section>
+            ) : null}
+
+            <section aria-labelledby="announcements-rest-heading">
+              <header className="mb-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
+                  Updates
+                </p>
+                <h2
+                  id="announcements-rest-heading"
+                  className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
+                >
+                  {filterIsActive ? 'Matching announcements' : 'More from the community'}
+                </h2>
+              </header>
+              <div className="space-y-3">
+                {rest.map((a) => (
+                  <EditorialAnnouncementRow key={a.id} announcement={a} />
+                ))}
+              </div>
+            </section>
           </div>
         )}
-      </div>
+      </PublicSection>
     </>
   )
 }
