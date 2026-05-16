@@ -155,12 +155,13 @@ export function EventDetailPage() {
         {cover ? (
           <div
             data-testid="event-detail-flyer"
-            className="mb-8 rounded-2xl overflow-hidden max-h-[28rem] bg-muted border border-border/50 shadow-sm"
+            className="mb-8 overflow-hidden rounded-2xl border border-border/70 bg-[#f7f2e8] shadow-sm"
           >
             <img
               src={cover}
               alt={`${event.title} flyer`}
-              className="w-full h-full object-cover"
+              data-testid="event-detail-flyer-img"
+              className="mx-auto h-auto max-h-[min(760px,80vh)] w-full object-contain"
             />
           </div>
         ) : null}

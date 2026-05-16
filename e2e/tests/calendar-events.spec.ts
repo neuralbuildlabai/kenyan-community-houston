@@ -31,8 +31,36 @@ test.describe('calendar & seeded events', () => {
     if (await page.getByRole('heading', { name: 'Event Not Found' }).isVisible()) {
       return
     }
-    const flyer = page.locator('main img[src*="family-fun-day-2026.jpeg"]')
-    await expect(flyer.first()).toBeVisible()
+    const flyer = page.getByTestId('event-detail-flyer-img')
+    await expect(flyer).toBeVisible()
+    await expect(flyer).toHaveAttribute('src', /family-fun-day-2026\.jpeg/)
+    const objectFit = await flyer.evaluate((el) => getComputedStyle(el).objectFit)
+    expect(objectFit).toBe('contain')
+    await expect(page.getByTestId('event-detail-title')).toBeVisible()
+    await expect(page.getByTestId('event-detail-date')).toBeVisible()
+    await expect(page.getByTestId('event-detail-location')).toBeVisible()
+  })
+
+  test('event detail flyer uses object-contain when any published event has a cover', async ({ page }) => {
+    await page.goto('/events', { waitUntil: 'domcontentloaded' })
+    const eventLink = page.locator('a[href^="/events/"]:not([href*="submit"])').first()
+    if ((await eventLink.count()) === 0) {
+      test.skip(true, 'No published events in this environment')
+    }
+    const href = await eventLink.getAttribute('href')
+    if (!href || href.includes('/submit')) {
+      test.skip(true, 'No event detail link found')
+    }
+    await page.goto(href, { waitUntil: 'domcontentloaded' })
+    if (await page.getByRole('heading', { name: 'Event Not Found' }).isVisible()) {
+      test.skip(true, 'Event not found')
+    }
+    const flyer = page.getByTestId('event-detail-flyer-img')
+    if ((await flyer.count()) === 0) {
+      test.skip(true, 'Event has no flyer image')
+    }
+    const objectFit = await flyer.evaluate((el) => getComputedStyle(el).objectFit)
+    expect(objectFit).toBe('contain')
   })
 
   test('financial literacy detail shows Past event when session is in the past', async ({ page }) => {
