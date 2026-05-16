@@ -216,14 +216,14 @@ export function ChatPage() {
         description="Ask questions and connect with the Kenyan community in Houston. Members can start a conversation with the community team."
       />
 
-      <div className="relative overflow-hidden min-h-[50vh]">
+      <div className="relative overflow-hidden min-h-screen">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[url('/kigh-media/backgrounds/communitychat.png')] bg-cover bg-center opacity-[0.16]"
+          className="pointer-events-none absolute inset-0 bg-[url('/kigh-media/backgrounds/communitychat.png')] bg-cover bg-[center_top] opacity-[0.3]"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/90 via-[#faf7ef]/90 to-white/95"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/70 via-[#faf7ef]/75 to-white/90"
         />
         <div className="relative z-10">
 
