@@ -60,10 +60,11 @@ export function HomePage() {
         const raw = (ev as Event[]) ?? []
         const deduped = dedupeToNextOccurrenceOnly(raw).slice(0, 3)
         setEvents(deduped)
+        // Reads from the public-safe view (migration 036). The view omits
+        // submitter PII and is pre-filtered to status='published'.
         const { data: momentsRows } = await supabase
-          .from('gallery_images')
+          .from('gallery_images_public')
           .select('id, thumbnail_url, image_url, alt_text')
-          .eq('status', 'published')
           .eq('is_homepage_featured', true)
           .order('sort_order', { ascending: true })
           .order('created_at', { ascending: false })

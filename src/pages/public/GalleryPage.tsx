@@ -31,10 +31,11 @@ export function GalleryPage() {
 
   useEffect(() => {
     async function load() {
+      // Reads from the public-safe view (migration 036). The view exposes
+      // only non-PII columns and is already filtered to status='published'.
       const { data: imgRows, error: imgErr } = await supabase
-        .from('gallery_images')
+        .from('gallery_images_public')
         .select('id, album_id, image_url, thumbnail_url, caption, alt_text, created_at, status')
-        .eq('status', 'published')
         .order('sort_order', { ascending: true })
         .order('created_at', { ascending: true })
 

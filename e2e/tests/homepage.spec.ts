@@ -116,4 +116,30 @@ test.describe('homepage', () => {
       page.getByRole('heading', { name: 'Disclaimer', exact: true })
     ).toBeVisible()
   })
+
+  test('homepage DOM never leaks gallery submitter identity fields', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
+    // The community moments strip pulls from gallery_images_public,
+    // which omits submitter PII (migration 036). Belt-and-suspenders
+    // check on the rendered DOM regardless of whether moments exist.
+    const html = await page.content()
+    expect(html).not.toMatch(/submitted_by_email/i)
+    expect(html).not.toMatch(/submitted_by_name/i)
+    expect(html).not.toMatch(/submitted_by_user_id/i)
+  })
+
+  test('homepage never requests submitter PII columns from REST', async ({ page }) => {
+    const piiRequestUrls: string[] = []
+    page.on('request', (req) => {
+      const url = req.url()
+      if (
+        url.includes('/rest/v1/gallery_images') &&
+        /submitted_by_(email|name|user_id)/i.test(url)
+      ) {
+        piiRequestUrls.push(url)
+      }
+    })
+    await page.goto('/', { waitUntil: 'networkidle' })
+    expect(piiRequestUrls).toEqual([])
+  })
 })

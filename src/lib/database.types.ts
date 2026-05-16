@@ -581,7 +581,23 @@ export interface Database {
         Update: never
       }
     }
-    Views: Record<string, never>
+    Views: {
+      gallery_images_public: {
+        Row: {
+          id: string
+          album_id: string | null
+          image_url: string | null
+          thumbnail_url: string | null
+          caption: string | null
+          alt_text: string | null
+          status: string
+          is_homepage_featured: boolean
+          sort_order: number
+          created_at: string
+          updated_at: string
+        }
+      }
+    }
     Functions: {
       is_admin: {
         Args: Record<string, never>

@@ -80,4 +80,31 @@ test.describe('gallery', () => {
       expect(await imgs.count()).toBeLessThanOrEqual(6)
     }
   })
+
+  test('public gallery DOM never leaks submitter identity fields', async ({ page }) => {
+    await page.goto('/gallery', { waitUntil: 'domcontentloaded' })
+    await expectNoPermanentLoading(page)
+
+    // Snapshot the rendered DOM after data has loaded. None of the
+    // submitter PII columns should ever appear in the public payload.
+    const html = await page.content()
+    expect(html).not.toMatch(/submitted_by_email/i)
+    expect(html).not.toMatch(/submitted_by_name/i)
+    expect(html).not.toMatch(/submitted_by_user_id/i)
+  })
+
+  test('public gallery does not request submitter PII columns from REST', async ({ page }) => {
+    const piiRequestUrls: string[] = []
+    page.on('request', (req) => {
+      const url = req.url()
+      if (
+        url.includes('/rest/v1/gallery_images') &&
+        /submitted_by_(email|name|user_id)/i.test(url)
+      ) {
+        piiRequestUrls.push(url)
+      }
+    })
+    await page.goto('/gallery', { waitUntil: 'networkidle' })
+    expect(piiRequestUrls).toEqual([])
+  })
 })
