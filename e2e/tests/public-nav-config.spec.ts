@@ -4,14 +4,15 @@ import {
   MORE_NAV_GROUPS,
   MORE_NAV_FLAT,
   ALL_PUBLIC_NAV,
+  COMMUNITY_MENU,
+  RESOURCES_MENU,
+  JOIN_MEMBERSHIP_ITEM,
 } from '../../src/lib/publicNav'
 
 /**
- * Contract tests for the public navigation. These don't render the
- * header — they assert the shape of the config so the May 2026 UX
- * cleanup ("five primary tabs, grouped More dropdown") cannot be
- * accidentally regressed by adding ten items to PRIMARY_NAV in a
- * future PR.
+ * Contract tests for the public navigation. Asserts the shape of the
+ * config so destinations stay deduped and every required route stays
+ * reachable from the header (primary links, dropdowns, or More).
  */
 const REQUIRED_DESTINATIONS = [
   '/events',
@@ -35,13 +36,12 @@ const REQUIRED_DESTINATIONS = [
 ] as const
 
 test.describe('public nav config', () => {
-  test('PRIMARY_NAV contains 4–6 high-traffic items', () => {
-    expect(PRIMARY_NAV.length).toBeGreaterThanOrEqual(4)
-    expect(PRIMARY_NAV.length).toBeLessThanOrEqual(6)
+  test('PRIMARY_NAV lists direct bar links (Events + Gallery)', () => {
+    expect(PRIMARY_NAV.map((i) => i.to)).toEqual(['/events', '/gallery'])
   })
 
-  test('PRIMARY_NAV destinations are unique', () => {
-    const tos = PRIMARY_NAV.map((i) => i.to)
+  test('COMMUNITY_MENU and RESOURCES_MENU have unique routes', () => {
+    const tos = [...COMMUNITY_MENU, ...RESOURCES_MENU].map((i) => i.to)
     expect(new Set(tos).size).toBe(tos.length)
   })
 
@@ -60,13 +60,25 @@ test.describe('public nav config', () => {
     }
   })
 
-  test('no destination is duplicated across primary + more', () => {
-    const all = [...PRIMARY_NAV.map((i) => i.to), ...MORE_NAV_FLAT.map((i) => i.to)]
+  test('no destination is duplicated across bar, dropdowns, join, and more', () => {
+    const bar = [...PRIMARY_NAV.map((i) => i.to), JOIN_MEMBERSHIP_ITEM.to]
+    const drops = [...COMMUNITY_MENU, ...RESOURCES_MENU].map((i) => i.to)
+    const more = MORE_NAV_FLAT.map((i) => i.to)
+    const all = [...bar, ...drops, ...more]
     expect(new Set(all).size).toBe(all.length)
   })
 
   test('top-tier admin destinations are NOT in the public nav', () => {
-    const admin = ['/admin', '/admin/dashboard', '/admin/system-health', '/admin/chat', '/admin/event-comments', '/admin/invites', '/admin/feed', '/admin/volunteers']
+    const admin = [
+      '/admin',
+      '/admin/dashboard',
+      '/admin/system-health',
+      '/admin/chat',
+      '/admin/event-comments',
+      '/admin/invites',
+      '/admin/feed',
+      '/admin/volunteers',
+    ]
     const allTos = ALL_PUBLIC_NAV.map((i) => i.to)
     for (const a of admin) {
       expect(allTos).not.toContain(a)

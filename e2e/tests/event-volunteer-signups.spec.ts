@@ -41,10 +41,12 @@ test.describe('event volunteer signups', () => {
     const nameInput = page.locator('#vol-name')
     const notOpen = page.getByText('Volunteer signup is not open for this event.')
     const closed = page.getByText('Volunteer signup has closed for this event.')
+    const closedPast = page.getByText(/not available for past events/i)
     const notFound = page.getByRole('heading', { name: /Event not found/i })
-    await expect(nameInput.or(notOpen).or(closed).or(notFound).first()).toBeVisible({ timeout: 30000 })
+    await expect(nameInput.or(notOpen).or(closed).or(closedPast).or(notFound).first()).toBeVisible({ timeout: 30000 })
     if (await notOpen.isVisible()) return
     if (await closed.isVisible()) return
+    if (await closedPast.isVisible()) return
     if (await notFound.isVisible()) return
 
     await expectPublicVolunteerSignupPath(page, slug)

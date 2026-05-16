@@ -129,7 +129,11 @@ export function EventDetailPage() {
           <div className="lg:col-span-2">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <Badge variant="secondary">{formatCategoryLabel(event.category)}</Badge>
-              {past ? <Badge variant="muted">Past event</Badge> : null}
+              {past ? (
+              <Badge variant="muted" className="font-normal">
+                Past event
+              </Badge>
+            ) : null}
               {event.is_virtual ? (
                 <Badge variant="outline" className="gap-1 border-primary/40">
                   <Video className="h-3.5 w-3.5" /> Virtual / Online
@@ -241,6 +245,7 @@ export function EventDetailPage() {
 
             <div className="space-y-2">
               {event.volunteer_signup_enabled &&
+                !past &&
                 !(event.volunteer_signup_closes_at && new Date(event.volunteer_signup_closes_at) <= new Date()) && (
                 <div className="rounded-lg border border-primary/25 bg-primary/5 p-4 space-y-2">
                   <div className="text-sm font-medium text-foreground">Volunteer for this event</div>

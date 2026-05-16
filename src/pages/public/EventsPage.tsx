@@ -13,6 +13,12 @@ import type { Event } from '@/lib/types'
 import { isEventPast } from '@/lib/eventDate'
 import { dedupeToNextOccurrenceOnly } from '@/lib/eventRecurrencePublic'
 
+function compareOccurrence(a: Event, b: Event): number {
+  const d = a.start_date.localeCompare(b.start_date)
+  if (d !== 0) return d
+  return (a.start_time ?? '').localeCompare(b.start_time ?? '')
+}
+
 export function EventsPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
@@ -35,17 +41,19 @@ export function EventsPage() {
       setEvents((data as Event[]) ?? [])
       setLoading(false)
     }
-    load()
+    void load()
   }, [search, category])
 
-  const displayedEvents = useMemo(() => {
-    const past = events.filter((e) => isEventPast(e.start_date))
-    const future = dedupeToNextOccurrenceOnly(events.filter((e) => !isEventPast(e.start_date)))
-    return [...past, ...future].sort((a, b) => {
-      const d = a.start_date.localeCompare(b.start_date)
+  const { upcoming, past } = useMemo(() => {
+    const upcomingRows = events.filter((e) => !isEventPast(e.start_date))
+    const pastRows = events.filter((e) => isEventPast(e.start_date))
+    const upcomingSorted = dedupeToNextOccurrenceOnly(upcomingRows).sort(compareOccurrence)
+    const pastSorted = [...pastRows].sort((a, b) => {
+      const d = b.start_date.localeCompare(a.start_date)
       if (d !== 0) return d
-      return (a.start_time ?? '').localeCompare(b.start_time ?? '')
+      return (b.start_time ?? '').localeCompare(a.start_time ?? '')
     })
+    return { upcoming: upcomingSorted, past: pastSorted }
   }, [events])
 
   return (
@@ -53,8 +61,6 @@ export function EventsPage() {
       <SEOHead title="Events" description="Find upcoming Kenyan community events in Houston and surrounding areas." />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        {/* Calmer page header — single heading, no helper paragraph,
-            primary action (Submit) lives in the same row. */}
         <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
@@ -74,7 +80,6 @@ export function EventsPage() {
           </div>
         </div>
 
-        {/* Filters — one search input + a single horizontal chip row. */}
         <div className="mb-8 space-y-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -111,20 +116,63 @@ export function EventsPage() {
         <p className="mb-5 text-sm text-muted-foreground">
           {loading
             ? 'Loading…'
-            : `${displayedEvents.length} event${displayedEvents.length !== 1 ? 's' : ''}`}
+            : `${upcoming.length} upcoming · ${past.length} past`}
         </p>
 
         {loading ? (
           <PageLoader />
-        ) : displayedEvents.length === 0 ? (
+        ) : upcoming.length === 0 && past.length === 0 ? (
           <EmptyState
             icon={Calendar}
             title="No events found"
             description="Try adjusting your search or check back soon for new events."
           />
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {displayedEvents.map((e) => <EventCard key={e.id} event={e} />)}
+          <div className="space-y-14">
+            <section aria-labelledby="events-upcoming-heading">
+              <h2
+                id="events-upcoming-heading"
+                className="mb-5 text-lg font-semibold tracking-tight text-foreground"
+              >
+                Upcoming events
+              </h2>
+              {upcoming.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No upcoming events match your filters.{' '}
+                  <Link to="/calendar" className="font-medium text-primary underline-offset-4 hover:underline">
+                    View the full calendar
+                  </Link>
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {upcoming.map((e) => (
+                    <EventCard key={e.id} event={e} />
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {past.length > 0 ? (
+              <section
+                aria-labelledby="events-past-heading"
+                className="border-t border-border/60 pt-12"
+              >
+                <h2
+                  id="events-past-heading"
+                  className="mb-2 text-lg font-semibold tracking-tight text-muted-foreground"
+                >
+                  Past events
+                </h2>
+                <p className="mb-6 max-w-2xl text-sm text-muted-foreground">
+                  Archive of completed gatherings. Volunteer signups and RSVPs are closed for these dates.
+                </p>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {past.map((e) => (
+                    <EventCard key={e.id} event={e} presentation="archive" />
+                  ))}
+                </div>
+              </section>
+            ) : null}
           </div>
         )}
       </div>

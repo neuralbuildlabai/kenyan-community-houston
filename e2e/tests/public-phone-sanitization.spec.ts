@@ -65,9 +65,12 @@ test.describe('public phone input sanitization', () => {
     const nameInput = page.locator('#vol-name')
     const notOpen = page.getByText('Volunteer signup is not open for this event.')
     const closed = page.getByText('Volunteer signup has closed for this event.')
+    const closedPast = page.getByText(/not available for past events/i)
     const notFound = page.getByRole('heading', { name: /Event not found/i })
 
-    await expect(nameInput.or(notOpen).or(closed).or(notFound).first()).toBeVisible({ timeout: 30_000 })
+    await expect(nameInput.or(notOpen).or(closed).or(closedPast).or(notFound).first()).toBeVisible({
+      timeout: 30_000,
+    })
 
     if (await notFound.isVisible()) {
       test.skip(true, `Volunteer phone sanitization skipped: no published event for slug "${slug}" (event not found).`)
@@ -77,6 +80,9 @@ test.describe('public phone input sanitization', () => {
     }
     if (await closed.isVisible()) {
       test.skip(true, `Volunteer phone sanitization skipped: volunteer signup has closed for slug "${slug}".`)
+    }
+    if (await closedPast.isVisible()) {
+      test.skip(true, `Volunteer phone sanitization skipped: event is in the past for slug "${slug}".`)
     }
 
     await expectPublicVolunteerSignupPath(page, slug)

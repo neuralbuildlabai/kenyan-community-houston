@@ -22,6 +22,38 @@ test.describe('calendar & seeded events', () => {
     }
   })
 
+  test('Family Fun Day detail uses new flyer when event exists', async ({ page, request, baseURL }) => {
+    const origin = baseURL ?? 'http://127.0.0.1:5173'
+    const img = await request.get(`${origin}/kigh-media/events/family-fun-day-2026.jpeg`)
+    expect(img.status()).toBe(200)
+
+    await page.goto('/events/kigh-family-fun-day-2026', { waitUntil: 'domcontentloaded' })
+    if (await page.getByRole('heading', { name: 'Event Not Found' }).isVisible()) {
+      return
+    }
+    const flyer = page.locator('main img[src*="family-fun-day-2026.jpeg"]')
+    await expect(flyer.first()).toBeVisible()
+  })
+
+  test('financial literacy detail shows Past event when session is in the past', async ({ page }) => {
+    await page.goto('/events/kigh-financial-literacy-session-2026-04-24', { waitUntil: 'domcontentloaded' })
+    if (await page.getByRole('heading', { name: 'Event Not Found' }).isVisible()) {
+      return
+    }
+    const shouldBePast = await page.evaluate(() => {
+      const ymd = '2026-04-24'
+      const d = new Date(`${ymd}T12:00:00`)
+      const t = new Date()
+      t.setHours(0, 0, 0, 0)
+      d.setHours(0, 0, 0, 0)
+      return d < t
+    })
+    if (!shouldBePast) {
+      test.skip(true, 'Session start is still in the future for this runner clock')
+    }
+    await expect(page.getByText('Past event', { exact: true })).toBeVisible()
+  })
+
   test('Financial Literacy session when seeded (past or all)', async ({ page }) => {
     await page.goto('/calendar')
     const lit = page.getByRole('link', { name: /Financial Literacy Session/i })

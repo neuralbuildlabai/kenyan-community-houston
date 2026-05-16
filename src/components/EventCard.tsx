@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Calendar, MapPin, Tag, Star, Video } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { formatDate } from '@/lib/utils'
+import { formatDate, cn } from '@/lib/utils'
 import { isEventPast } from '@/lib/eventDate'
 import { formatCategoryLabel } from '@/lib/communityCategories'
 import type { Event } from '@/lib/types'
@@ -10,15 +10,28 @@ import { MapLink } from '@/components/MapLink'
 
 interface EventCardProps {
   event: Event
+  /** Muted styling for the /events “Past events” archive band. */
+  presentation?: 'default' | 'archive'
 }
 
-export function EventCard({ event }: EventCardProps) {
+export function EventCard({ event, presentation = 'default' }: EventCardProps) {
   const past = isEventPast(event.start_date)
+  const archive = presentation === 'archive'
   return (
-    <Card className="group overflow-hidden transition-shadow hover:shadow-md">
+    <Card
+      className={cn(
+        'group overflow-hidden transition-shadow hover:shadow-md',
+        archive && 'border border-dashed border-muted-foreground/35 bg-muted/25 opacity-[0.97]'
+      )}
+    >
       <Link to={`/events/${event.slug}`} className="block">
         {/* Image */}
-        <div className="relative h-44 bg-muted overflow-hidden">
+        <div
+          className={cn(
+            'relative bg-muted overflow-hidden',
+            archive ? 'h-32' : 'h-44'
+          )}
+        >
           {(event.image_url || event.flyer_url) ? (
             <img
               src={event.image_url || event.flyer_url || ''}

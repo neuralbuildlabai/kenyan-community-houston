@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { PageLoader } from '@/components/LoadingSpinner'
 import { supabase } from '@/lib/supabase'
 import type { Event } from '@/lib/types'
+import { isEventPast } from '@/lib/eventDate'
 import { formatDate, isValidEmail } from '@/lib/utils'
 import { sanitizePhoneInput, validatePhoneNumber, PHONE_VALIDATION_USER_MESSAGE } from '@/lib/phoneValidation'
 import { validateCommunityContent, validatePublicCommunityContent } from '@/lib/communityModeration'
@@ -94,6 +95,7 @@ export function EventVolunteerSignupPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!event?.id) return
+    if (isEventPast(event.start_date)) return
     setError(null)
     const name = fullName.trim()
     if (name.length < 2) {
@@ -158,6 +160,21 @@ export function EventVolunteerSignupPage() {
         <p className="text-muted-foreground mb-6">This volunteer link may be invalid or the event is no longer published.</p>
         <Button asChild>
           <Link to="/events">Browse events</Link>
+        </Button>
+      </div>
+    )
+  }
+
+  if (isEventPast(event.start_date)) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-20 text-center">
+        <SEOHead title={`Volunteer — ${event.title}`} noIndex />
+        <h1 className="text-2xl font-bold mb-3">Volunteer signup closed</h1>
+        <p className="text-muted-foreground mb-6">
+          This event has already taken place. Volunteer signup is not available for past events.
+        </p>
+        <Button asChild variant="outline">
+          <Link to={`/events/${event.slug}`}>Back to event</Link>
         </Button>
       </div>
     )

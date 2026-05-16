@@ -1,10 +1,13 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('homepage', () => {
-  test('renders premium, clean homepage with key CTAs and no leaks', async ({ page }) => {
+  test('renders premium civic homepage with hero, CTAs, and no leaks', async ({ page }) => {
     await page.goto('/')
 
-    // ── A. Hero ──────────────────────────────────────────────
+    const hero = page.getByTestId('home-hero')
+    await expect(hero).toBeVisible()
+    await expect(hero).toHaveAttribute('data-hero-image', '/kigh-media/houstonmainimage-hero.jpg')
+
     await expect(
       page.getByRole('heading', {
         level: 1,
@@ -12,75 +15,71 @@ test.describe('homepage', () => {
       })
     ).toBeVisible()
 
+    await expect(page.getByTestId('home-hero-headline')).toBeVisible()
+
     const join = page.getByTestId('hero-cta-join')
     await expect(join).toBeVisible()
     await expect(join).toHaveAttribute('href', '/membership')
+
+    const exploreEvents = page.getByTestId('hero-cta-events')
+    await expect(exploreEvents).toBeVisible()
+    await expect(exploreEvents).toHaveAttribute('href', '/events')
 
     const askChat = page.getByTestId('hero-cta-chat')
     await expect(askChat).toBeVisible()
     await expect(askChat).toHaveAttribute('href', '/chat')
 
-    // ── B. Quick action strip — exactly four routes ──────────
-    await expect(page.getByTestId('action-chat')).toHaveAttribute('href', '/chat')
-    await expect(page.getByTestId('action-events')).toHaveAttribute(
-      'href',
-      '/events'
-    )
-    await expect(page.getByTestId('action-resources')).toHaveAttribute(
-      'href',
-      '/resources'
-    )
-    await expect(page.getByTestId('action-businesses')).toHaveAttribute(
-      'href',
-      '/businesses'
-    )
+    await expect(page.getByTestId('home-editorial-events')).toHaveAttribute('href', '/events')
+    await expect(page.getByTestId('home-editorial-chat')).toHaveAttribute('href', '/chat')
+    await expect(page.getByTestId('home-editorial-resources')).toHaveAttribute('href', '/resources')
+    await expect(page.getByTestId('home-editorial-businesses')).toHaveAttribute('href', '/businesses')
+    await expect(page.getByTestId('home-editorial-gallery')).toHaveAttribute('href', '/gallery')
 
-    // ── C. Connect with the community ────────────────────────
-    const living = page.getByTestId('home-living-community')
-    await expect(living).toBeVisible()
+    await expect(page.getByTestId('home-whats-happening')).toBeVisible()
     await expect(
-      living.getByRole('heading', { name: /Connect with the community/i })
-    ).toBeVisible()
-    await expect(living.getByTestId('home-cta-community-chat')).toHaveAttribute(
-      'href',
-      '/chat'
-    )
-    await expect(living.getByTestId('home-cta-community-feed')).toHaveAttribute(
-      'href',
-      '/community-feed'
-    )
-    // Static copy only — no fake private chat messages should be exposed.
-    const chatCard = living.getByTestId('home-cta-community-chat')
-    await expect(chatCard.getByText(/Member space/i)).toBeVisible()
-    await expect(chatCard.getByText(/Sign in may be required/i)).toBeVisible()
-
-    // ── D. Events preview ────────────────────────────────────
-    await expect(
-      page.getByRole('heading', { name: /Upcoming gatherings/i })
-    ).toBeVisible()
-    await expect(page.getByTestId('home-cta-events')).toHaveAttribute(
-      'href',
-      '/events'
-    )
-
-    // ── E. Updates & ways to help ────────────────────────────
-    await expect(
-      page.getByRole('heading', { name: /Updates and ways to help/i })
-    ).toBeVisible()
-    await expect(page.getByTestId('home-cta-announcements')).toHaveAttribute(
-      'href',
-      '/announcements'
-    )
-    await expect(
-      page.getByTestId('home-cta-community-support')
-    ).toHaveAttribute('href', '/community-support')
-
-    // ── F. New to Houston band ───────────────────────────────
-    await expect(
-      page.getByRole('heading', { name: /New to Houston\?/i })
+      page.getByRole('heading', { name: /What's happening/i })
     ).toBeVisible()
 
-    // ── No admin routes exposed on public homepage ──────────
+    const html = await page.content()
+    expect(html).not.toContain('kigh-family-fun-day-2026.jpeg')
+    expect(html).not.toMatch(/\/kigh-media\/events\/[^"']+\.(jpe?g|png)/i)
+
+    const eventRows = page.getByTestId('home-event-row')
+    const calendarLink = page.getByTestId('home-whats-happening-calendar')
+    await expect(eventRows.first().or(calendarLink)).toBeVisible({ timeout: 25_000 })
+    const rowCount = await eventRows.count()
+    expect(rowCount).toBeLessThanOrEqual(3)
+    if (rowCount > 0) {
+      await expect(page.getByTestId('home-cta-events')).toHaveAttribute('href', '/events')
+      const titles = await eventRows.locator('[data-testid="home-event-title"]').allTextContents()
+    const uniq = new Set(titles.map((t) => t.trim()))
+      expect(uniq.size, 'no duplicate titles in homepage preview').toBe(titles.length)
+      for (const row of await eventRows.all()) {
+        const href = await row.getAttribute('href')
+        expect(href).toMatch(/^\/events\//)
+      }
+    } else {
+      const cal = page.getByTestId('home-whats-happening-calendar')
+      await expect(cal).toBeVisible()
+      await expect(cal).toHaveAttribute('href', '/calendar')
+    }
+
+    await expect(page.getByRole('heading', { name: /New to Houston\?/i })).toBeVisible()
+    await expect(page.getByTestId('home-newcomer-resources')).toHaveAttribute('href', '/new-to-houston')
+    await expect(page.getByTestId('home-newcomer-chat')).toHaveAttribute('href', '/chat')
+
+    const help = page.getByTestId('home-help-links')
+    await expect(help).toBeVisible()
+    await expect(page.getByTestId('home-help-announcements')).toHaveAttribute('href', '/announcements')
+    await expect(page.getByTestId('home-help-community-support')).toHaveAttribute(
+      'href',
+      '/community-support'
+    )
+    await expect(page.getByTestId('home-help-contact')).toHaveAttribute('href', '/contact')
+
+    const momentCount = await page.getByTestId('home-gallery-moment').count()
+    expect(momentCount).toBeLessThanOrEqual(6)
+
     const mainContent = page.locator('main')
     const adminLinks = await mainContent
       .getByRole('link')
@@ -91,15 +90,11 @@ test.describe('homepage', () => {
       )
     expect(adminLinks).toEqual([])
 
-    // ── No fake private chat-message bubbles ────────────────
-    // We assert there are no chat-message-style nodes injected into the
-    // homepage that could look like real conversations.
     const fakeChatBubbles = await page
       .locator('[data-testid="chat-message"], [data-fake-chat="true"]')
       .count()
     expect(fakeChatBubbles).toBe(0)
 
-    // ── Footer essentials still wired ───────────────────────
     const loginLink = page
       .getByRole('contentinfo')
       .getByRole('link', { name: /^Login$/i })
@@ -117,11 +112,14 @@ test.describe('homepage', () => {
     ).toBeVisible()
   })
 
+  test('Family Fun Day flyer asset responds 200', async ({ request, baseURL }) => {
+    const origin = baseURL ?? 'http://127.0.0.1:5173'
+    const res = await request.get(`${origin}/kigh-media/events/family-fun-day-2026.jpeg`)
+    expect(res.status()).toBe(200)
+  })
+
   test('homepage DOM never leaks gallery submitter identity fields', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' })
-    // The community moments strip pulls from gallery_images_public,
-    // which omits submitter PII (migration 036). Belt-and-suspenders
-    // check on the rendered DOM regardless of whether moments exist.
     const html = await page.content()
     expect(html).not.toMatch(/submitted_by_email/i)
     expect(html).not.toMatch(/submitted_by_name/i)

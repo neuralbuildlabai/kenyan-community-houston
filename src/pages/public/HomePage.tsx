@@ -1,40 +1,18 @@
-import { useEffect, useState } from 'react'
-import { format } from 'date-fns'
+import { Fragment, useEffect, useState } from 'react'
+import { format, isValid, parseISO } from 'date-fns'
 import { Link } from 'react-router-dom'
-import {
-  Calendar,
-  Building2,
-  ArrowRight,
-  MessagesSquare,
-  Newspaper,
-  BookOpen,
-  Megaphone,
-  HeartHandshake,
-  ShieldCheck,
-} from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
-import { EventCard } from '@/components/EventCard'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { PageLoader } from '@/components/LoadingSpinner'
 import { supabase } from '@/lib/supabase'
 import type { Event } from '@/lib/types'
-import { dedupeToNextOccurrenceOnly } from '@/lib/eventRecurrencePublic'
-import { KighLogo } from '@/components/KighLogo'
+import { buildHomepageWhatsHappeningList, filterPublishedUpcomingByStartDate } from '@/lib/homepageEvents'
 import { trackClick } from '@/lib/analytics'
 
-/**
- * Homepage — premium, calm, community-centered.
- *
- * The structure is deliberately quiet:
- *   A. Hero — one strong headline, one primary + one secondary CTA.
- *   B. Community action strip — exactly four destinations.
- *   C. Community spaces — Chat + Feed surfaced as two large cards.
- *      (Never renders private chat content; only static labels.)
- *   D. Upcoming gatherings — up to three event cards.
- *   E. Updates & ways to help — two cards only.
- *   F. New-to-Houston band — slimmed orange section, two CTAs.
- */
+/** Optimized hero (see `public/kigh-media/houstonmainimage-hero.jpg`). */
+const HOME_HERO_IMAGE_JPEG = '/kigh-media/houstonmainimage-hero.jpg'
+const HOME_HERO_IMAGE_PNG = '/kigh-media/houstonmainimage.png'
+
 type HomeMoment = {
   id: string
   thumbnail_url: string | null
@@ -42,12 +20,26 @@ type HomeMoment = {
   alt_text: string | null
 }
 
+function formatEventListDate(ymd: string): string {
+  const d = parseISO(ymd)
+  return isValid(d) ? format(d, 'EEE, MMM d') : ymd
+}
+
+const EDITORIAL_LINKS = [
+  { to: '/events', label: 'Events', testId: 'home-editorial-events' },
+  { to: '/chat', label: 'Community Chat', testId: 'home-editorial-chat' },
+  { to: '/resources', label: 'Resources', testId: 'home-editorial-resources' },
+  { to: '/businesses', label: 'Business Directory', testId: 'home-editorial-businesses' },
+  { to: '/gallery', label: 'Gallery', testId: 'home-editorial-gallery' },
+] as const
+
 export function HomePage() {
   const [events, setEvents] = useState<Event[]>([])
   const [moments, setMoments] = useState<HomeMoment[]>([])
-  const [loading, setLoading] = useState(true)
+  const [listsLoaded, setListsLoaded] = useState(false)
 
   useEffect(() => {
+    let cancelled = false
     async function load() {
       try {
         const todayYmd = format(new Date(), 'yyyy-MM-dd')
@@ -59,10 +51,9 @@ export function HomePage() {
           .order('start_date', { ascending: true })
           .limit(60)
         const raw = (ev as Event[]) ?? []
-        const deduped = dedupeToNextOccurrenceOnly(raw).slice(0, 3)
-        setEvents(deduped)
-        // Reads from the public-safe view (migration 036). The view omits
-        // submitter PII and is pre-filtered to status='published'.
+        const upcomingOnly = filterPublishedUpcomingByStartDate(raw, todayYmd)
+        if (!cancelled) setEvents(buildHomepageWhatsHappeningList(upcomingOnly, 3))
+
         const { data: momentsRows } = await supabase
           .from('gallery_images_public')
           .select('id, thumbnail_url, image_url, alt_text')
@@ -70,245 +61,266 @@ export function HomePage() {
           .order('sort_order', { ascending: true })
           .order('created_at', { ascending: false })
           .limit(6)
-        setMoments(((momentsRows ?? []) as HomeMoment[]).filter((m) => (m.thumbnail_url ?? m.image_url)?.trim()))
+        if (!cancelled) {
+          setMoments(
+            ((momentsRows ?? []) as HomeMoment[]).filter((m) =>
+              (m.thumbnail_url ?? m.image_url)?.trim()
+            )
+          )
+        }
       } finally {
-        setLoading(false)
+        if (!cancelled) setListsLoaded(true)
       }
     }
     void load()
+    return () => {
+      cancelled = true
+    }
   }, [])
-
-  if (loading) return <PageLoader />
 
   return (
     <>
       <SEOHead
         title="Home"
-        description="The Kenyan community hub in Houston — find events, connect with members, and discover resources."
+        description="Connect with the Kenyan community in Houston — events, resources, and neighbors in Greater Houston."
       />
 
-      {/* ─── A. Hero ────────────────────────────────────────────
-          Calmer hero: single column on mobile, two on desktop.
-          One headline, one short subtext, one primary + one
-          secondary CTA. No badge clutter, no decorative chips. */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-kenyan-gold-50 via-amber-50/40 to-background">
+      {/* Full-bleed hero: skyline + gradient, nav sits above via layout overlap */}
+      <section
+        data-testid="home-hero"
+        data-hero-image={HOME_HERO_IMAGE_JPEG}
+        className="relative -mt-16 flex min-h-[82vh] flex-col lg:min-h-[90vh]"
+      >
+        <div className="pointer-events-none absolute inset-0 z-0">
+          <picture className="absolute inset-0 block h-full w-full">
+            <source srcSet={HOME_HERO_IMAGE_JPEG} type="image/jpeg" />
+            <img
+              src={HOME_HERO_IMAGE_PNG}
+              alt=""
+              width={1672}
+              height={941}
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover object-center"
+              aria-hidden
+            />
+          </picture>
+        </div>
         <div
-          className="pointer-events-none absolute inset-0 opacity-60 bg-[radial-gradient(ellipse_55%_40%_at_20%_15%,rgba(245,158,11,0.16),transparent_70%)]"
+          className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-black/55 via-black/50 to-black/75"
           aria-hidden
         />
-
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-28">
-          <div className="grid gap-12 lg:grid-cols-[1.15fr_1fr] lg:items-center">
-            <div className="max-w-xl">
-              <div className="mb-7 flex items-center gap-3">
-                <KighLogo
-                  withCard
-                  className="h-12 w-12 shrink-0 shadow-sm ring-1 ring-border/40"
-                  imgClassName="max-h-10"
-                />
-                <Badge className="border-0 bg-kenyan-gold-500 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white shadow-sm hover:bg-kenyan-gold-500">
-                  Kenyans in Greater Houston
-                </Badge>
-              </div>
-
-              <h1 className="mb-6 text-4xl font-bold leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-[3.25rem]">
-                Your Kenyan community hub in Houston
-              </h1>
-
-              <p className="mb-9 max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
-                Find events, connect with members, discover resources, and stay
-                close to the community.
-              </p>
-
-              <div className="flex flex-wrap gap-3">
-                <Button asChild size="lg" className="gap-1.5 font-semibold shadow-sm">
-                  <Link
-                    to="/membership"
-                    data-testid="hero-cta-join"
-                    onClick={() =>
-                      void trackClick('hero_join_membership', '/membership')
-                    }
-                  >
-                    Join the community
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className="border-border/60 bg-white/80 font-semibold backdrop-blur hover:bg-white"
+        <div className="relative z-10 flex flex-1 flex-col justify-center px-4 pb-10 pt-24 sm:px-6 sm:pt-28 lg:px-8">
+          <div className="mx-auto w-full max-w-3xl text-center text-white">
+            <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.28em] text-white/75 sm:text-xs">
+              Kenyan Community Houston
+            </p>
+            <h1
+              data-testid="home-hero-headline"
+              className="mb-6 text-4xl font-semibold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-[3.25rem]"
+            >
+              Your Kenyan community hub in Houston
+            </h1>
+            <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed text-white/88 sm:text-lg sm:leading-relaxed">
+              Connect with community, discover events, find resources, and stay close to home while
+              building life in Greater Houston.
+            </p>
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
+              <Button
+                asChild
+                size="lg"
+                className="min-w-[200px] gap-2 border-0 bg-kenyan-gold-500 px-8 text-base font-semibold text-white shadow-lg hover:bg-kenyan-gold-400"
+              >
+                <Link
+                  to="/membership"
+                  data-testid="hero-cta-join"
+                  onClick={() => void trackClick('hero_join_membership', '/membership')}
                 >
-                  <Link
-                    to="/chat"
-                    data-testid="hero-cta-chat"
-                    onClick={() => void trackClick('hero_ask_community', '/chat')}
-                  >
-                    Ask the community
-                  </Link>
-                </Button>
-              </div>
+                  Join the community
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="min-w-[200px] border-white/40 bg-white/10 px-8 text-base font-semibold text-white backdrop-blur-sm hover:bg-white/20 hover:text-white"
+              >
+                <Link
+                  to="/events"
+                  data-testid="hero-cta-events"
+                  onClick={() => void trackClick('hero_explore_events', '/events')}
+                >
+                  Explore events
+                </Link>
+              </Button>
             </div>
-
-            {/* Hero photo, single rounded frame, no stacked decoration. */}
-            <div className="relative">
-              <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-muted shadow-xl ring-1 ring-black/5 sm:aspect-[5/4] lg:aspect-[4/5]">
-                <img
-                  src="/kigh-media/events/kigh-family-fun-day-2026.jpeg"
-                  alt="KIGH community members gathered in Greater Houston."
-                  className="absolute inset-0 h-full w-full object-cover"
-                  loading="eager"
-                  onError={(e) => {
-                    const el = e.currentTarget as HTMLImageElement
-                    el.style.display = 'none'
-                  }}
-                />
-                <div
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/25 via-transparent to-transparent"
-                  aria-hidden
-                />
-              </div>
-            </div>
+            <p className="mt-8">
+              <Link
+                to="/chat"
+                data-testid="hero-cta-chat"
+                onClick={() => void trackClick('hero_ask_community', '/chat')}
+                className="text-sm font-medium text-white/90 underline decoration-white/35 underline-offset-4 transition hover:text-white hover:decoration-white"
+              >
+                Ask the community
+              </Link>
+            </p>
           </div>
         </div>
-      </section>
 
-      {/* ─── A2. Nonprofit trust line ────────────────────────────
-          A small, calm credibility statement directly under the
-          hero. Intentionally non-fundraising: no donate CTA, no
-          payment link, no tax-receipt language. */}
-      <section
-        className="border-y border-border/40 bg-card/30"
-        aria-label="Nonprofit status"
-      >
-        <div className="mx-auto flex max-w-7xl items-center justify-center gap-2.5 px-4 py-3.5 text-center sm:gap-3 sm:px-6 sm:py-4 lg:px-8">
-          <ShieldCheck
-            className="h-4 w-4 shrink-0 text-kenyan-gold-600 sm:h-[18px] sm:w-[18px]"
-            aria-hidden
-          />
-          <p className="max-w-3xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
+        <div className="relative z-10 mt-auto border-t border-white/10 bg-black/35 px-4 py-3.5 backdrop-blur-md sm:px-6 lg:px-8">
+          <p className="mx-auto max-w-3xl text-center text-xs leading-relaxed text-white/75 sm:text-sm">
             Kenyan Community Houston is a registered{' '}
-            <span className="font-semibold text-foreground">501(c)(3)</span>{' '}
-            nonprofit organization serving Kenyans and friends of Kenya across
-            the Houston area.
+            <span className="font-medium text-white">501(c)(3)</span> nonprofit serving Kenyans and
+            friends of Kenya across Greater Houston.
           </p>
         </div>
       </section>
 
-      {/* ─── B. Community action strip ───────────────────────────
-          Replaces the old multi-card "Start here" section.
-          Exactly four destinations, ordered so Community Chat is
-          first and lives immediately under the hero. */}
-      <section
-        className="bg-card/40 py-12 sm:py-16"
-        aria-labelledby="home-quick-actions"
+      {/* Editorial link band */}
+      <nav
+        aria-label="Popular destinations"
+        className="border-b border-border/50 bg-background py-10 sm:py-12"
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 id="home-quick-actions" className="sr-only">
-            Quick actions
-          </h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
-            {[
-              {
-                to: '/chat',
-                Icon: MessagesSquare,
-                title: 'Community Chat',
-                copy: 'Ask questions, connect with members, and get community guidance.',
-                testId: 'action-chat',
-                tone: 'bg-kenyan-gold-500/10 text-kenyan-gold-700',
-              },
-              {
-                to: '/events',
-                Icon: Calendar,
-                title: 'Events',
-                copy: 'See upcoming gatherings and community activities.',
-                testId: 'action-events',
-                tone: 'bg-primary/10 text-primary',
-              },
-              {
-                to: '/resources',
-                Icon: BookOpen,
-                title: 'Resources',
-                copy: 'Find helpful newcomer, family, and support resources.',
-                testId: 'action-resources',
-                tone: 'bg-kenyan-gold-500/10 text-kenyan-gold-700',
-              },
-              {
-                to: '/businesses',
-                Icon: Building2,
-                title: 'Business Directory',
-                copy: 'Discover Kenyan-owned and community businesses.',
-                testId: 'action-businesses',
-                tone: 'bg-primary/10 text-primary',
-              },
-            ].map(({ to, Icon, title, copy, testId, tone }) => (
-              <Link
-                key={to}
-                to={to}
-                data-testid={testId}
-                onClick={() => void trackClick(`home_${testId}`, to)}
-                className="group flex flex-col rounded-2xl bg-card p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-              >
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-1 gap-y-3 px-4 sm:px-6 lg:px-8">
+          {EDITORIAL_LINKS.map((item, i) => (
+            <Fragment key={item.to}>
+              {i > 0 ? (
                 <span
-                  className={`mb-4 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 ${tone}`}
-                >
-                  <Icon className="h-5 w-5" aria-hidden />
-                </span>
-                <span className="text-base font-semibold text-foreground">
-                  {title}
-                </span>
-                <span className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                  {copy}
-                </span>
+                  className="hidden h-4 w-px shrink-0 bg-border/70 sm:inline-block"
+                  aria-hidden
+                />
+              ) : null}
+              <Link
+                to={item.to}
+                data-testid={item.testId}
+                onClick={() => void trackClick(`home_editorial_${item.testId}`, item.to)}
+                className="px-3 text-[15px] font-medium tracking-wide text-foreground/85 transition-colors hover:text-primary sm:px-5 sm:text-base"
+              >
+                {item.label}
               </Link>
-            ))}
+            </Fragment>
+          ))}
+        </div>
+      </nav>
+
+      {/* What's happening */}
+      <section
+        className="border-b border-border/40 py-16 sm:py-20"
+        aria-labelledby="home-whats-happening-heading"
+        data-testid="home-whats-happening"
+      >
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <h2
+              id="home-whats-happening-heading"
+              className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
+            >
+              What's happening
+            </h2>
+            {events.length > 0 ? (
+              <Link
+                to="/events"
+                data-testid="home-cta-events"
+                className="shrink-0 text-sm font-semibold text-primary underline decoration-primary/30 underline-offset-4 transition hover:decoration-primary"
+                onClick={() => void trackClick('home_whats_happening_all', '/events')}
+              >
+                All events
+              </Link>
+            ) : null}
           </div>
+
+          {!listsLoaded ? (
+            <p className="text-sm text-muted-foreground">Loading upcoming events…</p>
+          ) : events.length === 0 ? (
+            <p className="text-muted-foreground">
+              New gatherings will appear here when they&apos;re published.{' '}
+              <Link
+                to="/calendar"
+                data-testid="home-whats-happening-calendar"
+                className="font-medium text-primary underline underline-offset-4 decoration-primary/30 hover:decoration-primary"
+                onClick={() => void trackClick('home_whats_happening_calendar', '/calendar')}
+              >
+                View the community calendar
+              </Link>
+            </p>
+          ) : (
+            <ul className="divide-y divide-border/60">
+              {events.map((e) => (
+                <li key={e.id}>
+                  <Link
+                    to={`/events/${e.slug}`}
+                    data-testid="home-event-row"
+                    onClick={() => void trackClick('home_whats_happening_event', `/events/${e.slug}`)}
+                    className="group block py-7 first:pt-0 transition-colors hover:text-primary"
+                  >
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8">
+                      <time
+                        dateTime={e.start_date}
+                        className="shrink-0 text-sm font-medium uppercase tracking-wide text-muted-foreground group-hover:text-primary sm:w-36"
+                      >
+                        {formatEventListDate(e.start_date)}
+                      </time>
+                      <div className="min-w-0 flex-1">
+                        <span
+                          data-testid="home-event-title"
+                          className="block text-xl font-semibold tracking-tight text-foreground group-hover:text-primary sm:text-2xl"
+                        >
+                          {e.title}
+                        </span>
+                        <span className="mt-1 block text-sm text-muted-foreground">{e.location}</span>
+                      </div>
+                      <span className="mt-2 inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary sm:mt-0">
+                        Details
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </section>
 
+      {/* Community moments */}
       {moments.length > 0 && (
         <section
-          className="border-y bg-muted/20 py-12 sm:py-16"
+          className="border-b border-border/40 bg-muted/15 py-16 sm:py-20"
           data-testid="home-community-moments"
           aria-labelledby="home-community-moments-heading"
         >
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h2
-                  id="home-community-moments-heading"
-                  className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-                >
-                  Community moments
-                </h2>
-                <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-                  Curated highlights from recent gatherings. Visit the gallery for the full collection.
-                </p>
-              </div>
-              <Button asChild variant="ghost" size="sm" className="w-fit shrink-0 gap-1.5 text-primary">
-                <Link
-                  to="/gallery"
-                  data-testid="home-cta-gallery-moments"
-                  onClick={() => void trackClick('home_community_moments_gallery', '/gallery')}
-                >
-                  View gallery <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <h2
+                id="home-community-moments-heading"
+                className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
+              >
+                Community moments
+              </h2>
+              <Link
+                to="/gallery"
+                data-testid="home-cta-gallery-moments"
+                className="shrink-0 text-sm font-semibold text-primary underline decoration-primary/30 underline-offset-4 transition hover:decoration-primary"
+                onClick={() => void trackClick('home_community_moments_gallery', '/gallery')}
+              >
+                View gallery
+              </Link>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-6">
+            <div className="flex gap-3 overflow-x-auto pb-1 md:grid md:grid-cols-3 md:overflow-visible md:pb-0 lg:grid-cols-6 lg:gap-4">
               {moments.map((m) => (
                 <Link
                   key={m.id}
                   to="/gallery"
-                  className="block aspect-square overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-shadow hover:ring-primary/30"
                   data-testid="home-gallery-moment"
+                  className="group relative aspect-[4/3] w-[min(85vw,280px)] shrink-0 overflow-hidden rounded-lg bg-muted md:w-auto"
+                  onClick={() => void trackClick('home_moment_thumb', '/gallery')}
                 >
                   <img
                     src={m.thumbnail_url ?? m.image_url ?? ''}
-                    alt={m.alt_text?.trim() || 'Community moment'}
+                    alt={m.alt_text?.trim() || 'Community moment from a KIGH gathering'}
                     loading="lazy"
                     decoding="async"
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                   />
                 </Link>
               ))}
@@ -317,242 +329,79 @@ export function HomePage() {
         </section>
       )}
 
-      {/* ─── C. Connect with the community ───────────────────────
-          Two large premium cards. Chat shows static preview text
-          only — never live or fake messages. */}
-      <section
-        className="bg-gradient-to-b from-background via-amber-50/30 to-background py-16 sm:py-20"
-        data-testid="home-living-community"
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-10 max-w-2xl">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Connect with the community
-            </h2>
-            <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-              Two member-friendly spaces — one for asking, one for staying in
-              the loop.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
+      {/* New to Houston */}
+      <section className="border-b border-border/40 bg-gradient-to-r from-amber-800/95 via-kenyan-gold-700 to-amber-900 py-14 text-white sm:py-16">
+        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">New to Houston?</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-white/90">
+            Practical guidance from neighbors who remember their first months in the city.
+          </p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-6">
+            <Link
+              to="/new-to-houston"
+              data-testid="home-newcomer-resources"
+              onClick={() => void trackClick('home_newcomer_resources', '/new-to-houston')}
+              className="text-base font-semibold text-white underline decoration-white/40 underline-offset-[6px] transition hover:decoration-white"
+            >
+              Newcomer resources
+            </Link>
+            <span className="hidden text-white/40 sm:inline" aria-hidden>
+              ·
+            </span>
             <Link
               to="/chat"
-              data-testid="home-cta-community-chat"
-              onClick={() =>
-                void trackClick('home_living_community_chat', '/chat')
-              }
-              className="group relative flex flex-col overflow-hidden rounded-3xl bg-card p-8 shadow-sm ring-1 ring-border/40 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:ring-primary/30 sm:p-10"
+              data-testid="home-newcomer-chat"
+              onClick={() => void trackClick('home_newcomer_ask', '/chat')}
+              className="text-base font-semibold text-white underline decoration-white/40 underline-offset-[6px] transition hover:decoration-white"
             >
-              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-kenyan-gold-700">
-                Member space
-              </span>
-              <div className="mt-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-kenyan-gold-500/10 text-kenyan-gold-700">
-                <MessagesSquare className="h-6 w-6" aria-hidden />
-              </div>
-              <h3 className="mt-5 text-2xl font-semibold tracking-tight text-foreground">
-                Community Chat
-              </h3>
-              <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Start a private community request or conversation. Sign in may
-                be required.
-              </p>
-              <span className="mt-7 inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
-                Open community chat
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </span>
-            </Link>
-
-            <Link
-              to="/community-feed"
-              data-testid="home-cta-community-feed"
-              onClick={() =>
-                void trackClick('home_living_community_feed', '/community-feed')
-              }
-              className="group relative flex flex-col overflow-hidden rounded-3xl bg-card p-8 shadow-sm ring-1 ring-border/40 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:ring-primary/30 sm:p-10"
-            >
-              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary/85">
-                Moderated updates
-              </span>
-              <div className="mt-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <Newspaper className="h-6 w-6" aria-hidden />
-              </div>
-              <h3 className="mt-5 text-2xl font-semibold tracking-tight text-foreground">
-                Community Feed
-              </h3>
-              <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Read community updates, reminders, and member-friendly posts.
-              </p>
-              <span className="mt-7 inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
-                View community feed
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </span>
+              Ask the community
             </Link>
           </div>
         </div>
       </section>
 
-      {/* ─── D. Upcoming gatherings ──────────────────────────────
-          Maximum three event cards. Empty state is a single calm
-          panel with one CTA back to the calendar. */}
-      <section className="py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-9 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                Upcoming gatherings
-              </h2>
-              <p className="mt-3 max-w-xl text-base leading-relaxed text-muted-foreground">
-                Workshops, family days, and community meetings across Greater
-                Houston.
-              </p>
-            </div>
-            <Button
-              asChild
-              variant="ghost"
-              size="sm"
-              className="w-fit shrink-0 gap-1.5 text-primary"
-            >
-              <Link to="/events" data-testid="home-cta-events">
-                View all events <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-
-          {events.length === 0 ? (
-            <div className="rounded-3xl bg-gradient-to-br from-kenyan-gold-50 via-amber-50/30 to-background px-6 py-12 text-center sm:px-10 sm:py-16">
-              <p className="text-lg font-semibold text-foreground">
-                Nothing scheduled yet
-              </p>
-              <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-                New gatherings appear here as they're published.
-              </p>
-              <div className="mt-6">
-                <Button asChild size="sm">
-                  <Link to="/calendar">Open calendar</Link>
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {events.slice(0, 3).map((e) => (
-                <EventCard key={e.id} event={e} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ─── E. Updates & ways to help ───────────────────────────
-          Just two cards — no extra panels, no inline donate CTA. */}
-      <section className="bg-card/40 py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-9 max-w-2xl">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Updates and ways to help
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+      {/* Help — minimal editorial links */}
+      <section
+        className="py-14 sm:py-16"
+        aria-label="Help and updates"
+        data-testid="home-help-links"
+      >
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+          <h2 className="mb-8 text-center text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Updates &amp; support
+          </h2>
+          <nav aria-label="Updates and support" className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
             <Link
               to="/announcements"
-              data-testid="home-cta-announcements"
-              onClick={() =>
-                void trackClick('home_announcements', '/announcements')
-              }
-              className="group flex flex-col rounded-3xl bg-card p-7 shadow-sm ring-1 ring-border/40 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-primary/30"
+              data-testid="home-help-announcements"
+              className="text-[15px] font-medium text-foreground/90 underline decoration-border underline-offset-4 transition hover:text-primary hover:decoration-primary"
+              onClick={() => void trackClick('home_help_announcements', '/announcements')}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <Megaphone className="h-5 w-5" aria-hidden />
-              </div>
-              <h3 className="mt-5 text-lg font-semibold text-foreground">
-                Announcements
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Official updates from KIGH organizers.
-              </p>
-              <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-primary">
-                Read announcements
-                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-              </span>
+              Announcements
             </Link>
-
+            <span className="text-border" aria-hidden>
+              |
+            </span>
             <Link
               to="/community-support"
-              data-testid="home-cta-community-support"
-              onClick={() =>
-                void trackClick('home_community_support', '/community-support')
-              }
-              className="group flex flex-col rounded-3xl bg-card p-7 shadow-sm ring-1 ring-border/40 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-primary/30"
+              data-testid="home-help-community-support"
+              className="text-[15px] font-medium text-foreground/90 underline decoration-border underline-offset-4 transition hover:text-primary hover:decoration-primary"
+              onClick={() => void trackClick('home_help_support', '/community-support')}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-kenyan-gold-500/10 text-kenyan-gold-700">
-                <HeartHandshake className="h-5 w-5" aria-hidden />
-              </div>
-              <h3 className="mt-5 text-lg font-semibold text-foreground">
-                Community support
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Welfare drives and fundraisers neighbors are rallying around.
-              </p>
-              <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-primary">
-                See how to help
-                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-              </span>
+              Community Support
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── F. New to Houston — slimmer orange band ────────────
-          One headline, one sentence, two CTAs. */}
-      <section className="px-4 pb-20 pt-4 sm:px-6 lg:px-8">
-        <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-gradient-to-br from-kenyan-gold-500 via-kenyan-gold-600 to-amber-700 px-6 py-12 text-white shadow-xl sm:px-12 sm:py-14">
-          <div
-            className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-white/10 blur-3xl"
-            aria-hidden
-          />
-
-          <div className="relative grid items-center gap-8 sm:grid-cols-[1.4fr_1fr]">
-            <div className="max-w-xl">
-              <h2 className="text-2xl font-bold leading-tight tracking-tight sm:text-3xl">
-                New to Houston?
-              </h2>
-              <p className="mt-3 text-sm leading-relaxed text-white/95 sm:text-base">
-                Settle in faster with resources curated by neighbors who've been
-                where you are.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3 sm:justify-end">
-              <Button
-                asChild
-                size="lg"
-                className="bg-white font-semibold text-kenyan-gold-700 shadow-md hover:bg-white/90"
-              >
-                <Link
-                  to="/new-to-houston"
-                  onClick={() =>
-                    void trackClick('home_newcomer_resources', '/new-to-houston')
-                  }
-                >
-                  Newcomer resources
-                </Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="border-white/70 bg-transparent font-semibold text-white hover:bg-white/10"
-              >
-                <Link
-                  to="/membership"
-                  onClick={() =>
-                    void trackClick('home_newcomer_join', '/membership')
-                  }
-                >
-                  Join the community
-                </Link>
-              </Button>
-            </div>
-          </div>
+            <span className="text-border" aria-hidden>
+              |
+            </span>
+            <Link
+              to="/contact"
+              data-testid="home-help-contact"
+              className="text-[15px] font-medium text-foreground/90 underline decoration-border underline-offset-4 transition hover:text-primary hover:decoration-primary"
+              onClick={() => void trackClick('home_help_contact', '/contact')}
+            >
+              Contact
+            </Link>
+          </nav>
         </div>
       </section>
     </>
