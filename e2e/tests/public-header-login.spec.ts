@@ -26,3 +26,34 @@ test.describe('public header login visibility', () => {
     expect(adminLinks).toEqual([])
   })
 })
+
+test.describe('auth return links', () => {
+  test('community feed sign-in preserves next path', async ({ page }) => {
+    await page.goto('/community-feed', { waitUntil: 'domcontentloaded' })
+    const link = page.getByTestId('community-feed-sign-in')
+    await expect(link).toBeVisible()
+    const href = await link.getAttribute('href')
+    expect(href).toContain('/login?next=')
+    expect(decodeURIComponent(href!.split('next=')[1] ?? '')).toContain('/community-feed')
+  })
+
+  test('event comments sign-in includes hash when event exists', async ({ page }) => {
+    await page.goto('/events', { waitUntil: 'domcontentloaded' })
+    const eventLink = page.locator('a[href^="/events/"]:not([href*="submit"])').first()
+    if ((await eventLink.count()) === 0) {
+      test.skip(true, 'No published events')
+    }
+    const href = await eventLink.getAttribute('href')
+    if (!href) test.skip(true, 'No event link')
+    await page.goto(href, { waitUntil: 'domcontentloaded' })
+    if (await page.getByRole('heading', { name: 'Event Not Found' }).isVisible()) {
+      test.skip(true, 'Event not found')
+    }
+    const signIn = page.getByTestId('event-comments-sign-in')
+    if ((await signIn.count()) === 0) {
+      test.skip(true, 'Already signed in or comments hidden')
+    }
+    const loginHref = await signIn.getAttribute('href')
+    expect(loginHref).toContain('%23comments')
+  })
+})

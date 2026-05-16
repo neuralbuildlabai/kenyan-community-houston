@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
+  Home,
   CalendarDays,
   Megaphone,
   Building2,
@@ -158,6 +159,15 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
               <div className="text-xs text-white/50 capitalize truncate">{profile.role.replace(/_/g, ' ')}</div>
             </div>
           </div>
+          <NavLink
+            to="/"
+            onClick={() => onNavigate?.()}
+            data-testid="admin-public-site"
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-white/85 hover:bg-white/10 hover:text-white"
+          >
+            <Home className="h-4 w-4 shrink-0" />
+            Public site
+          </NavLink>
           <NavLink
             to="/profile"
             onClick={() => onNavigate?.()}

@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Search, Download, ChevronDown, ChevronRight, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,14 +23,23 @@ const MEM_TYPES: MembershipType[] = ['individual', 'family_household', 'associat
 const MEM_STATUS: MembershipRecordStatus[] = ['pending', 'active', 'inactive', 'rejected']
 const DUES: DuesStatus[] = ['pending', 'paid', 'waived', 'overdue']
 
-const COL_COUNT = 14
+const COL_COUNT = 10
+
+function isGoodStanding(m: Member): boolean {
+  return m.membership_status === 'active' && (m.dues_status === 'paid' || m.dues_status === 'waived')
+}
 
 export function AdminMembersPage() {
+  const [searchParams] = useSearchParams()
   const [rows, setRows] = useState<MemberWithHousehold[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<string>('all')
-  const [memStatusFilter, setMemStatusFilter] = useState<string>('all')
+  const initialMemStatus =
+    searchParams.get('membershipStatus') ?? searchParams.get('filter') ?? 'all'
+  const [memStatusFilter, setMemStatusFilter] = useState<string>(
+    MEM_STATUS.includes(initialMemStatus as MembershipRecordStatus) ? initialMemStatus : 'all'
+  )
   const [duesFilter, setDuesFilter] = useState<string>('all')
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [detail, setDetail] = useState<MemberWithHousehold | null>(null)
@@ -52,6 +62,13 @@ export function AdminMembersPage() {
   useEffect(() => {
     load()
   }, [])
+
+  useEffect(() => {
+    const q = searchParams.get('membershipStatus') ?? searchParams.get('filter')
+    if (q && MEM_STATUS.includes(q as MembershipRecordStatus)) {
+      setMemStatusFilter(q)
+    }
+  }, [searchParams])
 
   const filtered = rows.filter((m) => {
     if (typeFilter !== 'all' && m.membership_type !== typeFilter) return false
@@ -189,20 +206,17 @@ export function AdminMembersPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-8" />
-              <TableHead>Name</TableHead>
-              <TableHead className="hidden lg:table-cell">Email</TableHead>
-              <TableHead className="hidden md:table-cell">Auth email</TableHead>
-              <TableHead className="hidden xl:table-cell">Phone</TableHead>
-              <TableHead className="hidden sm:table-cell text-center">HH</TableHead>
-              <TableHead className="hidden md:table-cell max-w-[140px]">Interests</TableHead>
-              <TableHead className="hidden lg:table-cell">Volunteer</TableHead>
-              <TableHead className="hidden lg:table-cell">Serve</TableHead>
-              <TableHead className="hidden md:table-cell">Type</TableHead>
+              <TableHead className="w-8 sticky left-0 z-10 bg-card" />
+              <TableHead className="sticky left-8 z-10 bg-card min-w-[9rem]">Name</TableHead>
+              <TableHead className="min-w-[10rem]">Email</TableHead>
               <TableHead>Membership</TableHead>
               <TableHead>Dues</TableHead>
-              <TableHead className="hidden sm:table-cell">Submitted</TableHead>
-              <TableHead className="text-right w-[72px]">View</TableHead>
+              <TableHead>Auth</TableHead>
+              <TableHead className="hidden sm:table-cell">Type</TableHead>
+              <TableHead>Standing</TableHead>
+              <TableHead className="hidden md:table-cell">Volunteer</TableHead>
+              <TableHead className="hidden md:table-cell">Serve</TableHead>
+              <TableHead className="text-right sticky right-0 z-10 bg-card w-[5.5rem]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -216,16 +230,16 @@ export function AdminMembersPage() {
               ))
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={COL_COUNT} className="text-center py-10 text-muted-foreground">
-                  No members match filters
+                <TableCell colSpan={COL_COUNT} className="text-center py-10 text-muted-foreground" data-testid="members-empty">
+                  {memStatusFilter === 'pending'
+                    ? 'No pending membership applications.'
+                    : 'No members match filters'}
                 </TableCell>
               </TableRow>
             ) : (
               filtered.map((m) => {
                 const open = !!expanded[m.id]
                 const hh = m.household_members ?? []
-                const interests = m.interests ?? []
-                const intLabel = interests.slice(0, 2).join(', ') + (interests.length > 2 ? '…' : '')
                 return (
                   <Fragment key={m.id}>
                     <TableRow>
@@ -242,34 +256,12 @@ export function AdminMembersPage() {
                           </Button>
                         ) : null}
                       </TableCell>
-                      <TableCell className="font-medium whitespace-nowrap">
+                      <TableCell className="font-medium whitespace-nowrap sticky left-8 z-[1] bg-card">
                         {m.first_name} {m.last_name}
-                        <div className="lg:hidden text-xs text-muted-foreground font-normal truncate max-w-[140px]">{m.email}</div>
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{m.email}</TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {m.auth_email_confirmed_at ? (
-                          <Badge variant="outline" className="font-normal">
-                            Verified
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">Unverified</Badge>
-                        )}
+                      <TableCell className="text-sm text-muted-foreground max-w-[12rem] truncate" title={m.email}>
+                        {m.email}
                       </TableCell>
-                      <TableCell className="hidden xl:table-cell text-sm">{m.phone ?? '—'}</TableCell>
-                      <TableCell className="hidden sm:table-cell text-center text-sm">{hh.length}</TableCell>
-                      <TableCell className="hidden md:table-cell text-xs text-muted-foreground max-w-[160px]">
-                        <span title={interests.join(', ')} className="line-clamp-2">
-                          {intLabel || '—'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <Badge variant={m.willing_to_volunteer ? 'default' : 'secondary'}>{m.willing_to_volunteer ? 'Yes' : 'No'}</Badge>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <Badge variant={m.willing_to_serve ? 'default' : 'secondary'}>{m.willing_to_serve ? 'Yes' : 'No'}</Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-sm">{m.membership_type.replace(/_/g, ' ')}</TableCell>
                       <TableCell>
                         <Select
                           value={m.membership_status}
@@ -304,12 +296,46 @@ export function AdminMembersPage() {
                           </SelectContent>
                         </Select>
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell text-xs text-muted-foreground whitespace-nowrap">
-                        {new Date(m.submitted_at).toLocaleString()}
+                      <TableCell>
+                        {m.auth_email_confirmed_at ? (
+                          <Badge variant="outline" className="font-normal text-xs">
+                            Verified
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs">
+                            Unverified
+                          </Badge>
+                        )}
                       </TableCell>
-                      <TableCell className="text-right p-1">
-                        <Button size="icon" variant="ghost" className="h-8 w-8" type="button" onClick={() => setDetail(m)} aria-label="View details">
-                          <Eye className="h-4 w-4" />
+                      <TableCell className="hidden sm:table-cell text-sm capitalize">
+                        {m.membership_type.replace(/_/g, ' ')}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={isGoodStanding(m) ? 'default' : 'secondary'} className="text-xs">
+                          {isGoodStanding(m) ? 'Yes' : 'No'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <Badge variant={m.willing_to_volunteer ? 'default' : 'secondary'} className="text-xs">
+                          {m.willing_to_volunteer ? 'Yes' : 'No'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <Badge variant={m.willing_to_serve ? 'default' : 'secondary'} className="text-xs">
+                          {m.willing_to_serve ? 'Yes' : 'No'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right p-1 sticky right-0 z-[1] bg-card">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 gap-1 text-xs"
+                          type="button"
+                          onClick={() => setDetail(m)}
+                          data-testid="member-view-details"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Details</span>
                         </Button>
                       </TableCell>
                     </TableRow>

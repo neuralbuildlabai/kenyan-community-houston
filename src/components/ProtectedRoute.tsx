@@ -40,7 +40,7 @@ export function ProtectedRoute({ children, requiredRoles }: ProtectedRouteProps)
   // (from AuthContext) and the role list check are intentional —
   // belt-and-braces.
   if (!user || !isAdmin || !isElevatedAdminRole(profile?.role)) {
-    const next = encodeURIComponent(`${location.pathname}${location.search}`)
+    const next = encodeURIComponent(`${location.pathname}${location.search}${location.hash}`)
     return <Navigate to={`/login?next=${next}`} replace />
   }
 
@@ -49,7 +49,7 @@ export function ProtectedRoute({ children, requiredRoles }: ProtectedRouteProps)
   }
 
   if (user && profile && requiresProfilePasswordRefresh(profile, user)) {
-    const next = encodeURIComponent(`${location.pathname}${location.search}`)
+    const next = encodeURIComponent(`${location.pathname}${location.search}${location.hash}`)
     return <Navigate to={`/change-password?next=${next}`} replace />
   }
 

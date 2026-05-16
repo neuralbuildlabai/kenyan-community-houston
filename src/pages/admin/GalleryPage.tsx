@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Upload, Trash2, Image as ImageIcon, Check, X, Archive, Star, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -67,7 +68,16 @@ function submitterLabel(row: GalleryImageRow): string {
 }
 
 export function AdminGalleryPage() {
+  const [searchParams] = useSearchParams()
   const { user } = useAuth()
+  const tabParam = searchParams.get('tab')
+  const statusParam = searchParams.get('status')
+  const activeGalleryTab =
+    tabParam === 'library' || tabParam === 'albums'
+      ? tabParam
+      : tabParam === 'review' || statusParam === 'pending'
+        ? 'review'
+        : 'review'
   const [albums, setAlbums] = useState<Album[]>([])
   const [images, setImages] = useState<GalleryImageRow[]>([])
   const [albumFilter, setAlbumFilter] = useState('all')
@@ -348,7 +358,7 @@ export function AdminGalleryPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="review">
+      <Tabs value={activeGalleryTab}>
         <TabsList>
           <TabsTrigger value="review">Review queue ({pendingRows.length})</TabsTrigger>
           <TabsTrigger value="library">Published ({publishedCount})</TabsTrigger>
@@ -357,8 +367,8 @@ export function AdminGalleryPage() {
 
         <TabsContent value="review" className="space-y-6 pt-4">
           {pendingRows.length === 0 ? (
-            <div className="rounded-xl border-2 border-dashed py-16 text-center text-muted-foreground">
-              No pending submissions
+            <div className="rounded-xl border-2 border-dashed py-16 text-center text-muted-foreground" data-testid="gallery-review-empty">
+              No pending gallery images.
             </div>
           ) : (
             <div className="space-y-4">

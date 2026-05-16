@@ -14,7 +14,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
-    const next = encodeURIComponent(`${location.pathname}${location.search}`)
+    const next = encodeURIComponent(`${location.pathname}${location.search}${location.hash}`)
     return <Navigate to={`/login?next=${next}`} replace />
   }
 

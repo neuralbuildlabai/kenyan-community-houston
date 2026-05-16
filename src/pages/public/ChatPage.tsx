@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import { loginNextFromLocation } from '@/lib/loginNext'
 import { Send, Lock, MessageSquare, ShieldCheck, ClipboardList } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
@@ -41,6 +42,7 @@ function mapCreateRequestError(message: string): string {
 }
 
 export function ChatPage() {
+  const location = useLocation()
   const { user, loading: authLoading } = useAuth()
   const [threads, setThreads] = useState<ChatThread[]>([])
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -251,7 +253,7 @@ export function ChatPage() {
               </CardHeader>
               <CardContent>
                 <Button asChild>
-                  <Link to="/login?next=%2Fchat">Sign in</Link>
+                  <Link to={loginNextFromLocation(location)} data-testid="chat-sign-in">Sign in</Link>
                 </Button>
               </CardContent>
             </Card>

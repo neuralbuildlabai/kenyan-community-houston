@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { MessageCircle, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,10 +13,24 @@ import { formatDate } from '@/lib/utils'
 const STATUSES = ['pending', 'approved', 'hidden', 'removed'] as const
 
 export function AdminEventCommentsPage() {
+  const [searchParams] = useSearchParams()
+  const statusParam = searchParams.get('status')
+  const initialFilter =
+    statusParam && (STATUSES as readonly string[]).includes(statusParam)
+      ? (statusParam as (typeof STATUSES)[number])
+      : statusParam === 'all'
+        ? 'all'
+        : 'pending'
   const [rows, setRows] = useState<EventComment[]>([])
   const [eventsById, setEventsById] = useState<Record<string, { title: string; slug: string }>>({})
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<(typeof STATUSES)[number] | 'all'>('pending')
+  const [filter, setFilter] = useState<(typeof STATUSES)[number] | 'all'>(initialFilter)
+
+  useEffect(() => {
+    if (statusParam && ((STATUSES as readonly string[]).includes(statusParam) || statusParam === 'all')) {
+      setFilter(statusParam as (typeof STATUSES)[number] | 'all')
+    }
+  }, [statusParam])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -103,7 +117,9 @@ export function AdminEventCommentsPage() {
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : empty ? (
-            <p className="text-sm text-muted-foreground py-12 text-center border border-dashed rounded-lg">No comments in this view.</p>
+            <p className="text-sm text-muted-foreground py-12 text-center border border-dashed rounded-lg" data-testid="event-comments-admin-empty">
+              {filter === 'pending' ? 'No event comments awaiting moderation.' : 'No comments in this view.'}
+            </p>
           ) : (
             <div className="space-y-4">
               {rows.map((c) => {

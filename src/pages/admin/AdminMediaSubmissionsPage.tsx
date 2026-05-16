@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Eye, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,8 +15,15 @@ type Row = MemberMediaSubmission & { submitter_email?: string | null; submitter_
 const STATUSES: MemberMediaSubmissionStatus[] = ['pending', 'approved', 'rejected', 'archived']
 
 export function AdminMediaSubmissionsPage() {
+  const [searchParams] = useSearchParams()
+  const statusFilter = searchParams.get('status')
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
+
+  const displayed = useMemo(() => {
+    if (statusFilter === 'pending') return rows.filter((r) => r.status === 'pending')
+    return rows
+  }, [rows, statusFilter])
 
   async function load() {
     setLoading(true)
@@ -95,14 +102,14 @@ export function AdminMediaSubmissionsPage() {
                   <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                 </TableCell>
               </TableRow>
-            ) : rows.length === 0 ? (
+            ) : displayed.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
-                  No submissions yet
+                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground" data-testid="media-submissions-empty">
+                  {statusFilter === 'pending' ? 'No pending media submissions.' : 'No submissions yet'}
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((r) => (
+              displayed.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-medium max-w-[180px]">
                     <div className="truncate">{r.title}</div>

@@ -196,15 +196,39 @@ export function AdminDashboardPage() {
 
   const statTiles = stats
     ? [
-        { label: 'Members', value: stats.members_total, sub: `${stats.members_pending} pending apps`, href: '/admin/members', Icon: Users },
+        {
+          label: 'Members',
+          value: stats.members_total,
+          sub: `${stats.members_pending} pending apps`,
+          href: stats.members_pending > 0 ? '/admin/members?membershipStatus=pending' : '/admin/members',
+          Icon: Users,
+        },
         { label: 'Profiles (accounts)', value: stats.profiles_total, sub: 'Directory accounts', href: '/admin/users', Icon: Users },
         { label: 'Events published', value: stats.events_published, sub: `${stats.events_pending} pending`, href: '/admin/calendar', Icon: Calendar },
         { label: 'Announcements', value: stats.announcements_published, sub: `${stats.announcements_pending} pending`, href: '/admin/announcements', Icon: Megaphone },
         { label: 'Businesses listed', value: stats.businesses_published, sub: `${stats.businesses_pending} pending`, href: '/admin/businesses', Icon: Building2 },
         { label: 'Fundraisers live', value: stats.fundraisers_active, sub: `${stats.fundraisers_pending} pending`, href: '/admin/fundraisers', Icon: Heart },
-        { label: 'Gallery pending', value: stats.gallery_pending, sub: 'Images awaiting review', href: '/admin/gallery', Icon: Image },
-        { label: 'Media submissions', value: stats.media_submissions_pending, sub: 'Member uploads', href: '/admin/media-submissions', Icon: Image },
-        { label: 'New contact messages', value: stats.contacts_new, sub: 'Status = new', href: '/admin/contacts', Icon: MessageSquare },
+        {
+          label: 'Gallery pending',
+          value: stats.gallery_pending,
+          sub: 'Images awaiting review',
+          href: stats.gallery_pending > 0 ? '/admin/gallery?tab=review' : '/admin/gallery',
+          Icon: Image,
+        },
+        {
+          label: 'Media submissions',
+          value: stats.media_submissions_pending,
+          sub: 'Member uploads',
+          href: stats.media_submissions_pending > 0 ? '/admin/media-submissions?status=pending' : '/admin/media-submissions',
+          Icon: Image,
+        },
+        {
+          label: 'New contact messages',
+          value: stats.contacts_new,
+          sub: 'Status = new',
+          href: stats.contacts_new > 0 ? '/admin/contacts?status=new' : '/admin/contacts',
+          Icon: MessageSquare,
+        },
       ]
     : []
 
@@ -226,7 +250,7 @@ export function AdminDashboardPage() {
           <div className="flex flex-col sm:flex-row gap-2 shrink-0">
             {needsAttention > 0 && (
               <Button asChild variant="default" className="gap-2 shadow-md">
-                <Link to="/admin/submissions">
+                <Link to="/admin/dashboard#needs-attention">
                   <Clock className="h-4 w-4" />
                   {needsAttention} items need attention
                 </Link>
@@ -270,18 +294,46 @@ export function AdminDashboardPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 border-amber-200/60 bg-gradient-to-br from-amber-50/90 via-card to-background">
+        <Card
+          id="needs-attention"
+          className="lg:col-span-2 border-amber-200/60 bg-gradient-to-br from-amber-50/90 via-card to-background scroll-mt-6"
+        >
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Inbox className="h-4 w-4 text-amber-700" /> Needs attention
             </CardTitle>
           </CardHeader>
           <CardContent className="grid sm:grid-cols-2 gap-3 text-sm">
-            <AttentionRow label="Pending submissions (events, announcements, businesses, fundraisers)" value={totalPendingReview} href="/admin/submissions" />
-            <AttentionRow label="Pending membership applications" value={stats?.members_pending ?? 0} href="/admin/members" />
-            <AttentionRow label="Gallery / image queue" value={stats?.gallery_pending ?? 0} href="/admin/gallery" />
-            <AttentionRow label="Member media submissions" value={stats?.media_submissions_pending ?? 0} href="/admin/media-submissions" />
-            <AttentionRow label="Unread contact messages" value={stats?.contacts_new ?? 0} href="/admin/contacts" />
+            <AttentionRow
+              label="Pending submissions (events, announcements, businesses, fundraisers)"
+              value={totalPendingReview}
+              href="/admin/submissions?status=pending"
+              emptyLabel="No pending submissions."
+            />
+            <AttentionRow
+              label="Pending membership applications"
+              value={stats?.members_pending ?? 0}
+              href="/admin/members?membershipStatus=pending"
+              emptyLabel="No pending membership applications."
+            />
+            <AttentionRow
+              label="Gallery / image queue"
+              value={stats?.gallery_pending ?? 0}
+              href="/admin/gallery?tab=review"
+              emptyLabel="No pending gallery images."
+            />
+            <AttentionRow
+              label="Member media submissions"
+              value={stats?.media_submissions_pending ?? 0}
+              href="/admin/media-submissions?status=pending"
+              emptyLabel="No pending media submissions."
+            />
+            <AttentionRow
+              label="Unread contact messages"
+              value={stats?.contacts_new ?? 0}
+              href="/admin/contacts?status=new"
+              emptyLabel="No unread contact messages."
+            />
           </CardContent>
         </Card>
 
@@ -422,10 +474,22 @@ export function AdminDashboardPage() {
   )
 }
 
-function AttentionRow({ label, value, href }: { label: string; value: number; href: string }) {
+function AttentionRow({
+  label,
+  value,
+  href,
+  emptyLabel,
+}: {
+  label: string
+  value: number
+  href: string
+  emptyLabel: string
+}) {
   return (
     <Link
       to={href}
+      data-testid={`attention-${href.split('?')[0]?.replace('/admin/', '') ?? 'link'}`}
+      title={value === 0 ? emptyLabel : undefined}
       className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/80 px-3 py-2.5 hover:border-primary/25 transition-colors"
     >
       <span className="text-muted-foreground leading-snug">{label}</span>

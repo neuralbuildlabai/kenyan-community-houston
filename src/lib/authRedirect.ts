@@ -34,9 +34,15 @@ const MEMBER_SAFE_PREFIXES = [
   '/community-feed',
 ]
 
+function pathWithoutHash(path: string): string {
+  const i = path.indexOf('#')
+  return i === -1 ? path : path.slice(0, i)
+}
+
 function isMemberSafePath(path: string): boolean {
-  if (path === '/' || path === '') return true
-  return MEMBER_SAFE_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`))
+  const base = pathWithoutHash(path)
+  if (base === '/' || base === '') return true
+  return MEMBER_SAFE_PREFIXES.some((p) => base === p || base.startsWith(`${p}/`))
 }
 
 /**

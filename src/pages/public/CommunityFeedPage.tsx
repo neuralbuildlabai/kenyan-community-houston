@@ -22,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import { formatDate } from '@/lib/utils'
 import { getBrowserOrigin } from '@/lib/siteOrigin'
+import { loginNextFromLocation } from '@/lib/loginNext'
 import type { CommunityFeedCommentListRow, CommunityFeedPostListRow } from '@/lib/communityFeed'
 import { mapFeedRpcError } from '@/lib/communityFeed'
 import { FEED_POST_TYPES, feedPostTypeLabel, APP_NAME } from '@/lib/constants'
@@ -313,14 +314,16 @@ export function CommunityFeedPage() {
           </CardHeader>
           <CardContent>
             <Button asChild>
-              <Link to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`}>Sign in</Link>
+              <Link to={loginNextFromLocation(location, { hash: '#community-feed-composer' })} data-testid="community-feed-sign-in">
+                Sign in
+              </Link>
             </Button>
           </CardContent>
         </Card>
       )}
 
       {user && canEngage && (
-        <Card>
+        <Card id="community-feed-composer" className="scroll-mt-24">
           <CardHeader>
             <CardTitle className="text-lg">Share with the community</CardTitle>
             <CardDescription>
@@ -514,7 +517,7 @@ export function CommunityFeedPage() {
                     </div>
                   ) : !user ? (
                     <p className="text-sm text-muted-foreground">
-                      <Link className="text-primary underline" to={`/login?next=${encodeURIComponent(location.pathname)}`}>
+                      <Link className="text-primary underline" to={loginNextFromLocation(location)} data-testid="community-feed-comment-sign-in">
                         Sign in
                       </Link>{' '}
                       as an approved member to comment.

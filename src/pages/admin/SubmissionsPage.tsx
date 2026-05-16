@@ -238,7 +238,7 @@ export function AdminSubmissionsPage() {
                     <TableRow>
                       <TableCell colSpan={colCount(type)} className="text-center py-12">
                         <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                        <p className="text-muted-foreground">No pending {type}</p>
+                        <p className="text-muted-foreground" data-testid="submissions-pending-empty">No pending submissions.</p>
                       </TableCell>
                     </TableRow>
                   ) : (

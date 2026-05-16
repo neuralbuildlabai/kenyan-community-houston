@@ -170,7 +170,10 @@ export function LoginPage() {
           </form>
           <p className="text-center text-sm text-muted-foreground">
             New to KIGH?{' '}
-            <Link to="/membership" className="text-primary font-medium underline-offset-4 hover:underline">
+            <Link
+              to={nextPath ? `/membership?next=${encodeURIComponent(nextPath)}` : '/membership'}
+              className="text-primary font-medium underline-offset-4 hover:underline"
+            >
               Membership registration
             </Link>
           </p>

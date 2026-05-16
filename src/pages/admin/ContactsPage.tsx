@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Mail, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -31,6 +32,8 @@ function isReadFromStatus(item: { status?: string | null; is_read?: boolean | nu
 }
 
 export function AdminContactsPage() {
+  const [searchParams] = useSearchParams()
+  const statusFilter = searchParams.get('status')
   const [items, setItems] = useState<ContactSubmission[]>([])
   const [selected, setSelected] = useState<ContactSubmission | null>(null)
   const [loading, setLoading] = useState(true)
@@ -68,13 +71,24 @@ export function AdminContactsPage() {
     setDeleteId(null)
   }
 
+  const displayed = useMemo(() => {
+    if (statusFilter === 'new') return items.filter((i) => !isReadFromStatus(i))
+    if (statusFilter && statusFilter !== 'all') {
+      return items.filter((i) => (i.status ?? 'new') === statusFilter)
+    }
+    return items
+  }, [items, statusFilter])
+
   const unread = items.filter((i) => !isReadFromStatus(i)).length
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Contact Messages</h1>
-        <p className="text-muted-foreground text-sm">{items.length} total{unread > 0 ? ` · ${unread} unread` : ''}</p>
+        <p className="text-muted-foreground text-sm">
+          {items.length} total{unread > 0 ? ` · ${unread} unread` : ''}
+          {statusFilter === 'new' ? ' · showing new only' : ''}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -93,9 +107,13 @@ export function AdminContactsPage() {
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}><TableCell colSpan={4}><div className="h-8 bg-muted animate-pulse rounded" /></TableCell></TableRow>
                 ))
-              ) : items.length === 0 ? (
-                <TableRow><TableCell colSpan={4} className="text-center py-10 text-muted-foreground">No messages</TableCell></TableRow>
-              ) : items.map((item) => {
+              ) : displayed.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-10 text-muted-foreground" data-testid="contacts-empty">
+                    {statusFilter === 'new' ? 'No unread contact messages.' : 'No messages'}
+                  </TableCell>
+                </TableRow>
+              ) : displayed.map((item) => {
                 const read = isReadFromStatus(item)
                 return (
                 <TableRow

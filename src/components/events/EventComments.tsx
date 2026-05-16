@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { loginNextFromLocation } from '@/lib/loginNext'
 import { MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -117,7 +118,11 @@ export function EventComments({ eventId }: Props) {
   }
 
   return (
-    <section className="rounded-2xl border border-border/80 bg-card/40 shadow-sm overflow-hidden" aria-labelledby="event-comments-heading">
+    <section
+      id="comments"
+      className="rounded-2xl border border-border/80 bg-card/40 shadow-sm overflow-hidden scroll-mt-24"
+      aria-labelledby="event-comments-heading"
+    >
       <Card className="border-0 shadow-none rounded-none">
         <CardHeader className="border-b bg-muted/25">
           <CardTitle id="event-comments-heading" className="text-lg flex items-center gap-2">
@@ -157,7 +162,7 @@ export function EventComments({ eventId }: Props) {
                     Questions are reviewed before they appear publicly so the community can stay informed safely.
                   </p>
                   <Button asChild size="sm">
-                    <Link to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`}>
+                    <Link to={loginNextFromLocation(location, { hash: '#comments' })} data-testid="event-comments-sign-in">
                       Sign in
                     </Link>
                   </Button>
