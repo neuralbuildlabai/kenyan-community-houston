@@ -14,6 +14,45 @@ test.describe('calendar & seeded events', () => {
     await expect(page.getByRole('button', { name: 'All' }).first()).toBeVisible()
   })
 
+  test('monthly calendar grid loads with current month', async ({ page }) => {
+    await page.goto('/calendar')
+    await expect(page.getByTestId('calendar-month-grid')).toBeVisible()
+    const expectedMonth = await page.evaluate(() => {
+      const now = new Date()
+      return now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    })
+    await expect(page.getByTestId('calendar-month-label')).toHaveText(expectedMonth)
+  })
+
+  test('clicking a date updates URL query', async ({ page }) => {
+    await page.goto('/calendar')
+    const dateKey = await page.evaluate(() => {
+      const d = new Date()
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${y}-${m}-${day}`
+    })
+    await page.getByTestId(`calendar-day-${dateKey}`).click()
+    await expect(page).toHaveURL(new RegExp(`date=${dateKey.replace(/-/g, '\\-')}`))
+    await expect(page.getByTestId('calendar-selected-date-banner')).toBeVisible()
+    await page.getByTestId('calendar-clear-date').click()
+    await expect(page).not.toHaveURL(/date=/)
+  })
+
+  test('July shows Independence Day holiday marker', async ({ page }) => {
+    await page.goto('/calendar?date=2026-07-04')
+    const julyFourth = page.getByTestId('calendar-day-2026-07-04')
+    await expect(julyFourth).toBeVisible()
+    await expect(julyFourth).toHaveAttribute('aria-label', /Independence Day/i)
+  })
+
+  test('date with no events shows empty state', async ({ page }) => {
+    await page.goto('/calendar?date=2099-01-15')
+    await expect(page.getByTestId('calendar-date-empty')).toBeVisible()
+    await expect(page.getByText('No community events listed for this date.')).toBeVisible()
+  })
+
   test('Family Fun Day when seeded', async ({ page }) => {
     await page.goto('/calendar')
     const fun = page.getByRole('link', { name: /KIGH Family Fun Day/i })
