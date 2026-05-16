@@ -56,9 +56,11 @@ test.describe('public phone input sanitization', () => {
     await expect(phone).toHaveValue(SANITIZED_PUBLIC_PHONE)
   })
 
-  test('events volunteer — phone strips to digits when signup is open', async ({ page }) => {
+  test('events volunteer — logged-out visitor: phone strips to digits when signup is open', async ({ page }) => {
     const slug = process.env.E2E_OPEN_VOLUNTEER_EVENT_SLUG ?? DEFAULT_VOLUNTEER_EVENT_SLUG
     await page.goto(`/events/${slug}/volunteer`, { waitUntil: 'networkidle' })
+
+    await expectPublicVolunteerSignupPath(page, slug)
 
     const nameInput = page.locator('#vol-name')
     const notOpen = page.getByText('Volunteer signup is not open for this event.')
@@ -77,9 +79,15 @@ test.describe('public phone input sanitization', () => {
       test.skip(true, `Volunteer phone sanitization skipped: volunteer signup has closed for slug "${slug}".`)
     }
 
+    await expectPublicVolunteerSignupPath(page, slug)
+    await expect(page.getByRole('heading', { name: /Volunteer for this event/i })).toBeVisible()
+
     const phone = page.locator('#vol-phone')
     await expect(phone).toBeVisible()
-    await phone.fill(DIRTY_PUBLIC_PHONE)
+    await phone.click()
+    await phone.fill('')
+    await phone.pressSequentially(DIRTY_PUBLIC_PHONE, { delay: 5 })
     await expect(phone).toHaveValue(SANITIZED_PUBLIC_PHONE)
+    await expectPublicVolunteerSignupPath(page, slug)
   })
 })

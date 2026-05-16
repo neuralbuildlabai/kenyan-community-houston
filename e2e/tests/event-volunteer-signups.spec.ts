@@ -2,10 +2,13 @@ import { test, expect } from '@playwright/test'
 import { ALL_PUBLIC_NAV } from '../../src/lib/publicNav'
 import { hasAdminCredentials } from '../helpers/env'
 import { loginAsAdmin } from '../helpers/auth'
+import { expectPublicVolunteerSignupPath } from '../helpers/publicVolunteerRoute'
 
 test.describe('event volunteer signups', () => {
   test('volunteer route: unknown slug is graceful', async ({ page }) => {
-    await page.goto('/events/__no_such_event_slug_kigh_uat__/volunteer', { waitUntil: 'domcontentloaded' })
+    const slug = '__no_such_event_slug_kigh_uat__'
+    await page.goto(`/events/${slug}/volunteer`, { waitUntil: 'domcontentloaded' })
+    await expectPublicVolunteerSignupPath(page, slug)
     await expect(page.getByRole('heading', { name: /Event not found/i })).toBeVisible()
   })
 
@@ -29,9 +32,12 @@ test.describe('event volunteer signups', () => {
   })
 
   test('volunteer form: name, phone, consent, and phone validation when signup is open', async ({ page }) => {
-    await page.goto('/events/kigh-financial-literacy-session-2026-04-24/volunteer', {
+    const slug = 'kigh-financial-literacy-session-2026-04-24'
+    await page.goto(`/events/${slug}/volunteer`, {
       waitUntil: 'networkidle',
     })
+    await expectPublicVolunteerSignupPath(page, slug)
+
     const nameInput = page.locator('#vol-name')
     const notOpen = page.getByText('Volunteer signup is not open for this event.')
     const closed = page.getByText('Volunteer signup has closed for this event.')
@@ -40,6 +46,8 @@ test.describe('event volunteer signups', () => {
     if (await notOpen.isVisible()) return
     if (await closed.isVisible()) return
     if (await notFound.isVisible()) return
+
+    await expectPublicVolunteerSignupPath(page, slug)
 
     await nameInput.fill(' ')
     await page.locator('#vol-phone').fill('+15551234567')

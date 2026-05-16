@@ -37,6 +37,14 @@ function rpcErrorToMessage(err: { message?: string } | null): string {
   return raw || 'Something went wrong. Please try again.'
 }
 
+/**
+ * Public volunteer signup (`/events/:slug/volunteer`).
+ *
+ * Volunteers do not need to be members. No login, membership registration, or approved
+ * member status is required when the event is published, volunteer signup is enabled,
+ * and signup is still open (if a close date is set). Organizer/admin tools handle PII;
+ * volunteer phone numbers are not shown on the public event page.
+ */
 export function EventVolunteerSignupPage() {
   const { slug } = useParams<{ slug: string }>()
   const [event, setEvent] = useState<Event | null>(null)
