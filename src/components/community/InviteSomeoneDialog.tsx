@@ -129,7 +129,7 @@ export function InviteSomeoneDialog({
               your invite on public pages.
             </p>
             <Button asChild>
-              <Link to="/login?next=%2Fchat">Sign in</Link>
+              <Link to="/login?next=%2Fchat" data-testid="invite-sign-in">Sign in</Link>
             </Button>
           </div>
         ) : (
