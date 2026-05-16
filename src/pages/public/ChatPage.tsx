@@ -216,6 +216,17 @@ export function ChatPage() {
         description="Ask questions and connect with the Kenyan community in Houston. Members can start a conversation with the community team."
       />
 
+      <div className="relative overflow-hidden min-h-[50vh]">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[url('/kigh-media/backgrounds/communitychat.png')] bg-cover bg-center opacity-[0.16]"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/90 via-[#faf7ef]/90 to-white/95"
+        />
+        <div className="relative z-10">
+
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="mb-8 max-w-2xl">
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80">
@@ -240,7 +251,7 @@ export function ChatPage() {
 
         {!user && (
           <div className="space-y-6">
-            <Card className="border-primary/20 shadow-sm">
+            <Card className="border-primary/20 bg-white/85 backdrop-blur-sm shadow-sm">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Lock className="h-5 w-5 text-muted-foreground" />
@@ -260,7 +271,7 @@ export function ChatPage() {
             <section
               data-testid="chat-about-public"
               aria-labelledby="chat-about-heading"
-              className="rounded-2xl border border-border/60 bg-card p-6 sm:p-7 shadow-sm"
+              className="rounded-2xl border border-border/60 bg-white/85 backdrop-blur-sm p-6 sm:p-7 shadow-sm"
             >
               <h2
                 id="chat-about-heading"
@@ -304,7 +315,7 @@ export function ChatPage() {
         )}
 
         {user && !loadingThreads && activeThread && (
-          <Card className="border-primary/15 shadow-sm">
+          <Card className="border-primary/15 bg-white/85 backdrop-blur-sm shadow-sm">
             <CardHeader className="border-b bg-muted/20">
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -397,7 +408,7 @@ export function ChatPage() {
         )}
 
         {user && !loadingThreads && !activeThread && (
-          <Card className="shadow-sm border-primary/10">
+          <Card className="shadow-sm border-primary/10 bg-white/85 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-lg">Start a Request</CardTitle>
               <CardDescription>
@@ -455,7 +466,7 @@ export function ChatPage() {
         )}
 
         {user && !loadingThreads && threads.filter((t) => !isChatThreadActive(t.status)).length > 0 && (
-          <Card>
+          <Card className="bg-white/85 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-base">Past requests</CardTitle>
               <CardDescription>Closed or archived threads for your account.</CardDescription>
@@ -478,6 +489,8 @@ export function ChatPage() {
           </Card>
         )}
         </div>
+      </div>
+      </div>
       </div>
 
       <ConfirmDialog
