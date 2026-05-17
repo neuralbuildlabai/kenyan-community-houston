@@ -195,6 +195,10 @@ create policy "Public can read gallery albums"
     )
   );
 
+-- Allow public gallery submissions through PostgREST while RLS keeps rows constrained.
+grant insert on public.gallery_images to anon, authenticated;
+grant select on public.gallery_images to anon, authenticated;
+
 -- ─── 7. gallery_images: public may insert pending submissions
 drop policy if exists "Public may submit pending gallery images" on public.gallery_images;
 
