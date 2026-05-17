@@ -88,7 +88,7 @@ export function AdminSystemHealthPage() {
               <span className="font-medium">{APP_ENV_LABEL[appEnv]}</span> ({appEnv})
             </p>
             <p>
-              <span className="text-muted-foreground">Supabase host:</span>{' '}
+              <span className="text-muted-foreground">Database host:</span>{' '}
               <span className="font-mono text-xs break-all">{supabaseHost()}</span>
             </p>
             <p>

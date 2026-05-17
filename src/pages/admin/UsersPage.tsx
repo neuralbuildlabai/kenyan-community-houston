@@ -169,7 +169,7 @@ export function AdminUsersPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold">Admin Users</h1>
-        <p className="text-muted-foreground text-sm">Create accounts via the Edge Function (service role). Never paste the service key in the browser.</p>
+        <p className="text-muted-foreground text-sm">Create or revoke admin accounts. New accounts must change their password on first sign-in.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -282,9 +282,9 @@ export function AdminUsersPage() {
                       </SelectContent>
                     </Select>
                     <p className="text-[11px] text-muted-foreground">
-                      Only roles you may assign are listed. Server-side
-                      governance ({profile?.role ?? 'unknown'}) is enforced
-                      by the create-admin-user Edge Function.
+                      Only roles you may assign are listed. Role assignment
+                      is enforced server-side based on your account
+                      ({profile?.role ?? 'unknown'}).
                     </p>
                   </div>
                   <div className="space-y-1.5">

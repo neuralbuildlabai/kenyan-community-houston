@@ -29,8 +29,8 @@ export async function formatEdgeFunctionInvokeError(
 
   const raw = error?.message ?? ''
   if (/failed to fetch|cors|network/i.test(raw)) {
-    return `Could not reach ${functionName}. Deploy the Edge Function and ensure CORS allows this site.`
+    return 'Could not reach the server. Check your connection and try again, or contact support if the problem continues.'
   }
 
-  return raw || `Could not reach ${functionName}.`
+  return raw || 'Could not reach the server. Please try again.'
 }

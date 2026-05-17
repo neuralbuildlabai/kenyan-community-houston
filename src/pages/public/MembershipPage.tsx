@@ -496,7 +496,7 @@ export function MembershipPage() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg">Account setup</CardTitle>
                     <CardDescription className="text-sm">
-                      Google or email and password (stored by Supabase Auth).
+                      Sign in with Google, or create an account using your email and a password.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -517,7 +517,7 @@ export function MembershipPage() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg">Account setup</CardTitle>
                     <CardDescription className="text-sm">
-                      Email and password (stored by Supabase Auth).
+                      Create an account using your email and a password.
                     </CardDescription>
                   </CardHeader>
                 </Card>
@@ -761,8 +761,7 @@ export function MembershipPage() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg">Password *</CardTitle>
                     <CardDescription className="text-sm">
-                      6–16 characters with uppercase, lowercase, number, and symbol. Stored by
-                      Supabase Auth.
+                      6–16 characters with uppercase, lowercase, number, and symbol.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="grid gap-4 sm:grid-cols-2">

@@ -286,7 +286,7 @@ export function AdminResourcesPage() {
         <div>
           <h1 className="text-2xl font-bold">Resource library</h1>
           <p className="text-muted-foreground text-sm">
-            Manage documents, links, and access levels. Private files use Supabase Storage ({KIGH_PRIVATE_DOCUMENTS_BUCKET}); downloads use short-lived signed URLs.
+            Manage documents, links, and access levels. Private files are stored securely and downloaded through short-lived signed links.
           </p>
         </div>
         <Button className="gap-2 shrink-0" onClick={openCreate}>
@@ -499,10 +499,10 @@ export function AdminResourcesPage() {
             <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Upload className="h-4 w-4" />
-                Private file (Supabase Storage)
+                Private file
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Uploads go to the secure bucket <code className="text-[11px]">{KIGH_PRIVATE_DOCUMENTS_BUCKET}</code>. Set access to{' '}
+                Uploads go to a secure private storage area. Set access to{' '}
                 <strong>admin_only</strong> before saving with an upload. Public site paths are cleared when a private file is attached. Signed download links expire in{' '}
                 {PRIVATE_SIGNED_URL_EXPIRY_SEC / 60} minutes.
               </p>

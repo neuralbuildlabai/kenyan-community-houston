@@ -48,7 +48,7 @@ export function PrivacyPage() {
 
           <h2 className="text-xl font-semibold text-foreground">4. Data Storage</h2>
           <p>
-            Your data is stored securely using Supabase (hosted on AWS). We implement reasonable security measures to protect your information.
+            Your data is stored securely with industry-standard encryption in transit and at rest, on infrastructure operated by established cloud providers. We implement reasonable administrative, technical, and physical safeguards to protect your information.
           </p>
 
           <h2 className="text-xl font-semibold text-foreground">5. Cookies</h2>
