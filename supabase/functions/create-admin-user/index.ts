@@ -2,8 +2,6 @@ import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supa
 import { errorJson } from '../_shared/apiErrors.ts'
 import {
   buildAdminUserProfilesRow,
-  buildAdminUsersRow,
-  buildCallerAdminLookupOrFilter,
   buildProfilesRow,
   isAuthUserAlreadyRegistered,
   resolveCallerRole,
@@ -119,9 +117,15 @@ export async function findAuthUserByEmail(
 }
 
 Deno.serve(async (req) => {
+  const reqId = crypto.randomUUID().slice(0, 8)
+  const log = (...args: unknown[]) => console.log(`[create-admin-user ${reqId}]`, ...args)
+  const logErr = (...args: unknown[]) => console.error(`[create-admin-user ${reqId}]`, ...args)
+
   try {
     const preflight = handleCorsPreflight(req)
     if (preflight) return preflight
+
+    log('method', req.method, 'origin', req.headers.get('Origin'))
 
     if (req.method !== 'POST') {
       return errorJson(req, 405, 'method_not_allowed', 'Method not allowed')
@@ -159,50 +163,65 @@ Deno.serve(async (req) => {
 
     const { data: userData, error: userErr } = await adminClient.auth.getUser(jwt)
     if (userErr || !userData?.user) {
+      logErr('getUser failed', userErr?.message)
       return errorJson(req, 401, 'unauthorized', 'Unauthorized', userErr?.message)
     }
 
     const callerId = userData.user.id
     const callerEmail = (userData.user.email ?? '').trim().toLowerCase()
+    log('caller', callerId, callerEmail)
 
-    const { data: callerAdminRow, error: callerAdminErr } = await adminClient
-      .from('admin_users')
-      .select('id, email, role')
-      .or(buildCallerAdminLookupOrFilter(callerId, callerEmail))
-      .limit(1)
-      .maybeSingle()
+    let callerAdminRow: { id?: string; email?: string | null; role?: string | null } | null = null
+    let callerRole = ''
 
-    if (callerAdminErr) {
-      return errorJson(
-        req,
-        500,
-        'CALLER_PERMISSION_LOOKUP_FAILED',
-        'Unable to verify caller permissions.',
-        callerAdminErr.message
-      )
-    }
-
-    let profileRole: string | null = null
-    if (!callerAdminRow) {
-      const { data: profileRow, error: profileErr } = await adminClient
-        .from('profiles')
-        .select('role')
+    // Production bootstrap/admin safety:
+    // This account is the approved KIGH super admin. Do not depend on the admin_users view
+    // or legacy profiles table for this known account because profiles may not exist and
+    // admin_users may be a view in this project.
+    if (callerEmail === 'admin@kenyancommunityhouston.org') {
+      callerAdminRow = { id: callerId, email: callerEmail, role: 'super_admin' }
+      callerRole = 'super_admin'
+    } else {
+      const { data: callerAdminById, error: callerAdminByIdErr } = await adminClient
+        .from('admin_users')
+        .select('id, email, role')
         .eq('id', callerId)
         .maybeSingle()
 
-      if (profileErr) {
+      if (callerAdminByIdErr) {
         return errorJson(
           req,
           500,
           'CALLER_PERMISSION_LOOKUP_FAILED',
           'Unable to verify caller permissions.',
-          profileErr.message
+          callerAdminByIdErr.message
         )
       }
-      profileRole = (profileRow?.role as string | undefined) ?? null
-    }
 
-    const callerRole = resolveCallerRole(callerAdminRow, profileRole)
+      callerAdminRow = callerAdminById
+
+      if (!callerAdminRow && callerEmail) {
+        const { data: callerAdminByEmail, error: callerAdminByEmailErr } = await adminClient
+          .from('admin_users')
+          .select('id, email, role')
+          .eq('email', callerEmail)
+          .maybeSingle()
+
+        if (callerAdminByEmailErr) {
+          return errorJson(
+            req,
+            500,
+            'CALLER_PERMISSION_LOOKUP_FAILED',
+            'Unable to verify caller permissions.',
+            callerAdminByEmailErr.message
+          )
+        }
+
+        callerAdminRow = callerAdminByEmail
+      }
+
+      callerRole = resolveCallerRole(callerAdminRow, null)
+    }
 
     if (!callerAdminRow && !callerRole) {
       return errorJson(
@@ -269,6 +288,7 @@ Deno.serve(async (req) => {
     let uid: string
     let authUserCreated = false
 
+    log('auth.createUser begin', email)
     const { data: created, error: createErr } = await adminClient.auth.admin.createUser({
       email,
       password: temporaryPassword,
@@ -278,6 +298,7 @@ Deno.serve(async (req) => {
 
     if (createErr || !created?.user) {
       const createMessage = createErr?.message ?? 'Unknown auth error'
+      log('auth.createUser failed', createMessage)
       if (!isAuthUserAlreadyRegistered(createMessage)) {
         return errorJson(
           req,
@@ -293,10 +314,12 @@ Deno.serve(async (req) => {
         existing = await findAuthUserByEmail(adminClient, email)
       } catch (lookupErr) {
         const details = lookupErr instanceof Error ? lookupErr.message : String(lookupErr)
+        logErr('findAuthUserByEmail threw', details)
         return errorJson(req, 500, 'auth_lookup_failed', 'Unable to look up existing account', details)
       }
 
       if (!existing) {
+        logErr('user not found via listUsers despite already-registered error')
         return errorJson(
           req,
           409,
@@ -307,12 +330,14 @@ Deno.serve(async (req) => {
       }
 
       uid = existing.id
+      log('reusing existing auth user', uid)
       const { error: updateErr } = await adminClient.auth.admin.updateUserById(uid, {
         password: temporaryPassword,
         email_confirm: true,
         user_metadata: { role: newRole },
       })
       if (updateErr) {
+        logErr('updateUserById failed', updateErr.message)
         return errorJson(
           req,
           400,
@@ -324,72 +349,31 @@ Deno.serve(async (req) => {
     } else {
       uid = created.user.id
       authUserCreated = true
+      log('auth user created', uid)
     }
 
-    const adminUsersRow = buildAdminUsersRow({
+    // `admin_users` is a join view (see migration 010), so it is not directly
+    // upsertable. The view reflects:
+    //   profiles.role         → role/email/display columns
+    //   admin_user_profiles.* → security metadata + display_name + position_title
+    // We therefore write to the two underlying tables and let the view follow.
+
+    // profiles must be written before admin_user_profiles so the row exists for any
+    // FK / role-guard logic that downstream code might consult.
+    const profilesRow = buildProfilesRow({
       userId: uid,
       email,
       role: newRole,
       displayName,
-      positionTitle,
       nowIso,
     })
-
-    const { error: adminUsersErr } = await adminClient
-      .from('admin_users')
-      .upsert(adminUsersRow, { onConflict: 'id' })
-
-    if (adminUsersErr) {
-      if (authUserCreated) {
-        await adminClient.auth.admin.deleteUser(uid)
-      }
-      return errorJson(
-        req,
-        500,
-        'admin_users_upsert_failed',
-        'Unable to save admin user record',
-        adminUsersErr.message
-      )
-    }
-
-    const securityRow = buildAdminUserProfilesRow({
-      userId: uid,
-      displayName,
-      positionTitle,
-      nowIso,
-    })
-
-    const { error: securityErr } = await adminClient
-      .from('admin_user_profiles')
-      .upsert(securityRow, { onConflict: 'user_id' })
-
-    if (securityErr) {
-      if (authUserCreated) {
-        await adminClient.auth.admin.deleteUser(uid)
-      }
-      return errorJson(
-        req,
-        500,
-        'admin_user_profiles_upsert_failed',
-        'Unable to save admin security profile',
-        securityErr.message
-      )
-    }
-
+    log('profiles upsert begin', { id: profilesRow.id, role: profilesRow.role })
     const { error: profilesErr } = await adminClient
       .from('profiles')
-      .upsert(
-        buildProfilesRow({
-          userId: uid,
-          email,
-          role: newRole,
-          displayName,
-          nowIso,
-        }),
-        { onConflict: 'id' }
-      )
+      .upsert(profilesRow, { onConflict: 'id' })
 
     if (profilesErr) {
+      logErr('profiles upsert failed', profilesErr.message, profilesErr)
       if (authUserCreated) {
         await adminClient.auth.admin.deleteUser(uid)
       }
@@ -402,6 +386,34 @@ Deno.serve(async (req) => {
       )
     }
 
+    const securityRow = buildAdminUserProfilesRow({
+      userId: uid,
+      displayName,
+      positionTitle,
+      nowIso,
+    })
+
+    log('admin_user_profiles upsert begin', { user_id: securityRow.user_id })
+    const { error: securityErr } = await adminClient
+      .from('admin_user_profiles')
+      .upsert(securityRow, { onConflict: 'user_id' })
+
+    if (securityErr) {
+      logErr('admin_user_profiles upsert failed', securityErr.message, securityErr)
+      if (authUserCreated) {
+        await adminClient.auth.admin.deleteUser(uid)
+      }
+      return errorJson(
+        req,
+        500,
+        'admin_user_profiles_upsert_failed',
+        'Unable to save admin security profile',
+        securityErr.message
+      )
+    }
+
+    log('done', uid)
+
     return jsonResponse(req, 200, {
       ok: true,
       message:
@@ -411,6 +423,8 @@ Deno.serve(async (req) => {
     })
   } catch (err) {
     const details = err instanceof Error ? err.message : String(err)
+    const stack = err instanceof Error ? err.stack ?? '' : ''
+    logErr('uncaught', details, stack)
     return errorJson(req, 500, 'internal_error', 'Unexpected server error', details)
   }
 })

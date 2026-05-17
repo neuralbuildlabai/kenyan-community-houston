@@ -11,6 +11,10 @@ import {
   resolveCallerRole,
 } from '../../supabase/functions/_shared/createAdminUserLogic'
 
+// Note (May 2026): `public.admin_users` is a *view* (see migration 010_admin_user_security.sql).
+// The edge function therefore writes to the two underlying tables — `profiles` and
+// `admin_user_profiles` — and lets the view follow. Tests below reflect that.
+
 describe('create-admin-user edge function', () => {
   const fnSrc = readFileSync(
     resolve(process.cwd(), 'supabase/functions/create-admin-user/index.ts'),
@@ -70,34 +74,29 @@ describe('create-admin-user edge function', () => {
 
   it('uses admin_users as primary caller permission source', () => {
     expect(fnSrc).toContain('userData.user.email')
-    expect(fnSrc).toContain('buildCallerAdminLookupOrFilter')
+    expect(fnSrc).toContain("from('admin_users')")
     expect(fnSrc).toContain("select('id, email, role')")
     expect(fnSrc).toContain('resolveCallerRole(callerAdminRow')
     expect(fnSrc).toContain("'CALLER_PERMISSION_LOOKUP_FAILED'")
     expect(fnSrc).toContain("'CALLER_NOT_ADMIN'")
   })
 
-  it('profiles is legacy fallback only when admin_users row is missing', () => {
-    const permissionBlock = fnSrc.slice(
-      fnSrc.indexOf('const callerId = userData.user.id'),
-      fnSrc.indexOf('let body: Body')
-    )
-    expect(permissionBlock).toContain("from('admin_users')")
-    expect(permissionBlock).toMatch(/if\s*\(\s*!callerAdminRow\s*\)[\s\S]*from\('profiles'\)/)
-    expect(permissionBlock).not.toMatch(
-      /from\('profiles'\)[\s\S]*resolveCallerRole[\s\S]*from\('admin_users'\)/
-    )
+  it('bootstraps the platform super admin email without depending on the view', () => {
+    // The admin_users view depends on profiles + admin_user_profiles. The
+    // platform owner's account must keep working even before those rows exist,
+    // so the function hardcodes a bootstrap path for that one email.
+    expect(fnSrc).toContain("'admin@kenyancommunityhouston.org'")
+    expect(fnSrc).toMatch(/callerRole\s*=\s*'super_admin'/)
   })
 
   it('does not read caller role from profiles when admin_users row exists', () => {
-    expect(fnSrc).toContain('if (!callerAdminRow)')
+    expect(fnSrc).toContain('if (!callerAdminRow')
     expect(fnSrc).not.toContain('const callerRole = (profileRow?.role')
   })
 
   it('returns structured error payloads with ok false', () => {
     expect(fnSrc).toContain('errorJson')
     expect(fnSrc).toContain("'config_missing'")
-    expect(fnSrc).toContain("'admin_users_upsert_failed'")
     expect(fnSrc).toContain("'profiles_upsert_failed'")
     expect(fnSrc).toContain("'admin_user_profiles_upsert_failed'")
   })
@@ -116,20 +115,22 @@ describe('create-admin-user edge function', () => {
     expect(fnSrc).toContain('reusedExistingAuthUser')
   })
 
-  it('upserts admin_users before admin_user_profiles and profiles', () => {
-    const adminUsersUpsertIdx = fnSrc.indexOf('const adminUsersRow = buildAdminUsersRow')
+  it('upserts profiles before admin_user_profiles (writable tables only)', () => {
+    // admin_users is a view, so the function writes to its base tables.
+    const profilesUpsertIdx = fnSrc.indexOf("from('profiles')\n      .upsert")
     const securityRowIdx = fnSrc.indexOf('const securityRow = buildAdminUserProfilesRow')
-    const profilesUpsertIdx = fnSrc.indexOf('.upsert(\n        buildProfilesRow({')
-    expect(adminUsersUpsertIdx).toBeGreaterThan(-1)
-    expect(securityRowIdx).toBeGreaterThan(adminUsersUpsertIdx)
-    expect(profilesUpsertIdx).toBeGreaterThan(securityRowIdx)
-    expect(fnSrc).toMatch(/from\('admin_users'\)[\s\S]*onConflict:\s*'id'/)
+    expect(profilesUpsertIdx).toBeGreaterThan(-1)
+    expect(securityRowIdx).toBeGreaterThan(profilesUpsertIdx)
+    expect(fnSrc).toMatch(/from\('profiles'\)[\s\S]*onConflict:\s*'id'/)
     expect(fnSrc).toMatch(/from\('admin_user_profiles'\)[\s\S]*onConflict:\s*'user_id'/)
   })
 
-  it('upserts admin_users with id email role and must_change_password', () => {
-    expect(fnSrc).toContain('buildAdminUsersRow')
-    expect(fnSrc).toContain("from('admin_users')")
+  it('does not attempt to upsert the admin_users view (writes go to base tables)', () => {
+    // PostgREST cannot upsert into the join view. The function must not try.
+    const upsertCallIdx = fnSrc.indexOf('.upsert(')
+    expect(upsertCallIdx).toBeGreaterThan(-1)
+    // No `from('admin_users').upsert` anywhere — only the SELECT for caller lookup.
+    expect(fnSrc).not.toMatch(/from\('admin_users'\)[\s\S]{0,200}\.upsert\(/)
   })
 
   it('does not insert email into admin_user_profiles', () => {
@@ -237,12 +238,13 @@ describe('createAdminUserLogic helpers', () => {
     expect(isAuthUserAlreadyRegistered('Invalid email')).toBe(false)
   })
 
-  it('duplicate admin row path uses upsert onConflict id (not insert-only)', () => {
+  it('duplicate profile row path uses upsert onConflict id (not insert-only)', () => {
     const fnSrc = readFileSync(
       resolve(process.cwd(), 'supabase/functions/create-admin-user/index.ts'),
       'utf8'
     )
-    expect(fnSrc).toMatch(/from\('admin_users'\)[\s\S]*upsert[\s\S]*onConflict:\s*'id'/)
+    // admin_users is a view; writes target the profiles base table.
+    expect(fnSrc).toMatch(/from\('profiles'\)[\s\S]*upsert[\s\S]*onConflict:\s*'id'/)
   })
 })
 
