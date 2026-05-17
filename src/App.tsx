@@ -53,6 +53,7 @@ import { AdminAnnouncementsPage } from '@/pages/admin/AnnouncementsPage'
 import { AdminBusinessesPage } from '@/pages/admin/BusinessesPage'
 import { AdminFundraisersPage } from '@/pages/admin/FundraisersPage'
 import { AdminGalleryPage } from '@/pages/admin/GalleryPage'
+import { AdminLeadershipPage } from '@/pages/admin/AdminLeadershipPage'
 import { AdminSubmissionsPage } from '@/pages/admin/SubmissionsPage'
 import { AdminContactsPage } from '@/pages/admin/ContactsPage'
 import { AdminSettingsPage } from '@/pages/admin/SettingsPage'
@@ -197,6 +198,7 @@ export default function App() {
               <Route path="businesses" element={<AdminBusinessesPage />} />
               <Route path="fundraisers" element={<AdminFundraisersPage />} />
               <Route path="gallery" element={<AdminGalleryPage />} />
+              <Route path="leadership" element={<AdminLeadershipPage />} />
               <Route path="submissions" element={<AdminSubmissionsPage />} />
               <Route path="contacts" element={<AdminContactsPage />} />
               <Route path="chat" element={<AdminChatPage />} />

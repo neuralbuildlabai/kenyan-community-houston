@@ -20,6 +20,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/admin/businesses': 'Businesses',
   '/admin/fundraisers': 'Fundraisers',
   '/admin/gallery': 'Gallery',
+  '/admin/leadership': 'Leadership',
   '/admin/submissions': 'Public submissions',
   '/admin/contacts': 'Contact messages',
   '/admin/chat': 'Community requests',

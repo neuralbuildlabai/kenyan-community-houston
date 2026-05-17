@@ -1,24 +1,42 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, HeartHandshake, UserPlus } from 'lucide-react'
 
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
 import { APP_NAME } from '@/lib/constants'
-import {
-  initialsForName,
-  seatsByGroup,
-  type LeadershipSeat,
-} from '@/data/leadership'
+import { initialsForName, type LeadershipSeat } from '@/data/leadership'
+import { fetchPublicLeadership, groupSeatsForDisplay } from '@/lib/leadershipApi'
 
 /**
  * Public-facing Interim Leadership Team page.
  *
- * Source of truth is `/src/data/leadership.ts`. Photos live in `/public/team/`.
- * Vacancies are rendered with a "Volunteer / Express interest" CTA pointing
- * to /serve/apply, so the page doubles as a recruitment surface.
+ * Source of truth is the `public.leadership_seats` table (migration 045),
+ * managed by elevated admins via `/admin/leadership`. Photos live in the
+ * `leadership-photos` Supabase Storage bucket (public-read). The static
+ * array in `src/data/leadership.ts` is used as a hard-coded fallback so
+ * the page never renders empty in the rare case the DB query fails.
  */
 export function LeadershipPage() {
-  const groups = seatsByGroup()
+  const [seats, setSeats] = useState<ReadonlyArray<LeadershipSeat>>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const { seats: rows } = await fetchPublicLeadership()
+      if (!cancelled) {
+        setSeats(rows)
+        setLoading(false)
+      }
+    }
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const groups = groupSeatsForDisplay(seats)
 
   return (
     <>
@@ -44,24 +62,39 @@ export function LeadershipPage() {
         </div>
 
         {/* Groups */}
-        <div className="space-y-12">
-          {groups.map((group) => (
-            <section key={group.group} aria-labelledby={`group-${group.group}`}>
-              <h2
-                id={`group-${group.group}`}
-                className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-5 sm:mb-6"
-              >
-                {group.label}
-              </h2>
+        {loading ? (
+          <div className="space-y-12">
+            {Array.from({ length: 2 }).map((_, gi) => (
+              <section key={gi}>
+                <div className="h-3 w-24 bg-muted/60 rounded mb-6 animate-pulse" />
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="h-32 rounded-2xl border bg-muted/30 animate-pulse" />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-12">
+            {groups.map((group) => (
+              <section key={group.group} aria-labelledby={`group-${group.group}`}>
+                <h2
+                  id={`group-${group.group}`}
+                  className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-5 sm:mb-6"
+                >
+                  {group.label}
+                </h2>
 
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {group.seats.map((seat) => (
-                  <SeatCard key={seat.slug} seat={seat} />
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {group.seats.map((seat) => (
+                    <SeatCard key={seat.slug} seat={seat} />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
 
         {/* CTA */}
         <div className="mt-16 rounded-2xl border bg-muted/30 p-8 sm:p-10 text-center">

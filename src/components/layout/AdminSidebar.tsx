@@ -27,6 +27,7 @@ import {
   ListTree,
   MessageCircle,
   Newspaper,
+  Users2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -67,6 +68,7 @@ function buildNavGroups(profileRole: string | null | undefined): NavGroup[] {
         { to: '/admin/community-groups', label: 'Community groups', Icon: UsersRound },
         { to: '/admin/fundraisers', label: 'Fundraisers', Icon: Heart },
         { to: '/admin/gallery', label: 'Gallery', Icon: Image },
+        { to: '/admin/leadership', label: 'Leadership', Icon: Users2 },
       ],
     },
     {

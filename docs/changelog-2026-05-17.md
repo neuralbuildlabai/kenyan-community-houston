@@ -143,7 +143,67 @@ decision is that "Other" should stand alone.
   `professional_field_other: null`.
 - Tests in `src/lib/profilePayload.test.ts` updated.
 
-## 6. Operational notes & follow-ups
+## 6. Leadership page + admin editor
+
+**Goal.** Public-facing "Interim Leadership Team" page introducing the
+community to its volunteers, with vacancies as a built-in recruitment
+surface. After a v1 of the page shipped statically, we converted it to a
+DB-backed CMS so elevated admins can update the roster from the admin UI
+without code changes.
+
+**What landed.**
+
+- `supabase/migrations/045_leadership_seats_and_photos.sql` — new
+  `public.leadership_seats` table (slug, name, titles[], seat_group,
+  photo_url, photo_storage_path, blurb, display_order, is_active,
+  created_at, updated_at) with CHECK constraints, RLS policies (public
+  SELECT for active rows, elevated admins for all writes), explicit
+  table grants, and the `leadership-photos` Supabase Storage bucket
+  (public read, admin write). Seeded with the current interim roster.
+- `src/data/leadership.ts` — Static fallback roster used when the DB
+  query fails or returns zero rows. Same shape as the DB row, mapped
+  via `toPublicSeat` in `src/lib/leadershipApi.ts`.
+- `src/lib/leadershipApi.ts` — fetch helpers
+  (`fetchPublicLeadership` with fallback, `fetchAllLeadershipSeats` for
+  admin, `groupSeatsForDisplay`).
+- `src/pages/public/LeadershipPage.tsx` — Reads from
+  `leadership_seats`; loading skeleton; falls back to the static array
+  if the query fails. Vacancies render with an "Express interest" CTA
+  linking to `/serve/apply`.
+- `src/pages/admin/AdminLeadershipPage.tsx` — Full CRUD: list grouped
+  by function, add/edit modal, photo upload to the
+  `leadership-photos` bucket, move-up/move-down within group, toggle
+  visibility, delete (with object cleanup). Available at
+  `/admin/leadership` under the **Content** section of the admin
+  sidebar.
+- `public/team/*.jpg` — Headshots extracted from the Virtual Meet &
+  Greet deck, kept as local assets so the page renders even before
+  the migration runs.
+
+**Permissions / who can edit.** Any user with
+`kigh_is_elevated_admin()` = true (super_admin, platform_admin,
+community_admin, content_manager, membership_manager, treasurer,
+media_moderator, ads_manager, business_admin, support_admin,
+moderator). Same scope as managing announcements or businesses.
+
+**Apply order.**
+
+1. Run migration 045 in Supabase SQL Editor.
+2. Confirm the `leadership-photos` bucket exists under
+   Storage → Buckets and that `leadership_seats` has 11 seeded rows.
+3. Commit + deploy the frontend.
+4. Visit `/admin/leadership` as an elevated admin and confirm the
+   editor renders.
+
+## 7. Facebook group link in footer
+
+`src/components/layout/Footer.tsx` already had a `Facebook` social-icon
+slot with `href: null`. Set it to
+`https://www.facebook.com/groups/kenyansinhouston` and updated the
+aria-label to the group's full name ("Kenyans in Greater Houston,
+Texas — Facebook group"). The icon now renders site-wide.
+
+## 8. Operational notes & follow-ups
 
 - **Edge Function diagnostic logs.** The `create-admin-user` function now
   emits `[create-admin-user <8-char-id>]` log lines at every step. Harmless

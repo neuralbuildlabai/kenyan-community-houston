@@ -9,7 +9,11 @@ import { KighLogo } from '@/components/KighLogo'
  * that lead nowhere. Replace `href` with a real profile URL to enable an icon.
  */
 const SOCIAL_LINKS: { Icon: typeof Facebook; label: string; href: string | null }[] = [
-  { Icon: Facebook, label: 'Facebook', href: null },
+  {
+    Icon: Facebook,
+    label: 'Kenyans in Greater Houston, Texas — Facebook group',
+    href: 'https://www.facebook.com/groups/kenyansinhouston',
+  },
   { Icon: Twitter, label: 'Twitter', href: null },
   { Icon: Instagram, label: 'Instagram', href: null },
   { Icon: Youtube, label: 'YouTube', href: null },
