@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { UserPlus, Trash2, ShieldCheck, AlertCircle } from 'lucide-react'
+import { UserPlus, Trash2, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -170,14 +170,6 @@ export function AdminUsersPage() {
       <div>
         <h1 className="text-2xl font-bold">Admin Users</h1>
         <p className="text-muted-foreground text-sm">Create accounts via the Edge Function (service role). Never paste the service key in the browser.</p>
-      </div>
-
-      <div className="rounded-lg border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-950 flex gap-2">
-        <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-        <p>
-          Deploy <code className="text-xs bg-white/80 px-1 rounded">create-admin-user</code> and{' '}
-          <code className="text-xs bg-white/80 px-1 rounded">delete-admin-user</code> Supabase Edge Functions before using this page in production.
-        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
