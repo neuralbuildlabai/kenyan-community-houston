@@ -27,6 +27,7 @@ import { NewToHoustonPage } from '@/pages/public/NewToHoustonPage'
 import { AboutPage } from '@/pages/public/AboutPage'
 import { ContactPage } from '@/pages/public/ContactPage'
 import { GovernancePage } from '@/pages/public/GovernancePage'
+import { LeadershipPage } from '@/pages/public/LeadershipPage'
 import { MembershipPage } from '@/pages/public/MembershipPage'
 import { MembershipSuccessPage } from '@/pages/public/MembershipSuccessPage'
 import { SupportPage } from '@/pages/public/SupportPage'
@@ -119,6 +120,7 @@ export default function App() {
               <Route path="chat" element={<PasswordExpiryRouteGate><ChatPage /></PasswordExpiryRouteGate>} />
               <Route path="community-feed" element={<PasswordExpiryRouteGate><CommunityFeedPage /></PasswordExpiryRouteGate>} />
               <Route path="governance" element={<GovernancePage />} />
+              <Route path="leadership" element={<LeadershipPage />} />
               <Route path="serve" element={<ServePage />} />
               <Route path="serve/apply" element={<ServeApplyPage />} />
               <Route path="membership" element={<MembershipPage />} />

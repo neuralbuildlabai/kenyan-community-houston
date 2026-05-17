@@ -79,6 +79,7 @@ export const MORE_NAV_GROUPS: ReadonlyArray<NavGroup> = [
     heading: 'About KIGH',
     items: [
       { to: '/about', label: 'About' },
+      { to: '/leadership', label: 'Leadership' },
       { to: '/governance', label: 'Governance' },
       { to: '/contact', label: 'Contact' },
       { to: '/privacy', label: 'Privacy' },

@@ -77,6 +77,7 @@ export function AboutPage() {
           <p className="text-muted-foreground mb-6">Have an event to share? A business to list? Or simply want to connect?</p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Button asChild><Link to="/contact">Contact Us</Link></Button>
+            <Button asChild variant="outline"><Link to="/leadership">Meet the Team</Link></Button>
             <Button asChild variant="outline"><Link to="/events/submit">Submit an Event</Link></Button>
           </div>
         </div>
