@@ -58,3 +58,13 @@ scripts/admin/local-*.mjs
 scripts/admin/*.local.mjs
 public/kigh-media/gallery/**/source/
 .env.vercel.*
+
+# Operator-only production/UAT cutover scripts. They run with the
+# production service-role key and target a specific environment;
+# they are not part of the shipped app and stay on the operator's
+# machine only. Add new ones as they appear.
+scripts/cleanup-*-prod.mjs
+scripts/copy-*-uat-to-prod.mjs
+
+# Local backups created by manual cutover/restore work.
+backups/
