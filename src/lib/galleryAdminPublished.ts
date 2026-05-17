@@ -1,7 +1,18 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { formatAdminActionError } from '@/lib/adminActionErrors'
 
-export type GalleryAdminMutationResult = { ok: true } | { ok: false; error: string }
+export type GalleryAdminMutationResult =
+  | { ok: true; storageWarning?: string }
+  | { ok: false; error: string }
+
+/** Unpublish moves published images back to the review queue. */
+export const GALLERY_UNPUBLISH_STATUS = 'pending' as const
+
+const GALLERY_ADMIN_SET_STATUS = {
+  unpublish: GALLERY_UNPUBLISH_STATUS,
+  archive: 'archived',
+  reject: 'rejected',
+} as const
 
 export type GalleryBulkMutationResult = {
   succeeded: number
@@ -20,7 +31,7 @@ type AdminDeleteGalleryImagePayload = {
 async function setGalleryStatus(
   supabase: SupabaseClient,
   id: string,
-  status: 'unpublished' | 'archived' | 'pending' | 'rejected'
+  status: (typeof GALLERY_ADMIN_SET_STATUS)[keyof typeof GALLERY_ADMIN_SET_STATUS]
 ): Promise<GalleryAdminMutationResult> {
   const { error } = await supabase.rpc('admin_set_gallery_image_status', {
     p_image_id: id,
@@ -35,7 +46,14 @@ export async function unpublishGalleryImage(
   supabase: SupabaseClient,
   id: string
 ): Promise<GalleryAdminMutationResult> {
-  return setGalleryStatus(supabase, id, 'unpublished')
+  return setGalleryStatus(supabase, id, GALLERY_ADMIN_SET_STATUS.unpublish)
+}
+
+export async function rejectGalleryImage(
+  supabase: SupabaseClient,
+  id: string
+): Promise<GalleryAdminMutationResult> {
+  return setGalleryStatus(supabase, id, GALLERY_ADMIN_SET_STATUS.reject)
 }
 
 /** Hides image from public gallery and default published list; keeps audit trail. */
@@ -43,7 +61,7 @@ export async function archiveGalleryImage(
   supabase: SupabaseClient,
   id: string
 ): Promise<GalleryAdminMutationResult> {
-  return setGalleryStatus(supabase, id, 'archived')
+  return setGalleryStatus(supabase, id, GALLERY_ADMIN_SET_STATUS.archive)
 }
 
 /** Moves image back to the review queue without deleting files. */
@@ -81,8 +99,8 @@ export async function deleteGalleryImagePermanently(
   const storageError = await removeGalleryStorageObjects(supabase, payload?.storage_objects)
   if (storageError) {
     return {
-      ok: false,
-      error: `Image record removed but storage cleanup failed: ${storageError}`,
+      ok: true,
+      storageWarning: `Image record deleted; storage cleanup failed: ${storageError}`,
     }
   }
   return { ok: true }

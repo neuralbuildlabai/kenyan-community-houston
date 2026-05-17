@@ -36,9 +36,11 @@ import {
   approveGalleryPendingImage,
   approveGalleryPendingImagesBulk,
 } from '@/lib/galleryAdminApproval'
+import { fetchAdminGalleryImages } from '@/lib/galleryAdminImages'
 import {
   archiveGalleryImage,
   deleteGalleryImagePermanently,
+  rejectGalleryImage,
   unpublishGalleryImage,
   unpublishGalleryImagesBulk,
 } from '@/lib/galleryAdminPublished'
@@ -151,17 +153,12 @@ export function AdminGalleryPage() {
   }, [])
 
   const loadImages = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('gallery_images')
-      .select(
-        'id, album_id, caption, alt_text, image_url, thumbnail_url, status, created_at, submission_storage_bucket, submission_storage_path, submission_thumb_path, is_homepage_featured, sort_order, submitted_by_name, submitted_by_email'
-      )
-      .order('created_at', { ascending: false })
+    const { data, error } = await fetchAdminGalleryImages(supabase)
     if (error) {
-      toast.error(error.message)
+      toast.error(error)
       return
     }
-    setImages((data ?? []) as GalleryImageRow[])
+    setImages(data as GalleryImageRow[])
   }, [])
 
   const publishedCount = useMemo(() => images.filter((i) => i.status === 'published').length, [images])
@@ -277,28 +274,56 @@ export function AdminGalleryPage() {
 
   async function deleteImage() {
     if (!deleteId) return
-    const result = await deleteGalleryImagePermanently(supabase, deleteId)
-    if (!result.ok) toast.error(result.error)
-    else {
+    setPublishedActionBusy(true)
+    try {
+      const result = await deleteGalleryImagePermanently(supabase, deleteId)
+      if (!result.ok) {
+        toast.error(result.error)
+        return
+      }
       toast.success('Image deleted permanently')
+      if (result.storageWarning) toast.warning(result.storageWarning)
       setSelectedPublishedIds((prev) => {
         const next = new Set(prev)
         next.delete(deleteId)
         return next
       })
+      setSelectedPendingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(deleteId)
+        return next
+      })
       void loadImages()
+    } finally {
+      setPublishedActionBusy(false)
+      setDeleteId(null)
     }
-    setDeleteId(null)
   }
 
-  async function setImageStatus(id: string, status: string) {
-    const { error } = await supabase.rpc('admin_set_gallery_image_status', {
-      p_image_id: id,
-      p_status: status,
-    })
-    if (error) toast.error(formatAdminActionError(error))
+  async function rejectPendingImage(id: string) {
+    const result = await rejectGalleryImage(supabase, id)
+    if (!result.ok) toast.error(result.error)
     else {
-      toast.success('Updated')
+      toast.success('Submission rejected')
+      setSelectedPendingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+      void loadImages()
+    }
+  }
+
+  async function archivePendingImage(id: string) {
+    const result = await archiveGalleryImage(supabase, id)
+    if (!result.ok) toast.error(result.error)
+    else {
+      toast.success('Submission archived')
+      setSelectedPendingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
       void loadImages()
     }
   }
@@ -396,13 +421,14 @@ export function AdminGalleryPage() {
         toast.error(result.error)
         return
       }
-      toast.success('Image unpublished')
+      toast.success('Image unpublished — moved back to review queue')
       setUnpublishTarget(null)
       setSelectedPublishedIds((prev) => {
         const next = new Set(prev)
         next.delete(unpublishTarget.id)
         return next
       })
+      setGalleryTab('review')
       void loadImages()
     } finally {
       setPublishedActionBusy(false)
@@ -673,13 +699,33 @@ export function AdminGalleryPage() {
                         <Check className="h-3.5 w-3.5" />
                         Approve
                       </Button>
-                      <Button size="sm" variant="outline" className="gap-1" onClick={() => void setImageStatus(row.id, 'rejected')}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1"
+                        onClick={() => void rejectPendingImage(row.id)}
+                      >
                         <X className="h-3.5 w-3.5" />
                         Reject
                       </Button>
-                      <Button size="sm" variant="secondary" className="gap-1" onClick={() => void setImageStatus(row.id, 'archived')}>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="gap-1"
+                        onClick={() => void archivePendingImage(row.id)}
+                      >
                         <Archive className="h-3.5 w-3.5" />
                         Archive
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="gap-1"
+                        data-testid="gallery-review-delete"
+                        onClick={() => setDeleteId(row.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete
                       </Button>
                     </div>
                   </CardContent>

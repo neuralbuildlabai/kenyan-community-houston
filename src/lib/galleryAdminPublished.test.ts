@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
+  GALLERY_UNPUBLISH_STATUS,
   archiveGalleryImage,
+  rejectGalleryImage,
   unpublishGalleryImage,
   unpublishGalleryImagesBulk,
 } from './galleryAdminPublished'
@@ -11,7 +13,9 @@ describe('galleryAdminPublished', () => {
   it('exports admin publish-management helpers', () => {
     expect(typeof unpublishGalleryImage).toBe('function')
     expect(typeof archiveGalleryImage).toBe('function')
+    expect(typeof rejectGalleryImage).toBe('function')
     expect(typeof unpublishGalleryImagesBulk).toBe('function')
+    expect(GALLERY_UNPUBLISH_STATUS).toBe('pending')
   })
 
   it('public gallery pages do not import admin published helpers', () => {
@@ -37,6 +41,9 @@ describe('galleryAdminPublished', () => {
       'utf8'
     )
     expect(publishedLib).toContain('admin_delete_gallery_image')
+    expect(publishedLib).toContain('admin_set_gallery_image_status')
+    expect(adminGallery).toContain('fetchAdminGalleryImages')
+    expect(adminGallery).toContain('gallery-review-delete')
     expect(adminGallery).toContain('gallery-published-unpublish')
     expect(adminGallery).toContain('gallery-published-archive')
     expect(adminGallery).toContain('data-testid="gallery-published-grid"')

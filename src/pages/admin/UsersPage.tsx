@@ -20,6 +20,7 @@ import {
   assignableRolesForCaller,
   canInviteAdminUsers,
 } from '@/lib/adminRoleMatrix'
+import { formatEdgeFunctionInvokeError } from '@/lib/edgeFunctionErrors'
 
 interface AdminUserRow {
   id: string
@@ -105,17 +106,13 @@ export function AdminUsersPage() {
         positionTitle: positionTitle.trim() || undefined,
       },
     })
-    setInviting(false)
     if (error) {
-      // Surface the server-side reason where possible (the Edge
-      // Function returns 403/422 with a `message` body for
-      // forbidden role assignments). supabase-js wraps non-2xx
-      // responses into `error`; if the response carried a JSON
-      // body we still get a message.
-      const msg = error.message || 'Could not reach the create-admin-user Edge Function.'
+      const msg = await formatEdgeFunctionInvokeError('create-admin-user', error, data)
       toast.error(msg)
+      setInviting(false)
       return
     }
+    setInviting(false)
     const payload = data as { ok?: boolean; message?: string }
     if (!payload?.ok) {
       toast.error(payload?.message ?? 'Unable to create user')
@@ -135,7 +132,8 @@ export function AdminUsersPage() {
       body: { userId: deleteId },
     })
     if (error) {
-      toast.error('Could not reach the delete-admin-user Edge Function.')
+      const msg = await formatEdgeFunctionInvokeError('delete-admin-user', error, data)
+      toast.error(msg)
       setDeleteId(null)
       return
     }
