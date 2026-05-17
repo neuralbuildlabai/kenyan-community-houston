@@ -466,7 +466,9 @@ export function ProfilePage() {
                   setRow((r) => ({
                     ...r,
                     professional_field: v === '__none__' ? null : v,
-                    professional_field_other: v !== 'other' ? null : r.professional_field_other,
+                    // We no longer collect a free-text description for "Other"
+                    // (migration 044). Always clear the legacy column.
+                    professional_field_other: null,
                   }))
                 }
               >
@@ -484,18 +486,6 @@ export function ProfilePage() {
               </Select>
               <p className="text-xs text-muted-foreground mt-1">Used only for aggregate community planning.</p>
             </div>
-            {row.professional_field === 'other' ? (
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="profile-professional-other">Other profession *</Label>
-                <Input
-                  id="profile-professional-other"
-                  data-testid="profile-professional-other"
-                  maxLength={80}
-                  value={row.professional_field_other ?? ''}
-                  onChange={(e) => setRow((r) => ({ ...r, professional_field_other: e.target.value }))}
-                />
-              </div>
-            ) : null}
             <div className="space-y-2 sm:col-span-2">
               <Label className="text-foreground">Interests</Label>
               <div className="grid gap-2 sm:grid-cols-2">

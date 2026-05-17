@@ -431,7 +431,10 @@ export function AdminMembersPage() {
                     onValueChange={(v) =>
                       updateMemberDemographics(detail.id, {
                         professional_field: v === '__none__' ? null : (v as Member['professional_field']),
-                        professional_field_other: v !== 'other' ? null : detail.professional_field_other,
+                        // We no longer collect a free-text description for "Other";
+                        // always clear the legacy column so old values don't linger
+                        // and trip the (now-relaxed) check constraint.
+                        professional_field_other: null,
                       })
                     }
                   >
@@ -447,19 +450,6 @@ export function AdminMembersPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {detail.professional_field === 'other' ? (
-                    <Input
-                      className="h-9 text-sm"
-                      defaultValue={detail.professional_field_other ?? ''}
-                      maxLength={80}
-                      placeholder="Describe (required if Other)"
-                      onBlur={(e) =>
-                        updateMemberDemographics(detail.id, {
-                          professional_field_other: e.target.value.trim() || null,
-                        })
-                      }
-                    />
-                  ) : null}
                 </div>
                 <div>
                   <span className="text-muted-foreground text-xs uppercase">Type</span>

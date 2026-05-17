@@ -18,13 +18,18 @@ export type LocationProfessionNormalizeResult =
       professional_field: string | null
       professional_field_other: string | null
     }
-  | { ok: false; kind: 'location' | 'profession' | 'profession_other'; message: string }
+  | { ok: false; kind: 'location' | 'profession'; message: string }
 
-/** Shared rules for `profiles` / `members` location + profession columns (migration 031). */
+/**
+ * Shared rules for `profiles` / `members` location + profession columns
+ * (migrations 031 + 044). The `professional_field_other` parameter is
+ * retained for back-compat but is always normalised to `null` — we no
+ * longer collect or store a free-text description for "Other".
+ */
 export function normalizeLocationProfession(input: {
   general_location_area: string | null | undefined
   professional_field: string | null | undefined
-  professional_field_other: string | null | undefined
+  professional_field_other?: string | null | undefined
 }): LocationProfessionNormalizeResult {
   const gla = (input.general_location_area ?? '').toString().trim()
   if (!gla || !isAllowedGeneralLocationArea(gla)) {
@@ -37,18 +42,7 @@ export function normalizeLocationProfession(input: {
     return { ok: false, kind: 'profession', message: LOCATION_PROFESSION_VALIDATION_MESSAGE }
   }
 
-  const pfoRaw = (input.professional_field_other ?? '').toString().trim()
-  if (pf !== 'other') {
-    return { ok: true, general_location_area: gla, professional_field: pf, professional_field_other: null }
-  }
-  if (pfoRaw.length < 1 || pfoRaw.length > 80) {
-    return {
-      ok: false,
-      kind: 'profession_other',
-      message: 'Please add a short description (1–80 characters) when you select Other.',
-    }
-  }
-  return { ok: true, general_location_area: gla, professional_field: pf, professional_field_other: pfoRaw }
+  return { ok: true, general_location_area: gla, professional_field: pf, professional_field_other: null }
 }
 
 /** Columns a member may PATCH on `public.profiles` (self-service). Omits id, role, email, timestamps, avatar columns. */
@@ -79,7 +73,7 @@ export type ProfilesSelfServicePatch = {
 
 export type ProfilePayloadResult =
   | { ok: true; patch: ProfilesSelfServicePatch }
-  | { ok: false; kind: 'location' | 'profession' | 'profession_other' | 'phone'; message: string }
+  | { ok: false; kind: 'location' | 'profession' | 'phone'; message: string }
 
 function toNullIfEmpty(s: string | null | undefined): string | null {
   const t = (s ?? '').trim()

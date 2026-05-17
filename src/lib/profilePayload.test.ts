@@ -50,32 +50,30 @@ describe('normalizeLocationProfession', () => {
     if (r.ok) expect(r.general_location_area).toBe('houston')
   })
 
-  it('requires professional_field_other when professional_field is other', () => {
-    const r = normalizeLocationProfession({
-      general_location_area: 'houston',
-      professional_field: 'other',
-      professional_field_other: '   ',
-    })
-    expect(r.ok).toBe(false)
-  })
-
-  it('accepts other with trimmed 1–80 chars', () => {
+  it('accepts professional_field="other" as a stand-alone value (migration 044)', () => {
+    // The follow-up free-text description is no longer collected. "Other"
+    // is valid by itself, and any inbound value for professional_field_other
+    // is normalised to null before reaching the database.
     const r = normalizeLocationProfession({
       general_location_area: 'sugar_land',
       professional_field: 'other',
-      professional_field_other: '  Custom role  ',
+      professional_field_other: null,
     })
     expect(r.ok).toBe(true)
-    if (r.ok) expect(r.professional_field_other).toBe('Custom role')
+    if (r.ok) {
+      expect(r.professional_field).toBe('other')
+      expect(r.professional_field_other).toBeNull()
+    }
   })
 
-  it('rejects professional_field_other longer than 80 when other', () => {
+  it('discards any legacy professional_field_other value passed alongside "other"', () => {
     const r = normalizeLocationProfession({
       general_location_area: 'houston',
       professional_field: 'other',
-      professional_field_other: 'x'.repeat(81),
+      professional_field_other: 'Custom role text the UI no longer collects',
     })
-    expect(r.ok).toBe(false)
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.professional_field_other).toBeNull()
   })
 
   it('rejects invalid professional_field slug', () => {

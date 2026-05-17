@@ -103,7 +103,6 @@ export function MembershipPage() {
 
   const [generalLocationArea, setGeneralLocationArea] = useState('')
   const [professionalField, setProfessionalField] = useState<string>('__none__')
-  const [professionalFieldOther, setProfessionalFieldOther] = useState('')
 
   const [primary, setPrimary] = useState({
     first_name: '',
@@ -185,7 +184,7 @@ export function MembershipPage() {
     const locProf = normalizeLocationProfession({
       general_location_area: generalLocationArea,
       professional_field: professionalField,
-      professional_field_other: professionalFieldOther,
+      professional_field_other: null,
     })
     if (!locProf.ok) {
       toast.error(locProf.message)
@@ -380,8 +379,6 @@ export function MembershipPage() {
       else if (error.message?.includes('missing_or_invalid_general_location_area'))
         toast.error('Please select a valid general Houston-area location.')
       else if (error.message?.includes('invalid_professional_field')) toast.error('Please choose a valid professional category.')
-      else if (error.message?.includes('professional_field_other_required'))
-        toast.error('Please describe what you do when you select Other.')
       else toast.error(error.message || 'Registration failed. Please try again.')
       return
     }
@@ -723,18 +720,7 @@ export function MembershipPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    {professionalField === 'other' ? (
-                      <div className="space-y-1.5 pt-2">
-                        <Label htmlFor="membership-professional-other">Other profession *</Label>
-                        <Input
-                          id="membership-professional-other"
-                          data-testid="membership-professional-other"
-                          maxLength={80}
-                          value={professionalFieldOther}
-                          onChange={(e) => setProfessionalFieldOther(e.target.value)}
-                        />
-                      </div>
-                    ) : null}
+                    {/* "Other" no longer requires a free-text description (migration 044). */}
                   </div>
                   <div className="space-y-2 sm:col-span-2">
                     <Label>Interests</Label>
