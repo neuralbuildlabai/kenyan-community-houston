@@ -32,6 +32,11 @@ describe('galleryAdminPublished', () => {
       'utf8'
     )
     expect(adminGallery).toContain('galleryAdminPublished')
+    const publishedLib = readFileSync(
+      resolve(process.cwd(), 'src/lib/galleryAdminPublished.ts'),
+      'utf8'
+    )
+    expect(publishedLib).toContain('admin_delete_gallery_image')
     expect(adminGallery).toContain('gallery-published-unpublish')
     expect(adminGallery).toContain('gallery-published-archive')
     expect(adminGallery).toContain('data-testid="gallery-published-grid"')

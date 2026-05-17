@@ -42,6 +42,7 @@ import {
   unpublishGalleryImage,
   unpublishGalleryImagesBulk,
 } from '@/lib/galleryAdminPublished'
+import { formatAdminActionError } from '@/lib/adminActionErrors'
 import { buildGalleryWebAndThumb, GalleryImageProcessingError } from '@/lib/galleryImageProcessing'
 import { PRIVATE_SIGNED_URL_EXPIRY_SEC } from '@/lib/kighPrivateStorage'
 import { cn } from '@/lib/utils'
@@ -291,8 +292,11 @@ export function AdminGalleryPage() {
   }
 
   async function setImageStatus(id: string, status: string) {
-    const { error } = await supabase.from('gallery_images').update({ status }).eq('id', id)
-    if (error) toast.error(error.message)
+    const { error } = await supabase.rpc('admin_set_gallery_image_status', {
+      p_image_id: id,
+      p_status: status,
+    })
+    if (error) toast.error(formatAdminActionError(error))
     else {
       toast.success('Updated')
       void loadImages()
@@ -304,7 +308,7 @@ export function AdminGalleryPage() {
     patch: Partial<Pick<GalleryImageRow, 'caption' | 'alt_text' | 'album_id' | 'is_homepage_featured' | 'sort_order'>>
   ) {
     const { error } = await supabase.from('gallery_images').update(patch).eq('id', id)
-    if (error) toast.error(error.message)
+    if (error) toast.error(formatAdminActionError(error))
     else {
       toast.success('Saved')
       void loadImages()
@@ -875,6 +879,7 @@ export function AdminGalleryPage() {
                         size="sm"
                         variant="destructive"
                         className="h-7 gap-1 px-2 text-xs"
+                        data-testid="gallery-published-delete"
                         onClick={() => setDeleteId(img.id)}
                       >
                         <Trash2 className="h-3 w-3" />
@@ -1069,7 +1074,7 @@ export function AdminGalleryPage() {
         open={!!deleteId}
         onOpenChange={(open) => !open && setDeleteId(null)}
         title="Delete image permanently?"
-        description="This permanently deletes the database record. Files in storage may remain until cleaned up separately."
+        description="This permanently deletes the image record and removes files from gallery storage when possible."
         confirmLabel="Delete permanently"
         variant="destructive"
         loading={publishedActionBusy}

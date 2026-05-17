@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { supabase } from '@/lib/supabase'
+import { formatAdminActionError } from '@/lib/adminActionErrors'
+import { adminUpdateMemberStatus, type AdminMemberStatusPatch } from '@/lib/adminMembers'
 import { toast } from 'sonner'
 import type { DuesStatus, HouseholdMember, Member, MembershipRecordStatus, MembershipType } from '@/lib/types'
 import {
@@ -51,7 +53,7 @@ export function AdminMembersPage() {
       .select('*, household_members(*)')
       .order('submitted_at', { ascending: false })
     if (error) {
-      toast.error(error.message)
+      toast.error(formatAdminActionError(error))
       setRows([])
     } else {
       setRows((data as MemberWithHousehold[]) ?? [])
@@ -86,9 +88,18 @@ export function AdminMembersPage() {
     return true
   })
 
-  async function updateMember(id: string, patch: Partial<Member>) {
+  async function updateMemberStatus(id: string, patch: AdminMemberStatusPatch) {
+    const result = await adminUpdateMemberStatus(supabase, id, patch)
+    if (!result.ok) toast.error(result.error)
+    else {
+      toast.success('Updated')
+      load()
+    }
+  }
+
+  async function updateMemberDemographics(id: string, patch: Partial<Member>) {
     const { error } = await supabase.from('members').update(patch).eq('id', id)
-    if (error) toast.error(error.message)
+    if (error) toast.error(formatAdminActionError(error))
     else {
       toast.success('Updated')
       load()
@@ -265,7 +276,9 @@ export function AdminMembersPage() {
                       <TableCell>
                         <Select
                           value={m.membership_status}
-                          onValueChange={(v) => updateMember(m.id, { membership_status: v as MembershipRecordStatus })}
+                          onValueChange={(v) =>
+                            void updateMemberStatus(m.id, { membership_status: v as MembershipRecordStatus })
+                          }
                         >
                           <SelectTrigger className="h-8 min-w-[100px] max-w-[120px] text-xs">
                             <SelectValue />
@@ -282,7 +295,7 @@ export function AdminMembersPage() {
                       <TableCell>
                         <Select
                           value={m.dues_status}
-                          onValueChange={(v) => updateMember(m.id, { dues_status: v as DuesStatus })}
+                          onValueChange={(v) => void updateMemberStatus(m.id, { dues_status: v as DuesStatus })}
                         >
                           <SelectTrigger className="h-8 min-w-[90px] max-w-[110px] text-xs">
                             <SelectValue />
@@ -393,7 +406,9 @@ export function AdminMembersPage() {
                   <Select
                     value={detail.general_location_area ?? '__none__'}
                     onValueChange={(v) =>
-                      updateMember(detail.id, { general_location_area: v === '__none__' ? null : (v as Member['general_location_area']) })
+                      updateMemberDemographics(detail.id, {
+                        general_location_area: v === '__none__' ? null : (v as Member['general_location_area']),
+                      })
                     }
                   >
                     <SelectTrigger className="h-9 text-sm">
@@ -414,7 +429,7 @@ export function AdminMembersPage() {
                   <Select
                     value={detail.professional_field ?? '__none__'}
                     onValueChange={(v) =>
-                      updateMember(detail.id, {
+                      updateMemberDemographics(detail.id, {
                         professional_field: v === '__none__' ? null : (v as Member['professional_field']),
                         professional_field_other: v !== 'other' ? null : detail.professional_field_other,
                       })
@@ -439,7 +454,7 @@ export function AdminMembersPage() {
                       maxLength={80}
                       placeholder="Describe (required if Other)"
                       onBlur={(e) =>
-                        updateMember(detail.id, {
+                        updateMemberDemographics(detail.id, {
                           professional_field_other: e.target.value.trim() || null,
                         })
                       }

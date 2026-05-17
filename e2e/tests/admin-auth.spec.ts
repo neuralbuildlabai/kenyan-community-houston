@@ -22,6 +22,32 @@ test.describe('admin auth', () => {
     await expect(page.getByText(/Auth email/i)).toBeVisible()
   })
 
+  test('can activate a pending member when one exists', async ({ page }) => {
+    await loginAsAdmin(page)
+    await page.goto('/admin/members?membershipStatus=pending', { waitUntil: 'domcontentloaded' })
+    const empty = page.getByTestId('members-empty')
+    if ((await empty.count()) > 0 && (await empty.isVisible())) {
+      test.skip(true, 'No pending members to activate')
+    }
+    const statusTrigger = page.locator('table tbody tr').first().getByRole('combobox').first()
+    await statusTrigger.click()
+    await page.getByRole('option', { name: 'active', exact: true }).click()
+    await expect(page.getByText('Updated')).toBeVisible({ timeout: 15_000 })
+  })
+
+  test('can delete a published gallery image when one exists', async ({ page }) => {
+    await loginAsAdmin(page)
+    await page.goto('/admin/gallery?tab=library', { waitUntil: 'domcontentloaded' })
+    await page.getByTestId('gallery-tab-published').click()
+    const deleteBtn = page.getByTestId('gallery-published-delete').first()
+    if ((await deleteBtn.count()) === 0) {
+      test.skip(true, 'No published gallery images to delete')
+    }
+    await deleteBtn.click()
+    await page.getByRole('button', { name: 'Delete permanently', exact: true }).click()
+    await expect(page.getByText(/deleted permanently/i)).toBeVisible({ timeout: 20_000 })
+  })
+
   test('logout is visible and returns to public homepage', async ({ page }) => {
     await loginAsAdmin(page)
     await expect(page.getByRole('button', { name: 'Logout' }).first()).toBeVisible()
