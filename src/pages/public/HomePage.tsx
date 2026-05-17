@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase'
 import type { Event } from '@/lib/types'
 import { buildHomepageWhatsHappeningList, filterPublishedUpcomingByStartDate } from '@/lib/homepageEvents'
 import { trackClick } from '@/lib/analytics'
+import { FeaturedPoll } from '@/components/landing/FeaturedPoll'
 
 /** Optimized hero (see `public/kigh-media/houstonmainimage-hero.jpg`). */
 const HOME_HERO_IMAGE_JPEG = '/kigh-media/houstonmainimage-hero.jpg'
@@ -271,6 +272,9 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Featured community poll — renders nothing unless an admin has featured one */}
+      <FeaturedPoll />
 
       {/* Community moments */}
       {moments.length > 0 && (
