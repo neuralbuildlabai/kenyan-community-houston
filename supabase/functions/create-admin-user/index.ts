@@ -1,16 +1,17 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+import { errorJson } from '../_shared/apiErrors.ts'
+import {
+  buildAdminUserProfilesRow,
+  buildAdminUsersRow,
+  buildCallerAdminLookupOrFilter,
+  buildProfilesRow,
+  isAuthUserAlreadyRegistered,
+  resolveCallerRole,
+} from '../_shared/createAdminUserLogic.ts'
 import { handleCorsPreflight, jsonResponse } from '../_shared/cors.ts'
 
 // ────────────────────────────────────────────────────────────────────
 // Server-side admin role assignment matrix.
-//
-// Production-readiness audit (May 2026) found that the previous
-// implementation used a single flat ASSIGNABLE_ROLES set without
-// looking at the caller's role, which let community_admin assign
-// super_admin. The matrix below is the authoritative server-side
-// enforcement and is the single source of truth used by both the
-// Edge Function and the frontend UsersPage role picker (via the
-// exported `assignableRolesForCaller` helper).
 // ────────────────────────────────────────────────────────────────────
 
 export const ALL_ASSIGNABLE_ROLES = [
@@ -97,145 +98,319 @@ type Body = {
   positionTitle?: string
 }
 
+export async function findAuthUserByEmail(
+  adminClient: SupabaseClient,
+  email: string
+): Promise<{ id: string; email: string | undefined } | null> {
+  const normalized = email.trim().toLowerCase()
+  let page = 1
+  const perPage = 200
+
+  while (page <= 50) {
+    const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage })
+    if (error) throw error
+    const match = data.users.find((u) => (u.email ?? '').trim().toLowerCase() === normalized)
+    if (match) return { id: match.id, email: match.email }
+    if (data.users.length < perPage) return null
+    page += 1
+  }
+
+  return null
+}
+
 Deno.serve(async (req) => {
-  const preflight = handleCorsPreflight(req)
-  if (preflight) return preflight
-
-  if (req.method !== 'POST') {
-    return jsonResponse(req, 405, { ok: false, message: 'Method not allowed' })
-  }
-
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-
-  if (!supabaseUrl || !serviceKey) {
-    return jsonResponse(req, 500, { ok: false, message: 'Server configuration error' })
-  }
-
-  const authHeader = req.headers.get('Authorization') ?? ''
-  if (!authHeader.startsWith('Bearer ')) {
-    return jsonResponse(req, 401, { ok: false, message: 'Unauthorized' })
-  }
-
-  const jwt = authHeader.replace('Bearer ', '').trim()
-  const adminClient = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } })
-
-  const { data: userData, error: userErr } = await adminClient.auth.getUser(jwt)
-  if (userErr || !userData?.user) {
-    return jsonResponse(req, 401, { ok: false, message: 'Unauthorized' })
-  }
-
-  const callerId = userData.user.id
-
-  const { data: profile, error: profErr } = await adminClient
-    .from('profiles')
-    .select('role,email')
-    .eq('id', callerId)
-    .maybeSingle()
-
-  if (profErr) {
-    return jsonResponse(req, 500, { ok: false, message: 'Unable to complete request' })
-  }
-
-  const callerRole = (profile?.role as string | undefined)?.trim() ?? ''
-  const callerEmail = (profile?.email as string | undefined)?.trim().toLowerCase() ?? ''
-
-  if (assignableRolesForCaller(callerRole).length === 0) {
-    return jsonResponse(req, 403, { ok: false, message: 'Forbidden' })
-  }
-
-  let body: Body
   try {
-    body = (await req.json()) as Body
-  } catch {
-    return jsonResponse(req, 400, { ok: false, message: 'Invalid JSON body' })
-  }
+    const preflight = handleCorsPreflight(req)
+    if (preflight) return preflight
 
-  const email = (body.email ?? '').trim().toLowerCase()
-  const temporaryPassword = body.temporaryPassword ?? ''
-  const newRole = (body.role ?? '').trim()
-  const displayName = (body.displayName ?? '').trim() || null
-  const positionTitle = (body.positionTitle ?? '').trim() || null
+    if (req.method !== 'POST') {
+      return errorJson(req, 405, 'method_not_allowed', 'Method not allowed')
+    }
 
-  if (!email || !temporaryPassword) {
-    return jsonResponse(req, 400, { ok: false, message: 'Email and temporary password are required' })
-  }
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
-  if (!newRole) {
-    return jsonResponse(req, 400, { ok: false, message: 'Role is required' })
-  }
+    if (!supabaseUrl) {
+      return errorJson(
+        req,
+        500,
+        'config_missing',
+        'Server configuration error',
+        'SUPABASE_URL is not set'
+      )
+    }
+    if (!serviceKey) {
+      return errorJson(
+        req,
+        500,
+        'config_missing',
+        'Server configuration error',
+        'SUPABASE_SERVICE_ROLE_KEY is not set'
+      )
+    }
 
-  if (!(ALL_ASSIGNABLE_ROLES as ReadonlyArray<string>).includes(newRole)) {
-    return jsonResponse(req, 400, { ok: false, message: 'Invalid role' })
-  }
+    const authHeader = req.headers.get('Authorization') ?? ''
+    if (!authHeader.startsWith('Bearer ')) {
+      return errorJson(req, 401, 'unauthorized', 'Unauthorized')
+    }
 
-  if (!callerCanAssign(callerRole, newRole)) {
-    return jsonResponse(req, 403, {
-      ok: false,
-      message: `Your role (${callerRole}) is not permitted to assign role "${newRole}".`,
-    })
-  }
+    const jwt = authHeader.replace('Bearer ', '').trim()
+    const adminClient = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } })
 
-  if (callerEmail && email === callerEmail) {
-    return jsonResponse(req, 422, {
-      ok: false,
-      message: 'You cannot use this endpoint to modify your own account.',
-    })
-  }
+    const { data: userData, error: userErr } = await adminClient.auth.getUser(jwt)
+    if (userErr || !userData?.user) {
+      return errorJson(req, 401, 'unauthorized', 'Unauthorized', userErr?.message)
+    }
 
-  const { data: created, error: createErr } = await adminClient.auth.admin.createUser({
-    email,
-    password: temporaryPassword,
-    email_confirm: true,
-    user_metadata: { role: newRole },
-  })
+    const callerId = userData.user.id
+    const callerEmail = (userData.user.email ?? '').trim().toLowerCase()
 
-  if (createErr || !created?.user) {
-    return jsonResponse(req, 400, {
-      ok: false,
-      message: 'Unable to create account. Check the email address and try again.',
-    })
-  }
+    const { data: callerAdminRow, error: callerAdminErr } = await adminClient
+      .from('admin_users')
+      .select('id, email, role')
+      .or(buildCallerAdminLookupOrFilter(callerId, callerEmail))
+      .limit(1)
+      .maybeSingle()
 
-  const uid = created.user.id
+    if (callerAdminErr) {
+      return errorJson(
+        req,
+        500,
+        'CALLER_PERMISSION_LOOKUP_FAILED',
+        'Unable to verify caller permissions.',
+        callerAdminErr.message
+      )
+    }
 
-  const { error: upProf } = await adminClient.from('profiles').upsert(
-    {
-      id: uid,
+    let profileRole: string | null = null
+    if (!callerAdminRow) {
+      const { data: profileRow, error: profileErr } = await adminClient
+        .from('profiles')
+        .select('role')
+        .eq('id', callerId)
+        .maybeSingle()
+
+      if (profileErr) {
+        return errorJson(
+          req,
+          500,
+          'CALLER_PERMISSION_LOOKUP_FAILED',
+          'Unable to verify caller permissions.',
+          profileErr.message
+        )
+      }
+      profileRole = (profileRow?.role as string | undefined) ?? null
+    }
+
+    const callerRole = resolveCallerRole(callerAdminRow, profileRole)
+
+    if (!callerAdminRow && !callerRole) {
+      return errorJson(
+        req,
+        403,
+        'CALLER_NOT_ADMIN',
+        'Your account is not authorized to create admin users.'
+      )
+    }
+
+    if (assignableRolesForCaller(callerRole).length === 0) {
+      return errorJson(
+        req,
+        403,
+        'CALLER_NOT_ADMIN',
+        'Your account is not authorized to create admin users.'
+      )
+    }
+
+    let body: Body
+    try {
+      body = (await req.json()) as Body
+    } catch {
+      return errorJson(req, 400, 'invalid_json', 'Invalid JSON body')
+    }
+
+    const email = (body.email ?? '').trim().toLowerCase()
+    const temporaryPassword = body.temporaryPassword ?? ''
+    const newRole = (body.role ?? '').trim()
+    const displayName = (body.displayName ?? '').trim() || null
+    const positionTitle = (body.positionTitle ?? '').trim() || null
+
+    if (!email || !temporaryPassword) {
+      return errorJson(req, 400, 'validation_error', 'Email and temporary password are required')
+    }
+
+    if (!newRole) {
+      return errorJson(req, 400, 'validation_error', 'Role is required')
+    }
+
+    if (!(ALL_ASSIGNABLE_ROLES as ReadonlyArray<string>).includes(newRole)) {
+      return errorJson(req, 400, 'invalid_role', 'Invalid role')
+    }
+
+    if (!callerCanAssign(callerRole, newRole)) {
+      return errorJson(
+        req,
+        403,
+        'role_not_assignable',
+        `Your role (${callerRole}) is not permitted to assign role "${newRole}".`
+      )
+    }
+
+    if (callerEmail && email === callerEmail) {
+      return errorJson(
+        req,
+        422,
+        'self_modification_forbidden',
+        'You cannot use this endpoint to modify your own account.'
+      )
+    }
+
+    const nowIso = new Date().toISOString()
+    let uid: string
+    let authUserCreated = false
+
+    const { data: created, error: createErr } = await adminClient.auth.admin.createUser({
       email,
-      full_name: displayName,
+      password: temporaryPassword,
+      email_confirm: true,
+      user_metadata: { role: newRole },
+    })
+
+    if (createErr || !created?.user) {
+      const createMessage = createErr?.message ?? 'Unknown auth error'
+      if (!isAuthUserAlreadyRegistered(createMessage)) {
+        return errorJson(
+          req,
+          400,
+          'auth_create_failed',
+          'Unable to create account. Check the email address and try again.',
+          createMessage
+        )
+      }
+
+      let existing: { id: string; email: string | undefined } | null = null
+      try {
+        existing = await findAuthUserByEmail(adminClient, email)
+      } catch (lookupErr) {
+        const details = lookupErr instanceof Error ? lookupErr.message : String(lookupErr)
+        return errorJson(req, 500, 'auth_lookup_failed', 'Unable to look up existing account', details)
+      }
+
+      if (!existing) {
+        return errorJson(
+          req,
+          409,
+          'auth_user_exists',
+          'An account with this email already exists but could not be loaded.',
+          createMessage
+        )
+      }
+
+      uid = existing.id
+      const { error: updateErr } = await adminClient.auth.admin.updateUserById(uid, {
+        password: temporaryPassword,
+        email_confirm: true,
+        user_metadata: { role: newRole },
+      })
+      if (updateErr) {
+        return errorJson(
+          req,
+          400,
+          'auth_update_failed',
+          'Unable to update existing account credentials.',
+          updateErr.message
+        )
+      }
+    } else {
+      uid = created.user.id
+      authUserCreated = true
+    }
+
+    const adminUsersRow = buildAdminUsersRow({
+      userId: uid,
+      email,
       role: newRole,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'id' }
-  )
+      displayName,
+      positionTitle,
+      nowIso,
+    })
 
-  if (upProf) {
-    await adminClient.auth.admin.deleteUser(uid)
-    return jsonResponse(req, 500, { ok: false, message: 'Unable to complete request' })
+    const { error: adminUsersErr } = await adminClient
+      .from('admin_users')
+      .upsert(adminUsersRow, { onConflict: 'id' })
+
+    if (adminUsersErr) {
+      if (authUserCreated) {
+        await adminClient.auth.admin.deleteUser(uid)
+      }
+      return errorJson(
+        req,
+        500,
+        'admin_users_upsert_failed',
+        'Unable to save admin user record',
+        adminUsersErr.message
+      )
+    }
+
+    const securityRow = buildAdminUserProfilesRow({
+      userId: uid,
+      displayName,
+      positionTitle,
+      nowIso,
+    })
+
+    const { error: securityErr } = await adminClient
+      .from('admin_user_profiles')
+      .upsert(securityRow, { onConflict: 'user_id' })
+
+    if (securityErr) {
+      if (authUserCreated) {
+        await adminClient.auth.admin.deleteUser(uid)
+      }
+      return errorJson(
+        req,
+        500,
+        'admin_user_profiles_upsert_failed',
+        'Unable to save admin security profile',
+        securityErr.message
+      )
+    }
+
+    const { error: profilesErr } = await adminClient
+      .from('profiles')
+      .upsert(
+        buildProfilesRow({
+          userId: uid,
+          email,
+          role: newRole,
+          displayName,
+          nowIso,
+        }),
+        { onConflict: 'id' }
+      )
+
+    if (profilesErr) {
+      if (authUserCreated) {
+        await adminClient.auth.admin.deleteUser(uid)
+      }
+      return errorJson(
+        req,
+        500,
+        'profiles_upsert_failed',
+        'Unable to save login profile (profiles)',
+        profilesErr.message
+      )
+    }
+
+    return jsonResponse(req, 200, {
+      ok: true,
+      message:
+        'Admin user created. Share the temporary password securely; they must change it on first sign-in.',
+      userId: uid,
+      reusedExistingAuthUser: !authUserCreated,
+    })
+  } catch (err) {
+    const details = err instanceof Error ? err.message : String(err)
+    return errorJson(req, 500, 'internal_error', 'Unexpected server error', details)
   }
-
-  const { error: secErr } = await adminClient.from('admin_user_profiles').upsert(
-    {
-      user_id: uid,
-      must_change_password: true,
-      temporary_password_set_at: new Date().toISOString(),
-      password_changed_at: null,
-      display_name: displayName,
-      position_title: positionTitle,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'user_id' }
-  )
-
-  if (secErr) {
-    await adminClient.auth.admin.deleteUser(uid)
-    return jsonResponse(req, 500, { ok: false, message: 'Unable to complete request' })
-  }
-
-  return jsonResponse(req, 200, {
-    ok: true,
-    message: 'Admin user created. Share the temporary password securely; they must change it on first sign-in.',
-    userId: uid,
-  })
 })
