@@ -25,6 +25,23 @@
 -- ============================================================
 
 -- ─── 1. Table ───────────────────────────────────────────────
+-- Per-element validation of the `titles` array. CHECK constraints cannot
+-- contain subqueries, so we wrap the per-element predicate in an IMMUTABLE
+-- function and call it from the constraint. Returns true for empty arrays;
+-- the separate `_titles_nonempty` constraint enforces non-emptiness so we
+-- get a clearer error on that path.
+create or replace function public.kigh_leadership_titles_ok(t text[])
+returns boolean
+language sql
+immutable
+as $$
+  select coalesce(
+    bool_and(char_length(coalesce(x, '')) between 1 and 120),
+    true
+  )
+  from unnest(t) as x;
+$$;
+
 create table if not exists public.leadership_seats (
   id uuid primary key default gen_random_uuid(),
   slug text not null unique,
@@ -40,12 +57,7 @@ create table if not exists public.leadership_seats (
   updated_at timestamptz not null default now(),
   constraint leadership_seats_slug_format check (slug ~ '^[a-z0-9][a-z0-9-]{0,60}$'),
   constraint leadership_seats_titles_nonempty check (array_length(titles, 1) >= 1),
-  constraint leadership_seats_titles_short check (
-    not exists (
-      select 1 from unnest(titles) as t(label)
-      where char_length(coalesce(label, '')) < 1 or char_length(label) > 120
-    )
-  ),
+  constraint leadership_seats_titles_short check (public.kigh_leadership_titles_ok(titles)),
   constraint leadership_seats_group_allowed check (
     seat_group in (
       'executive',
