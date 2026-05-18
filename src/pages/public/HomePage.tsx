@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { format, isValid, parseISO } from 'date-fns'
 import { Link } from 'react-router-dom'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, HeartHandshake } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
@@ -37,10 +37,33 @@ const HERO_QUICK_LINKS = [
   { to: '/chat', label: 'Ask the Community', testId: 'home-quick-ask' },
 ] as const
 
+/**
+ * True when an event currently accepts volunteer signups: feature is on,
+ * close time hasn't passed (or isn't set), and a signup slug exists for
+ * the URL. Matches the gating in EventVolunteerSignupPage.
+ */
+function eventAcceptsVolunteers(e: Event, now: Date = new Date()): boolean {
+  if (!e.volunteer_signup_enabled) return false
+  if (!e.slug) return false
+  const closesAt = e.volunteer_signup_closes_at
+    ? new Date(e.volunteer_signup_closes_at).getTime()
+    : null
+  if (closesAt !== null && !Number.isNaN(closesAt) && closesAt <= now.getTime()) {
+    return false
+  }
+  return true
+}
+
 export function HomePage() {
   const [events, setEvents] = useState<Event[]>([])
   const [moments, setMoments] = useState<HomeMoment[]>([])
   const [listsLoaded, setListsLoaded] = useState(false)
+
+  // The soonest event on the homepage list that currently accepts
+  // volunteer signups. Only ONE badge appears across the list (admin
+  // chose "just the next upcoming one"), so we pin the id here and the
+  // row renderer checks identity.
+  const volunteerCallEventId = events.find((e) => eventAcceptsVolunteers(e))?.id ?? null
 
   useEffect(() => {
     let cancelled = false
@@ -265,6 +288,25 @@ export function HomePage() {
                         </span>
                       </div>
                     </Link>
+                    {e.id === volunteerCallEventId ? (
+                      // Lives outside the main event Link because nested
+                      // <a> elements are invalid HTML. Aligned with the
+                      // title column on desktop via left padding.
+                      <div className="-mt-4 pb-5 sm:pl-44">
+                        <Link
+                          to={`/events/${e.slug}/volunteer`}
+                          onClick={() =>
+                            void trackClick('home_volunteer_call', `/events/${e.slug}/volunteer`)
+                          }
+                          data-testid="home-volunteer-link"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 transition hover:bg-amber-100"
+                        >
+                          <HeartHandshake className="h-3.5 w-3.5" aria-hidden />
+                          Volunteers needed — sign up
+                          <ArrowRight className="h-3 w-3" aria-hidden />
+                        </Link>
+                      </div>
+                    ) : null}
                   </li>
                 ))}
               </ul>
