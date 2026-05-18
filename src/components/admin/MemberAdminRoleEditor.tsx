@@ -234,6 +234,8 @@ function translatePromotionError(err: unknown): string {
   if (msg.includes('role_not_assignable_by_caller'))
     return 'You are not allowed to assign that role.'
   if (msg.includes('target_profile_not_found')) return 'This member has no profile yet.'
+  if (msg.includes('target_auth_user_not_found'))
+    return 'This user no longer exists. Their account was likely deleted.'
   if (msg.includes('cannot_demote_self')) return "You can't demote yourself."
   if (msg.includes('target_outranks_caller'))
     return 'This user holds a role above yours — only a higher-tier admin can change it.'
