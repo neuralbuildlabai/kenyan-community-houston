@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { supabase } from '@/lib/supabase'
 import { formatAdminActionError } from '@/lib/adminActionErrors'
 import { adminUpdateMemberStatus, type AdminMemberStatusPatch } from '@/lib/adminMembers'
+import { MemberAdminRoleEditor } from '@/components/admin/MemberAdminRoleEditor'
 import { toast } from 'sonner'
 import type { DuesStatus, HouseholdMember, Member, MembershipRecordStatus, MembershipType } from '@/lib/types'
 import {
@@ -400,6 +401,13 @@ export function AdminMembersPage() {
                   )}
                 </p>
               </div>
+
+              <MemberAdminRoleEditor
+                userId={detail.user_id ?? null}
+                email={detail.email}
+                onChanged={() => void load()}
+              />
+
               <div className="grid grid-cols-2 gap-2">
                 <div className="col-span-2 space-y-1.5">
                   <span className="text-muted-foreground text-xs uppercase">General Houston-area location</span>
