@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { StagingBanner } from '@/components/StagingBanner'
 import { AnalyticsRouteListener } from '@/components/AnalyticsRouteListener'
+import { PasswordExpiryBanner } from '@/components/PasswordExpiryBanner'
 
 const ADMIN_CHANGE_PASSWORD_PATH = '/admin/change-password'
 
@@ -65,6 +66,7 @@ export function AdminLayout() {
     <div className="flex h-screen overflow-hidden bg-background flex-col">
       <AnalyticsRouteListener />
       <StagingBanner />
+      <PasswordExpiryBanner />
       <div className="flex flex-1 overflow-hidden">
       {/* Desktop sidebar */}
       <div className="hidden lg:flex lg:shrink-0">

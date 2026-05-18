@@ -25,6 +25,33 @@ export function AdminChangePasswordPage() {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [saving, setSaving] = useState(false)
+  const [keeping, setKeeping] = useState(false)
+
+  /**
+   * "Keep current password" — bumps rotation timestamps via the
+   * `kigh_extend_password_expiry` RPC (migration 047) without changing
+   * the actual Supabase Auth password. Only shown when this is an
+   * `expired` redirect; a true forced reset (`reason === 'forced'`)
+   * still requires picking a new password.
+   */
+  async function handleKeep() {
+    if (!user?.id) {
+      toast.error('You must be signed in.')
+      return
+    }
+    setKeeping(true)
+    const { error } = await supabase.rpc('kigh_extend_password_expiry')
+    if (error) {
+      setKeeping(false)
+      toast.error(error.message || 'Could not extend — please try again.')
+      return
+    }
+    await refreshProfile()
+    await refreshAdminSecurity()
+    setKeeping(false)
+    toast.success('Got it — keeping your current password.')
+    navigate('/admin/dashboard', { replace: true })
+  }
 
   const checklist = useMemo(() => passwordPolicyChecklist(password, confirm), [password, confirm])
 
@@ -113,6 +140,22 @@ export function AdminChangePasswordPage() {
             {saving ? 'Saving…' : 'Save new password'}
           </Button>
         </form>
+
+        {reason !== 'forced' ? (
+          // Only true-force flows ("admin set a temp password") hide this
+          // affordance. Reaching this page via banner or expiry redirect
+          // lets the user opt out of a rotation they didn't ask for.
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={() => void handleKeep()}
+            disabled={keeping || saving}
+            data-testid="admin-change-password-keep"
+          >
+            {keeping ? 'Saving…' : 'Keep current password'}
+          </Button>
+        ) : null}
 
         <Button type="button" variant="outline" className="w-full gap-2" onClick={() => void signOut().then(() => navigate(postLogoutPath(location.pathname)))}>
           <LogOut className="h-4 w-4" /> Sign out

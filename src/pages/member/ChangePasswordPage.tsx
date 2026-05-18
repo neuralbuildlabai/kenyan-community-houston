@@ -21,6 +21,39 @@ export function ChangePasswordPage() {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [saving, setSaving] = useState(false)
+  const [keeping, setKeeping] = useState(false)
+
+  /**
+   * "Keep current password" — extends the rotation window by 180 days
+   * via `kigh_extend_password_expiry` (migration 047) without changing
+   * the actual Supabase Auth password. Hidden when the profile has
+   * `force_password_change = true` (an admin-issued temp password),
+   * because that's a true forced rotation that shouldn't be skippable.
+   */
+  async function handleKeep() {
+    if (!user?.id) {
+      toast.error('You must be signed in.')
+      return
+    }
+    setKeeping(true)
+    const { error } = await supabase.rpc('kigh_extend_password_expiry')
+    if (error) {
+      setKeeping(false)
+      toast.error(error.message || 'Could not extend — please try again.')
+      return
+    }
+    if (isAdmin) await refreshAdminSecurity()
+    await refreshProfile()
+    setKeeping(false)
+    toast.success('Got it — keeping your current password.')
+    const dest =
+      nextSafe && nextSafe !== '/change-password'
+        ? nextSafe
+        : isElevatedAdminRole(profile?.role)
+          ? '/admin/dashboard'
+          : '/profile'
+    navigate(dest, { replace: true })
+  }
 
   const nextRaw = params.get('next')
   const nextSafe = sanitizeNextParam(nextRaw)
@@ -142,6 +175,19 @@ export function ChangePasswordPage() {
               {saving ? 'Saving…' : 'Save password'}
             </Button>
           </form>
+
+          {!profile?.force_password_change ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => void handleKeep()}
+              disabled={keeping || saving}
+              data-testid="change-password-keep"
+            >
+              {keeping ? 'Saving…' : 'Keep current password'}
+            </Button>
+          ) : null}
 
           <Button
             type="button"

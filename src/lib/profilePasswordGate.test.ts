@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { User } from '@supabase/supabase-js'
 import type { Profile } from '@/lib/types'
-import { requiresProfilePasswordRefresh } from '@/lib/profilePasswordGate'
+import {
+  isProfilePasswordExpiryReached,
+  requiresProfilePasswordRefresh,
+} from '@/lib/profilePasswordGate'
 
 function userWithIdentities(identities: { provider: string }[]): User {
   return { identities } as unknown as User
@@ -22,13 +25,10 @@ function baseProfile(over: Partial<Profile> = {}): Profile {
   } as Profile
 }
 
-describe('requiresProfilePasswordRefresh', () => {
+describe('requiresProfilePasswordRefresh (post-047: hard-block only)', () => {
   it('is false when no email identity (OAuth-only)', () => {
     const u = userWithIdentities([{ provider: 'google' }])
-    const p = baseProfile({
-      force_password_change: true,
-      password_changed_at: undefined,
-    })
+    const p = baseProfile({ force_password_change: true })
     expect(requiresProfilePasswordRefresh(p, u)).toBe(false)
   })
 
@@ -42,14 +42,14 @@ describe('requiresProfilePasswordRefresh', () => {
     expect(requiresProfilePasswordRefresh(p, u)).toBe(true)
   })
 
-  it('is true when password_expires_at is in the past', () => {
+  it('is false when password_expires_at is in the past (now soft expiry)', () => {
     const u = userWithIdentities([{ provider: 'email' }])
     const p = baseProfile({
       force_password_change: false,
       password_changed_at: '2020-01-01T00:00:00Z',
       password_expires_at: '2020-06-01T00:00:00Z',
     })
-    expect(requiresProfilePasswordRefresh(p, u, new Date('2026-01-01T00:00:00Z'))).toBe(true)
+    expect(requiresProfilePasswordRefresh(p, u)).toBe(false)
   })
 
   it('is false when password_expires_at is in the future', () => {
@@ -58,15 +58,50 @@ describe('requiresProfilePasswordRefresh', () => {
       password_changed_at: '2026-01-01T00:00:00Z',
       password_expires_at: '2027-01-01T00:00:00Z',
     })
-    expect(requiresProfilePasswordRefresh(p, u, new Date('2026-06-01T00:00:00Z'))).toBe(false)
+    expect(requiresProfilePasswordRefresh(p, u)).toBe(false)
   })
 
-  it('is true when password_changed_at is missing and no expires_at', () => {
+  it('is false when password_changed_at is missing (no longer hard-blocks; banner can prompt)', () => {
     const u = userWithIdentities([{ provider: 'email' }])
     const p = baseProfile({
       password_changed_at: undefined,
       password_expires_at: undefined,
     })
-    expect(requiresProfilePasswordRefresh(p, u)).toBe(true)
+    expect(requiresProfilePasswordRefresh(p, u)).toBe(false)
+  })
+})
+
+describe('isProfilePasswordExpiryReached (soft prompt)', () => {
+  it('is false when no email identity', () => {
+    const u = userWithIdentities([{ provider: 'google' }])
+    const p = baseProfile({ password_expires_at: '2020-06-01T00:00:00Z' })
+    expect(isProfilePasswordExpiryReached(p, u, new Date('2026-01-01Z'))).toBe(false)
+  })
+
+  it('is true when password_expires_at is in the past', () => {
+    const u = userWithIdentities([{ provider: 'email' }])
+    const p = baseProfile({
+      password_changed_at: '2020-01-01T00:00:00Z',
+      password_expires_at: '2020-06-01T00:00:00Z',
+    })
+    expect(isProfilePasswordExpiryReached(p, u, new Date('2026-01-01Z'))).toBe(true)
+  })
+
+  it('is false when password_expires_at is in the future', () => {
+    const u = userWithIdentities([{ provider: 'email' }])
+    const p = baseProfile({
+      password_changed_at: '2026-01-01T00:00:00Z',
+      password_expires_at: '2027-01-01T00:00:00Z',
+    })
+    expect(isProfilePasswordExpiryReached(p, u, new Date('2026-06-01Z'))).toBe(false)
+  })
+
+  it('is false when no rotation metadata yet (fresh account)', () => {
+    const u = userWithIdentities([{ provider: 'email' }])
+    const p = baseProfile({
+      password_changed_at: undefined,
+      password_expires_at: undefined,
+    })
+    expect(isProfilePasswordExpiryReached(p, u)).toBe(false)
   })
 })
