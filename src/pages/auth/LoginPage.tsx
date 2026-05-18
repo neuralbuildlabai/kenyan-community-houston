@@ -163,6 +163,15 @@ export function LoginPage() {
                 </button>
               </div>
             </div>
+            <div className="-mt-2 flex justify-end">
+              <Link
+                to="/forgot-password"
+                className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+                data-testid="login-forgot-password"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <Button type="submit" className="w-full" disabled={loading}>
               <LogIn className="h-4 w-4 mr-2" />
               {loading ? 'Signing in…' : 'Sign in'}

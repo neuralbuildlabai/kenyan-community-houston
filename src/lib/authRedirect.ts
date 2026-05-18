@@ -31,6 +31,7 @@ const MEMBER_SAFE_PREFIXES = [
   '/contact',
   '/chat',
   '/change-password',
+  '/forgot-password',
   '/community-feed',
 ]
 

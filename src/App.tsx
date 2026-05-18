@@ -79,6 +79,7 @@ import { RequiresFreshPassword } from '@/components/RequiresFreshPassword'
 import { PasswordExpiryRouteGate } from '@/components/PasswordExpiryRouteGate'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { AuthCallbackPage } from '@/pages/auth/AuthCallbackPage'
+import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
 import { ProfilePage } from '@/pages/member/ProfilePage'
 import { ProfileMediaPage } from '@/pages/member/ProfileMediaPage'
 import { ChangePasswordPage } from '@/pages/member/ChangePasswordPage'
@@ -131,6 +132,7 @@ export default function App() {
               <Route path="resources" element={<ResourcesPage />} />
               <Route path="login" element={<LoginPage />} />
               <Route path="admin/login" element={<LoginPage />} />
+              <Route path="forgot-password" element={<ForgotPasswordPage />} />
               <Route path="auth/callback" element={<AuthCallbackPage />} />
               <Route
                 path="change-password"
