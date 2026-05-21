@@ -47,7 +47,10 @@ test.describe('homepage', () => {
     const calendarLink = page.getByTestId('home-whats-happening-calendar')
     await expect(eventRows.first().or(calendarLink)).toBeVisible({ timeout: 25_000 })
     const rowCount = await eventRows.count()
-    expect(rowCount).toBeLessThanOrEqual(3)
+    // Homepage shows up to 5 upcoming events: the soonest 2 render as
+    // a featured pair, the remainder as a compact "Also coming up"
+    // list.
+    expect(rowCount).toBeLessThanOrEqual(5)
     if (rowCount > 0) {
       await expect(page.getByTestId('home-cta-events')).toHaveAttribute('href', '/events')
       const titles = await eventRows.locator('[data-testid="home-event-title"]').allTextContents()

@@ -79,7 +79,11 @@ export function HomePage() {
           .limit(60)
         const raw = (ev as Event[]) ?? []
         const upcomingOnly = filterPublishedUpcomingByStartDate(raw, todayYmd)
-        if (!cancelled) setEvents(buildHomepageWhatsHappeningList(upcomingOnly, 3))
+        // Show up to 5: the soonest 2 are visually elevated ("Coming up
+        // next") and the remainder render as a compact "Also coming up"
+        // list. Past events naturally drop off because the query
+        // already filters by start_date >= today.
+        if (!cancelled) setEvents(buildHomepageWhatsHappeningList(upcomingOnly, 5))
 
         const { data: momentsRows } = await supabase
           .from('gallery_images_public')
@@ -257,59 +261,171 @@ export function HomePage() {
                 </Link>
               </p>
             ) : (
-              <ul className="divide-y divide-border/60">
-                {events.map((e) => (
-                  <li key={e.id}>
-                    <Link
-                      to={`/events/${e.slug}`}
-                      data-testid="home-event-row"
-                      onClick={() => void trackClick('home_whats_happening_event', `/events/${e.slug}`)}
-                      className="group block py-7 first:pt-0 transition-colors hover:text-primary"
-                    >
-                      <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8">
-                        <time
-                          dateTime={e.start_date}
-                          className="shrink-0 text-sm font-medium uppercase tracking-wide text-muted-foreground group-hover:text-primary sm:w-36"
-                        >
-                          {formatEventListDate(e.start_date)}
-                        </time>
-                        <div className="min-w-0 flex-1">
-                          <span
-                            data-testid="home-event-title"
-                            className="block text-xl font-semibold tracking-tight text-foreground group-hover:text-primary sm:text-2xl"
-                          >
-                            {e.title}
-                          </span>
-                          <span className="mt-1 block text-sm text-muted-foreground">{e.location}</span>
-                        </div>
-                        <span className="mt-2 inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary sm:mt-0">
-                          Details
-                          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
-                        </span>
-                      </div>
-                    </Link>
-                    {e.id === volunteerCallEventId ? (
-                      // Lives outside the main event Link because nested
-                      // <a> elements are invalid HTML. Aligned with the
-                      // title column on desktop via left padding.
-                      <div className="-mt-4 pb-5 sm:pl-44">
+              <div className="space-y-10">
+                {/* Featured pair — the next 2 upcoming events. The very
+                    first ("soonest") gets a gold accent + "Coming up
+                    next" pill; the second sits in a neutral card so the
+                    pair reads as a unit while the leader still pops. */}
+                <div className="space-y-4">
+                  {events.slice(0, 2).map((e, i) => {
+                    const isLeader = i === 0
+                    return (
+                      <div
+                        key={e.id}
+                        data-testid={isLeader ? 'home-event-featured' : 'home-event-up-next'}
+                        className={
+                          isLeader
+                            ? 'relative overflow-hidden rounded-2xl border-l-4 border-kenyan-gold-500 bg-kenyan-gold-50/60 px-5 py-6 ring-1 ring-kenyan-gold-100 sm:px-7 sm:py-7'
+                            : 'relative rounded-2xl border border-border/60 bg-card px-5 py-6 sm:px-7 sm:py-7'
+                        }
+                      >
+                        {isLeader ? (
+                          <p className="mb-3 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-kenyan-gold-700">
+                            <span
+                              className="inline-block h-1.5 w-1.5 rounded-full bg-kenyan-gold-500"
+                              aria-hidden
+                            />
+                            Coming up next
+                          </p>
+                        ) : null}
                         <Link
-                          to={`/events/${e.slug}/volunteer`}
+                          to={`/events/${e.slug}`}
+                          data-testid="home-event-row"
                           onClick={() =>
-                            void trackClick('home_volunteer_call', `/events/${e.slug}/volunteer`)
+                            void trackClick('home_whats_happening_event', `/events/${e.slug}`)
                           }
-                          data-testid="home-volunteer-link"
-                          className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 transition hover:bg-amber-100"
+                          className="group block transition-colors hover:text-primary"
                         >
-                          <HeartHandshake className="h-3.5 w-3.5" aria-hidden />
-                          Volunteers needed — sign up
-                          <ArrowRight className="h-3 w-3" aria-hidden />
+                          <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8">
+                            <time
+                              dateTime={e.start_date}
+                              className="shrink-0 text-sm font-semibold uppercase tracking-wide text-muted-foreground group-hover:text-primary sm:w-36"
+                            >
+                              {formatEventListDate(e.start_date)}
+                            </time>
+                            <div className="min-w-0 flex-1">
+                              <span
+                                data-testid="home-event-title"
+                                className="block text-2xl font-semibold tracking-tight text-foreground group-hover:text-primary sm:text-[1.7rem]"
+                              >
+                                {e.title}
+                              </span>
+                              <span className="mt-1 block text-sm text-muted-foreground">
+                                {e.location}
+                              </span>
+                            </div>
+                            <span className="mt-2 inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary sm:mt-0">
+                              Details
+                              <ArrowRight
+                                className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                                aria-hidden
+                              />
+                            </span>
+                          </div>
                         </Link>
+                        {e.id === volunteerCallEventId ? (
+                          <div className="mt-4 sm:pl-44">
+                            <Link
+                              to={`/events/${e.slug}/volunteer`}
+                              onClick={() =>
+                                void trackClick(
+                                  'home_volunteer_call',
+                                  `/events/${e.slug}/volunteer`
+                                )
+                              }
+                              data-testid="home-volunteer-link"
+                              className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 transition hover:bg-amber-100"
+                            >
+                              <HeartHandshake className="h-3.5 w-3.5" aria-hidden />
+                              Volunteers needed — sign up
+                              <ArrowRight className="h-3 w-3" aria-hidden />
+                            </Link>
+                          </div>
+                        ) : null}
                       </div>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
+                    )
+                  })}
+                </div>
+
+                {/* Remaining upcoming events render as a compact
+                    editorial list so they're visible but clearly
+                    secondary to the featured pair above. Past events
+                    are filtered out at the query layer and naturally
+                    fall off this list each day. */}
+                {events.length > 2 ? (
+                  <div data-testid="home-events-also-coming-up">
+                    <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                      Also coming up
+                    </p>
+                    <ul className="divide-y divide-border/60 border-t border-border/60">
+                      {events.slice(2).map((e) => (
+                        <li key={e.id}>
+                          <Link
+                            to={`/events/${e.slug}`}
+                            data-testid="home-event-row"
+                            onClick={() =>
+                              void trackClick(
+                                'home_whats_happening_event',
+                                `/events/${e.slug}`
+                              )
+                            }
+                            className="group block py-5 transition-colors hover:text-primary"
+                          >
+                            <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8">
+                              <time
+                                dateTime={e.start_date}
+                                className="shrink-0 text-sm font-medium uppercase tracking-wide text-muted-foreground group-hover:text-primary sm:w-36"
+                              >
+                                {formatEventListDate(e.start_date)}
+                              </time>
+                              <div className="min-w-0 flex-1">
+                                <span
+                                  data-testid="home-event-title"
+                                  className="block text-lg font-semibold tracking-tight text-foreground group-hover:text-primary"
+                                >
+                                  {e.title}
+                                </span>
+                                <span className="mt-1 block text-sm text-muted-foreground">
+                                  {e.location}
+                                </span>
+                              </div>
+                              <span className="mt-2 inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary sm:mt-0">
+                                Details
+                                <ArrowRight
+                                  className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                                  aria-hidden
+                                />
+                              </span>
+                            </div>
+                          </Link>
+                          {e.id === volunteerCallEventId ? (
+                            // Lives outside the main event Link because
+                            // nested <a> elements are invalid HTML.
+                            // Aligned with the title column on desktop.
+                            <div className="-mt-2 pb-5 sm:pl-44">
+                              <Link
+                                to={`/events/${e.slug}/volunteer`}
+                                onClick={() =>
+                                  void trackClick(
+                                    'home_volunteer_call',
+                                    `/events/${e.slug}/volunteer`
+                                  )
+                                }
+                                data-testid="home-volunteer-link"
+                                className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 transition hover:bg-amber-100"
+                              >
+                                <HeartHandshake className="h-3.5 w-3.5" aria-hidden />
+                                Volunteers needed — sign up
+                                <ArrowRight className="h-3 w-3" aria-hidden />
+                              </Link>
+                            </div>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
             )}
           </div>
         </div>
