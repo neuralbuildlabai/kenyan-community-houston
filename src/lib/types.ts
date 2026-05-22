@@ -237,6 +237,13 @@ export interface Event {
   volunteer_signup_instructions?: string | null
   volunteer_slots_needed?: number | null
   volunteer_signup_closes_at?: string | null
+  /** Vendor signup (migration 050). */
+  vendor_signup_enabled?: boolean | null
+  vendor_signup_closes_at?: string | null
+  vendor_signup_instructions?: string | null
+  vendor_food_fee_cents?: number | null
+  vendor_other_fee_cents?: number | null
+  vendor_slots_total?: number | null
 }
 
 export type VolunteerSignupStatus =
@@ -257,6 +264,36 @@ export interface EventVolunteerSignup {
   availability_note: string | null
   volunteer_role: string | null
   status: VolunteerSignupStatus
+  submitted_at: string
+  updated_at: string
+}
+
+export type VendorCategory = 'food' | 'other'
+
+export type VendorSignupStatus =
+  | 'submitted'
+  | 'confirmed'
+  | 'waitlisted'
+  | 'cancelled'
+  | 'declined'
+
+export type VendorPaymentStatus = 'unpaid' | 'paid' | 'waived' | 'refunded'
+
+/** Row in `public.event_vendor_signups` (migration 050). */
+export interface EventVendorSignup {
+  id: string
+  event_id: string
+  user_id: string | null
+  business_name: string
+  contact_name: string
+  email: string
+  phone: string
+  vendor_category: VendorCategory
+  product_description: string | null
+  fee_amount_cents: number
+  payment_status: VendorPaymentStatus
+  status: VendorSignupStatus
+  admin_notes: string | null
   submitted_at: string
   updated_at: string
 }

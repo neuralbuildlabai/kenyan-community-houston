@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Calendar, MapPin, Clock, Tag, ExternalLink, ArrowLeft, Ticket, Video, FileText, HeartHandshake } from 'lucide-react'
+import { Calendar, MapPin, Clock, Tag, ExternalLink, ArrowLeft, Ticket, Video, FileText, HeartHandshake, Store } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,11 @@ import { trackEntityView } from '@/lib/analytics'
 import { safeExternalHref } from '@/lib/externalUrl'
 import { EventComments } from '@/components/events/EventComments'
 import { volunteerSignupPath } from '@/lib/eventVolunteerSignup'
+import {
+  formatVendorFee,
+  resolveVendorFeeCents,
+  vendorSignupPath,
+} from '@/lib/eventVendorSignup'
 
 function resourceHref(r: Resource): string | null {
   // External URLs run through the safe normaliser so unsafe protocols
@@ -287,6 +292,26 @@ export function EventDetailPage() {
                   <Button asChild className="w-full gap-2">
                     <Link to={volunteerSignupPath(event.slug)}>
                       <HeartHandshake className="h-4 w-4" /> Volunteer signup
+                    </Link>
+                  </Button>
+                </div>
+              )}
+              {event.vendor_signup_enabled &&
+                !past &&
+                !(event.vendor_signup_closes_at && new Date(event.vendor_signup_closes_at) <= new Date()) && (
+                <div
+                  className="space-y-2 rounded-lg border border-kenyan-gold-200 bg-kenyan-gold-50/60 p-4"
+                  data-testid="event-vendor-cta"
+                >
+                  <div className="text-sm font-medium text-foreground">Sign up as a vendor</div>
+                  <p className="text-xs text-muted-foreground">
+                    Food {formatVendorFee(resolveVendorFeeCents(event, 'food'))} · Other{' '}
+                    {formatVendorFee(resolveVendorFeeCents(event, 'other'))}. Payment instructions
+                    appear after signup.
+                  </p>
+                  <Button asChild className="w-full gap-2">
+                    <Link to={vendorSignupPath(event.slug)}>
+                      <Store className="h-4 w-4" /> Vendor signup
                     </Link>
                   </Button>
                 </div>

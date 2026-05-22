@@ -12,6 +12,7 @@ import { HomePage } from '@/pages/public/HomePage'
 import { EventsPage } from '@/pages/public/EventsPage'
 import { EventDetailPage } from '@/pages/public/EventDetailPage'
 import { EventVolunteerSignupPage } from '@/pages/public/EventVolunteerSignupPage'
+import { EventVendorSignupPage } from '@/pages/public/EventVendorSignupPage'
 import { CalendarPage } from '@/pages/public/CalendarPage'
 import { AnnouncementsPage } from '@/pages/public/AnnouncementsPage'
 import { AnnouncementDetailPage } from '@/pages/public/AnnouncementDetailPage'
@@ -97,6 +98,7 @@ export default function App() {
               <Route path="events" element={<EventsPage />} />
               <Route path="events/submit" element={<SubmitEventPage />} />
               <Route path="events/:slug/volunteer" element={<EventVolunteerSignupPage />} />
+              <Route path="events/:slug/vendor" element={<EventVendorSignupPage />} />
               <Route path="events/:slug" element={<EventDetailPage />} />
               <Route path="calendar" element={<CalendarPage />} />
 
