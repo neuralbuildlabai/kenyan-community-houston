@@ -78,6 +78,8 @@ type VendorSignupSuccess = {
   signupId: string
   feeCents: number
   category: VendorCategory
+  /** Short reference code (e.g. VND-A1B2C3) the vendor includes in their payment note. */
+  referenceCode: string
 }
 
 /**
@@ -209,6 +211,7 @@ export function EventVendorSignupPage() {
       signupId: row.signup_id as string,
       feeCents: (row.fee_amount_cents as number) ?? liveFeeCents,
       category: (row.vendor_category as VendorCategory) ?? category,
+      referenceCode: (row.reference_code as string) ?? '',
     })
   }
 
@@ -506,6 +509,32 @@ function VendorSuccessPanel({
         </p>
       </div>
 
+      {success.referenceCode ? (
+        <div className="rounded-lg border border-foreground/15 bg-background/80 p-3" data-testid="vendor-reference-code">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Your reference code
+          </p>
+          <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+            <p className="break-all font-mono text-base font-bold text-foreground">
+              {success.referenceCode}
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="gap-1"
+              onClick={() => onCopy(success.referenceCode)}
+            >
+              <Copy className="h-3.5 w-3.5" /> Copy code
+            </Button>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Add this code (and your business name) to the payment note so the treasurer
+            can match your fee to your signup.
+          </p>
+        </div>
+      ) : null}
+
       <div className="space-y-3">
         <p className="text-sm font-semibold text-foreground">
           Send {feeDisplay} to one of these:
@@ -546,8 +575,8 @@ function VendorSuccessPanel({
           ))}
         </ul>
         <p className="text-xs text-muted-foreground">
-          When you send the fee, add a note with your business name so we can match the
-          payment to your signup.
+          When you send the fee, paste your reference code (above) plus your business name
+          into the payment note so the treasurer can match it instantly.
         </p>
       </div>
 

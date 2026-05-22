@@ -27,6 +27,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/admin/chat': 'Community requests',
   '/admin/event-comments': 'Event comments',
   '/admin/volunteers': 'Volunteers',
+  '/admin/vendors': 'Vendors',
   '/admin/invites': 'WhatsApp invites',
   '/admin/service-interests': 'Call to Serve',
   '/admin/media-submissions': 'Media submissions',

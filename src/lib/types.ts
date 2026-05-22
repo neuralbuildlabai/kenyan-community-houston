@@ -279,7 +279,7 @@ export type VendorSignupStatus =
 
 export type VendorPaymentStatus = 'unpaid' | 'paid' | 'waived' | 'refunded'
 
-/** Row in `public.event_vendor_signups` (migration 050). */
+/** Row in `public.event_vendor_signups` (migrations 050 + 051). */
 export interface EventVendorSignup {
   id: string
   event_id: string
@@ -294,6 +294,8 @@ export interface EventVendorSignup {
   payment_status: VendorPaymentStatus
   status: VendorSignupStatus
   admin_notes: string | null
+  /** Short code (e.g. VND-A1B2C3) — vendor includes this in the payment note. */
+  reference_code: string
   submitted_at: string
   updated_at: string
 }
