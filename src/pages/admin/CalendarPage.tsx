@@ -36,6 +36,12 @@ import {
   buildVolunteerWhatsAppShareUrl,
   generateVolunteerSignupSlug,
 } from '@/lib/eventVolunteerSignup'
+import {
+  VENDOR_FEE_DEFAULTS_CENTS,
+  buildVendorShareMessage,
+  buildVendorSignupUrl,
+  buildVendorWhatsAppShareUrl,
+} from '@/lib/eventVendorSignup'
 
 type EventRow = Event
 
@@ -87,6 +93,14 @@ const defaultForm = () => ({
   volunteer_signup_instructions: '',
   volunteer_slots_needed: '' as string,
   volunteer_signup_closes_at: '' as string,
+  // Vendor signup (migration 050/051). Fees are USD strings in the
+  // form for editor ergonomics, then converted to integer cents on
+  // save. Blank values fall back to the community defaults.
+  vendor_signup_enabled: false,
+  vendor_signup_instructions: '',
+  vendor_signup_closes_at: '' as string,
+  vendor_food_fee_usd: '' as string,
+  vendor_other_fee_usd: '' as string,
 })
 
 function toDatetimeLocalValue(iso: string | null | undefined): string {
@@ -177,6 +191,13 @@ export function AdminCalendarPage() {
       volunteer_signup_instructions: e.volunteer_signup_instructions ?? '',
       volunteer_slots_needed: e.volunteer_slots_needed != null ? String(e.volunteer_slots_needed) : '',
       volunteer_signup_closes_at: toDatetimeLocalValue(e.volunteer_signup_closes_at ?? undefined),
+      vendor_signup_enabled: !!e.vendor_signup_enabled,
+      vendor_signup_instructions: e.vendor_signup_instructions ?? '',
+      vendor_signup_closes_at: toDatetimeLocalValue(e.vendor_signup_closes_at ?? undefined),
+      vendor_food_fee_usd:
+        e.vendor_food_fee_cents != null ? (e.vendor_food_fee_cents / 100).toString() : '',
+      vendor_other_fee_usd:
+        e.vendor_other_fee_cents != null ? (e.vendor_other_fee_cents / 100).toString() : '',
     })
     setDialogOpen(true)
   }
@@ -188,6 +209,31 @@ export function AdminCalendarPage() {
     }
     if (form.volunteer_signup_instructions.trim().length > 500) {
       toast.error('Volunteer instructions must be 500 characters or less')
+      return
+    }
+    if (form.vendor_signup_instructions.trim().length > 1000) {
+      toast.error('Vendor instructions must be 1000 characters or less')
+      return
+    }
+    // Validate fee inputs only when vendor signup is enabled to
+    // avoid surprising admins editing unrelated events.
+    function parseVendorFeeCents(raw: string, fallback: number): number | null {
+      const t = raw.trim()
+      if (!t) return fallback
+      const usd = Number(t)
+      if (!Number.isFinite(usd) || usd < 0 || usd > 10000) return null
+      return Math.round(usd * 100)
+    }
+    const vendorFoodCents = parseVendorFeeCents(
+      form.vendor_food_fee_usd,
+      VENDOR_FEE_DEFAULTS_CENTS.food
+    )
+    const vendorOtherCents = parseVendorFeeCents(
+      form.vendor_other_fee_usd,
+      VENDOR_FEE_DEFAULTS_CENTS.other
+    )
+    if (form.vendor_signup_enabled && (vendorFoodCents === null || vendorOtherCents === null)) {
+      toast.error('Vendor fees must be numbers between $0 and $10,000.')
       return
     }
     setSaving(true)
@@ -252,6 +298,13 @@ export function AdminCalendarPage() {
       volunteer_signup_closes_at: form.volunteer_signup_closes_at.trim()
         ? new Date(form.volunteer_signup_closes_at).toISOString()
         : null,
+      vendor_signup_enabled: form.vendor_signup_enabled,
+      vendor_signup_instructions: form.vendor_signup_instructions.trim() || null,
+      vendor_signup_closes_at: form.vendor_signup_closes_at.trim()
+        ? new Date(form.vendor_signup_closes_at).toISOString()
+        : null,
+      vendor_food_fee_cents: vendorFoodCents ?? VENDOR_FEE_DEFAULTS_CENTS.food,
+      vendor_other_fee_cents: vendorOtherCents ?? VENDOR_FEE_DEFAULTS_CENTS.other,
     }
 
     if (form.id) {
@@ -570,7 +623,7 @@ export function AdminCalendarPage() {
                 </div>
               </div>
               {form.volunteer_signup_enabled ? (
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-2" data-testid="admin-event-volunteer-fields">
                   <div className="form-field-stack">
                     <Label>Slots needed</Label>
                     <Input
@@ -625,6 +678,127 @@ export function AdminCalendarPage() {
                           <a
                             href={buildVolunteerWhatsAppShareUrl(
                               buildVolunteerShareMessage(form.title.trim() || 'this event', buildVolunteerSignupUrl(volunteerLinkSlugPreview))
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {/* Vendor signup — mirrors the volunteer block above
+                so admins reason about the two flows the same way.
+                Fees are per-event; blank inputs fall back to the
+                community defaults ($100 food / $50 other). */}
+            <div className="sm:col-span-2 rounded-xl border border-kenyan-gold-200/80 bg-kenyan-gold-50/40 p-4 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold text-foreground">Vendor signup</div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Self-serve form at /events/&lt;slug&gt;/vendor. Vendors get a
+                    reference code and pay via CashApp/Venmo/PayPal handles.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Switch
+                    checked={form.vendor_signup_enabled}
+                    onCheckedChange={(v) => setForm((f) => ({ ...f, vendor_signup_enabled: v }))}
+                    id="vendor-en"
+                  />
+                  <Label htmlFor="vendor-en" className="text-sm">Enable</Label>
+                </div>
+              </div>
+              {form.vendor_signup_enabled ? (
+                <div className="grid gap-4 sm:grid-cols-2" data-testid="admin-event-vendor-fields">
+                  <div className="form-field-stack">
+                    <Label>Food vendor fee (USD)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={form.vendor_food_fee_usd}
+                      onChange={(e) => setForm((f) => ({ ...f, vendor_food_fee_usd: e.target.value }))}
+                      placeholder="100"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Default $100 if blank.
+                    </p>
+                  </div>
+                  <div className="form-field-stack">
+                    <Label>Other vendor fee (USD)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={form.vendor_other_fee_usd}
+                      onChange={(e) => setForm((f) => ({ ...f, vendor_other_fee_usd: e.target.value }))}
+                      placeholder="50"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Default $50 if blank. Applies to retail, services, nonprofit.
+                    </p>
+                  </div>
+                  <div className="form-field-stack">
+                    <Label>Signup closes</Label>
+                    <Input
+                      type="datetime-local"
+                      value={form.vendor_signup_closes_at}
+                      onChange={(e) => setForm((f) => ({ ...f, vendor_signup_closes_at: e.target.value }))}
+                    />
+                  </div>
+                  <div className="form-field-stack sm:col-span-1">
+                    <Label>Instructions (max 1000)</Label>
+                    <Textarea
+                      rows={3}
+                      maxLength={1000}
+                      value={form.vendor_signup_instructions}
+                      onChange={(e) => setForm((f) => ({ ...f, vendor_signup_instructions: e.target.value }))}
+                      placeholder="Setup time, power access, what to bring, food-permit requirements…"
+                    />
+                  </div>
+                  <div className="sm:col-span-2 space-y-2">
+                    <Label className="text-xs text-muted-foreground">Shareable link</Label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Input
+                        readOnly
+                        value={buildVendorSignupUrl(volunteerLinkSlugPreview)}
+                        className="font-mono text-xs"
+                      />
+                      <div className="flex flex-wrap gap-2 shrink-0">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          className="gap-1"
+                          onClick={() => {
+                            const u = buildVendorSignupUrl(volunteerLinkSlugPreview)
+                            void navigator.clipboard.writeText(u).then(() => toast.success('Link copied'))
+                          }}
+                        >
+                          <Copy className="h-3.5 w-3.5" /> Copy
+                        </Button>
+                        <Button type="button" size="sm" variant="outline" className="gap-1" asChild>
+                          <a
+                            href={buildVendorSignupUrl(volunteerLinkSlugPreview)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" /> Open
+                          </a>
+                        </Button>
+                        <Button type="button" size="sm" variant="outline" className="gap-1" asChild>
+                          <a
+                            href={buildVendorWhatsAppShareUrl(
+                              buildVendorShareMessage(
+                                form.title.trim() || 'this event',
+                                buildVendorSignupUrl(volunteerLinkSlugPreview)
+                              )
                             )}
                             target="_blank"
                             rel="noopener noreferrer"
