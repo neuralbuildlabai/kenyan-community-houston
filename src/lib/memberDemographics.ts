@@ -207,9 +207,9 @@ export function buildInviteMessage(args: {
 
   let body: string
   if (name) {
-    body = `Hi ${name}, I'm inviting you to join Kenyan Community Houston.\n\nYou can use the community website to view events, announcements, resources, businesses, community support updates, and membership information.\n\nVisit: ${site}`
+    body = `Hi ${name}, I'm inviting you to join Kenyans in Greater Houston.\n\nYou can use the community website to view events, announcements, resources, businesses, community support updates, and membership information.\n\nVisit: ${site}`
   } else {
-    body = `Hi, I'm inviting you to join Kenyan Community Houston.\n\nYou can use the community website to view events, announcements, resources, businesses, community support updates, and membership information.\n\nVisit: ${site}`
+    body = `Hi, I'm inviting you to join Kenyans in Greater Houston.\n\nYou can use the community website to view events, announcements, resources, businesses, community support updates, and membership information.\n\nVisit: ${site}`
   }
   if (note) {
     body += `\n\nNote from me: ${note}`

@@ -111,7 +111,7 @@ export function Header() {
           overlayHeader ? 'text-white' : 'text-primary'
         )}
       >
-        Kenyan Community Houston
+        Kenyans in Greater Houston
       </span>
       <span
         className={cn(
@@ -119,7 +119,7 @@ export function Header() {
           overlayHeader ? 'text-white/72' : 'text-muted-foreground'
         )}
       >
-        Kenyans in Greater Houston
+        Community Hub
       </span>
     </div>
   )

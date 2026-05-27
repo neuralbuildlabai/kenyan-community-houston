@@ -8,10 +8,10 @@ import type { FeedPostType } from './types'
 
 export { COMMUNITY_SUBMISSION_CATEGORIES, canonicalCategory, formatCategoryLabel, categoryValuesMatchingCanonical }
 
-export const APP_NAME = 'Kenyan Community Houston'
+export const APP_NAME = 'Kenyans in Greater Houston'
 /** Standard nonprofit credibility line for footer, hero, and key public surfaces. */
 export const KIGH_NONPROFIT_CREDIBILITY_STATEMENT =
-  'Kenyan Community Houston is a registered 501(c)(3) nonprofit organization serving Kenyans and friends of Kenya across the Houston area.'
+  'Kenyans in Greater Houston is a registered 501(c)(3) nonprofit organization serving Kenyans and friends of Kenya across the Houston area.'
 export const APP_TAGLINE = 'Your trusted home away from home in Houston, Texas.'
 export const APP_DESCRIPTION =
   'The trusted digital hub for Kenyans in Houston and surrounding areas. Discover events, businesses, community news, and more.'
@@ -188,12 +188,12 @@ export const CONTENT_STATUSES = [
 
 export const BUSINESS_TIERS = ['free', 'verified', 'featured', 'sponsor'] as const
 
-export const DISCLAIMER_TEXT = `Kenyan Community Houston is a community information platform. We do not
+export const DISCLAIMER_TEXT = `Kenyans in Greater Houston is a community information platform. We do not
 guarantee the accuracy, completeness, or reliability of any content published
 here. Fundraiser listings do not constitute endorsement. Always verify
 independently before donating. Business listings are provided for
 informational purposes only.`
 
 export const FUNDRAISER_DISCLAIMER = `Please verify the authenticity of any fundraiser before contributing.
-Kenyan Community Houston reviews submissions but cannot guarantee every
+Kenyans in Greater Houston reviews submissions but cannot guarantee every
 claim. Contact us if you have concerns about a specific listing.`

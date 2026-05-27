@@ -11,7 +11,7 @@ test.describe('homepage', () => {
     await expect(
       page.getByRole('heading', {
         level: 1,
-        name: /Your Kenyan community hub in Houston/i,
+        name: /Welcome to The Kenyans in Greater Houston Community Hub/i,
       })
     ).toBeVisible()
 

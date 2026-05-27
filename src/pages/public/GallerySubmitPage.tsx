@@ -254,7 +254,7 @@ export function GallerySubmitPage() {
     <>
       <SEOHead
         title="Submit gallery photos"
-        description="Share photos from Kenyan Community Houston events for review before they appear in the public gallery."
+        description="Share photos from Kenyans in Greater Houston events for review before they appear in the public gallery."
       />
 
       <PublicPageHero
@@ -412,7 +412,7 @@ export function GallerySubmitPage() {
                     data-testid="gallery-submit-consent"
                   />
                   <Label htmlFor="consent" className="cursor-pointer text-sm font-normal leading-relaxed">
-                    I confirm I have the right to share these photos with Kenyan Community Houston
+                    I confirm I have the right to share these photos with Kenyans in Greater Houston
                     (KIGH), and I understand they may be cropped or edited for the website. KIGH may
                     use approved images on this site and related community channels. I am not
                     uploading private or sensitive information about others without their permission.

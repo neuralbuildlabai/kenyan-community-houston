@@ -263,7 +263,7 @@ export function CommunitySupportPage() {
 
             <div className="rounded-2xl border border-border/50 bg-muted/30 p-5 text-xs text-muted-foreground leading-relaxed">
               <p>
-                Kenyan Community Houston is a registered 501(c)(3) nonprofit organization serving
+                Kenyans in Greater Houston is a registered 501(c)(3) nonprofit organization serving
                 Kenyans and friends of Kenya across the Houston area.
               </p>
             </div>

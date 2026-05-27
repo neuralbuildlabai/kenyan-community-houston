@@ -143,13 +143,13 @@ export function HomePage() {
         <div className="relative z-10 flex flex-1 flex-col justify-center px-4 pb-16 pt-24 sm:px-6 sm:pb-20 sm:pt-28 lg:px-8 lg:pb-24">
           <div className="mx-auto w-full max-w-3xl text-center text-white">
             <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.28em] text-white/75 sm:text-xs">
-              Kenyan Community Houston
+              Kenyans in Greater Houston
             </p>
             <h1
               data-testid="home-hero-headline"
               className="mb-6 text-4xl font-semibold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-[3.25rem]"
             >
-              Your Kenyan community hub in Houston
+              Welcome to The Kenyans in Greater Houston Community Hub
             </h1>
             <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed text-white/88 sm:text-lg sm:leading-relaxed">
               A trusted place to find what is happening, who is serving, and how to stay connected

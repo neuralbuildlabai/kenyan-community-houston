@@ -103,7 +103,7 @@ export function ContactPage() {
     <>
       <SEOHead
         title="Contact / Join"
-        description="Reach out to the Kenyan Community Houston team for inquiries, event submissions, or to get involved."
+        description="Reach out to the Kenyans in Greater Houston team for inquiries, event submissions, or to get involved."
       />
 
       <PublicPageHero

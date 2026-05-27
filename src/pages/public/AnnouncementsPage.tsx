@@ -66,7 +66,7 @@ export function AnnouncementsPage() {
       <PublicPageHero
         eyebrow="Community noticeboard"
         title="Announcements"
-        subtitle="Official updates, leadership notices, event reminders, opportunities, and important community news from Kenyan Community Houston. Reviewed before publication so members can trust what they read here."
+        subtitle="Official updates, leadership notices, event reminders, opportunities, and important community news from Kenyans in Greater Houston. Reviewed before publication so members can trust what they read here."
         primaryAction={
           <Button asChild size="sm">
             <Link to="/announcements/submit">Submit an announcement</Link>

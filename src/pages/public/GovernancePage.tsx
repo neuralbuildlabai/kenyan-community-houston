@@ -178,7 +178,7 @@ export function GovernancePage() {
                 Constitution & Bylaws
               </h1>
               <p className="mt-4 text-lg text-muted-foreground leading-relaxed max-w-3xl">
-                How Kenyan Community Houston is organized, led, funded, and held accountable to its
+                How Kenyans in Greater Houston is organized, led, funded, and held accountable to its
                 members. Transparent governance is what turns a group of neighbors into a trusted
                 community institution.
               </p>

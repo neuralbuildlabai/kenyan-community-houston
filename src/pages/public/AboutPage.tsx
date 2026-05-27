@@ -50,7 +50,7 @@ export function AboutPage() {
                 Registered 501(c)(3) nonprofit
               </h2>
               <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
-                Kenyan Community Houston is a registered 501(c)(3) nonprofit
+                Kenyans in Greater Houston is a registered 501(c)(3) nonprofit
                 organization serving Kenyans and friends of Kenya across the
                 Houston area.
               </p>
