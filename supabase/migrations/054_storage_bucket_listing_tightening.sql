@@ -55,6 +55,16 @@ drop policy if exists "leadership_photos public read" on storage.objects;
 -- URLs still resolve through the public-bucket CDN path; this
 -- policy only governs PostgREST-mediated reads.
 
+-- Only elevated admins may list/download kigh-submission-media via the
+-- SDK. Public URL access continues to work via the storage CDN
+-- (bucket.public = true); the admin gallery-approval pipeline uses
+-- .download() and requires this policy (migration 054).
+--
+-- COMMENT ON POLICY on storage.objects is skipped because the migration
+-- runner role does not own storage.objects (it is owned by
+-- supabase_storage_admin). The rationale lives here in the migration
+-- source instead.
+
 drop policy if exists "kigh_submission_media_select_public" on storage.objects;
 create policy "kigh_submission_media_select_admin"
   on storage.objects for select
@@ -63,9 +73,3 @@ create policy "kigh_submission_media_select_admin"
     bucket_id = 'kigh-submission-media'
     and public.kigh_is_elevated_admin()
   );
-
-comment on policy "kigh_submission_media_select_admin" on storage.objects is
-  'Only elevated admins may list/download kigh-submission-media via '
-  'the SDK. Public URL access continues to work via the storage CDN '
-  '(bucket.public = true); the admin gallery-approval pipeline uses '
-  '.download() and requires this policy (migration 054).';
