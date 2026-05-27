@@ -81,28 +81,18 @@ begin
 end
 $$;
 
--- Add `extensions` to the database-default search_path so unqualified
--- operator references (e.g. `text % text`) keep working.
--- This statement requires superuser/role-owner privileges; Supabase
--- service-role migrations have it.
-do $$
-declare
-  db_name text := current_database();
-  existing_path text;
-begin
-  select setting into existing_path
-  from pg_db_role_setting drs
-  join pg_database db on db.oid = drs.setdatabase
-  where db.datname = db_name
-    and drs.setrole = 0
-  limit 1;
-
-  -- Only update if `extensions` is not already on the search_path.
-  if existing_path is null or position('extensions' in existing_path) = 0 then
-    execute format('alter database %I set search_path = "$user", public, extensions', db_name);
-  end if;
-end
-$$;
+-- Note on search_path: Supabase's managed Postgres already includes
+-- `extensions` in the default search_path for the postgres role and
+-- the application roles (anon, authenticated, service_role). So
+-- relocating pg_trgm to `extensions` does not require any further
+-- search_path mutation — unqualified `gin_trgm_ops` / `text % text`
+-- references continue to resolve. We intentionally do NOT alter the
+-- database-level search_path here because (a) it's already correct
+-- on Supabase, and (b) altering it via a migration requires the
+-- database owner role, which the migration runner does not always
+-- have. If a future environment ships without `extensions` on the
+-- search_path, the fix is a one-line manual:
+--   alter database postgres set search_path = "$user", public, extensions;
 
 -- ─── 3. service_interests: shape-validated INSERT policy ─────────
 -- Replace the always-true INSERT policy with a CHECK that enforces
