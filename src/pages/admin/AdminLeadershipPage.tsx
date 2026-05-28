@@ -380,7 +380,6 @@ export function AdminLeadershipPage() {
                     >
                       <div className="shrink-0">
                         {row.photo_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={row.photo_url}
                             alt={row.name ?? row.titles[0] ?? 'Seat'}
@@ -580,7 +579,6 @@ export function AdminLeadershipPage() {
                 <Label className="text-sm">Photo (optional)</Label>
                 <div className="flex items-center gap-3">
                   {photoPreview ? (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={photoPreview}
                       alt="preview"
@@ -589,7 +587,6 @@ export function AdminLeadershipPage() {
                   ) : editingId &&
                     !clearExistingPhoto &&
                     rows.find((r) => r.id === editingId)?.photo_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={rows.find((r) => r.id === editingId)!.photo_url ?? undefined}
                       alt="current"

@@ -14,7 +14,14 @@ import { buildEventIcs, googleCalendarUrl } from '@/lib/calendarLinks'
 import type { Event } from '@/lib/types'
 import { PageLoader } from '@/components/LoadingSpinner'
 import { isEventPast } from '@/lib/eventDate'
-import { dedupeToNextOccurrenceOnly } from '@/lib/eventRecurrencePublic'
+import { limitOccurrencesPerGroup } from '@/lib/eventRecurrencePublic'
+
+/**
+ * Public calendar caps each recurring series at this many upcoming
+ * occurrences so weekly events (e.g. Sunday services) don't crowd the
+ * list. Past events are never capped — historical context is useful.
+ */
+const PUBLIC_MAX_UPCOMING_OCCURRENCES_PER_GROUP = 2
 import { MapLink } from '@/components/MapLink'
 import { trackClick } from '@/lib/analytics'
 import { MonthCalendarGrid } from '@/components/calendar/MonthCalendarGrid'
@@ -92,13 +99,16 @@ export function CalendarPage() {
     if (category) list = list.filter((e) => canonicalCategory(e.category) === category)
     if (tab === 'upcoming') {
       list = list.filter((e) => !isEventPast(e.start_date))
-      list = dedupeToNextOccurrenceOnly(list)
+      list = limitOccurrencesPerGroup(list, PUBLIC_MAX_UPCOMING_OCCURRENCES_PER_GROUP)
     } else if (tab === 'past') {
       list = list.filter((e) => isEventPast(e.start_date))
       list = [...list].sort((a, b) => parseISO(b.start_date).getTime() - parseISO(a.start_date).getTime())
     } else {
       const past = list.filter((e) => isEventPast(e.start_date))
-      const future = dedupeToNextOccurrenceOnly(list.filter((e) => !isEventPast(e.start_date)))
+      const future = limitOccurrencesPerGroup(
+        list.filter((e) => !isEventPast(e.start_date)),
+        PUBLIC_MAX_UPCOMING_OCCURRENCES_PER_GROUP
+      )
       list = [...past, ...future].sort((a, b) => parseISO(a.start_date).getTime() - parseISO(b.start_date).getTime())
     }
     return list

@@ -13,7 +13,10 @@ import { supabase } from '@/lib/supabase'
 import { EVENT_CATEGORIES, categoryValuesMatchingCanonical } from '@/lib/constants'
 import type { Event } from '@/lib/types'
 import { isEventPast } from '@/lib/eventDate'
-import { dedupeToNextOccurrenceOnly } from '@/lib/eventRecurrencePublic'
+import { limitOccurrencesPerGroup } from '@/lib/eventRecurrencePublic'
+
+/** Mirrors the public calendar — cap recurring series so the list breathes. */
+const PUBLIC_MAX_UPCOMING_OCCURRENCES_PER_GROUP = 2
 
 function compareOccurrence(a: Event, b: Event): number {
   const d = a.start_date.localeCompare(b.start_date)
@@ -49,7 +52,10 @@ export function EventsPage() {
   const { featured, upcoming, past } = useMemo(() => {
     const upcomingRows = events.filter((e) => !isEventPast(e.start_date))
     const pastRows = events.filter((e) => isEventPast(e.start_date))
-    const upcomingSorted = dedupeToNextOccurrenceOnly(upcomingRows).sort(compareOccurrence)
+    const upcomingSorted = limitOccurrencesPerGroup(
+      upcomingRows,
+      PUBLIC_MAX_UPCOMING_OCCURRENCES_PER_GROUP
+    ).sort(compareOccurrence)
     const pastSorted = [...pastRows].sort((a, b) => {
       const d = b.start_date.localeCompare(a.start_date)
       if (d !== 0) return d

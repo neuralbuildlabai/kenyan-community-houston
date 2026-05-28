@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Search, Trash2, Star } from 'lucide-react'
+import { Search, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { supabase } from '@/lib/supabase'
 import { moderationStatusPatch } from '@/lib/publishLifecycle'
-import { formatDateShort } from '@/lib/utils'
 import { toast } from 'sonner'
 
 interface Business {
@@ -40,6 +38,9 @@ export function AdminBusinessesPage() {
     setLoading(false)
   }
 
+  // Reload only when the status filter changes; `load` is a closure
+  // recreated each render, so we keep it out of the dependency array.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [statusFilter])
 
   async function updateStatus(id: string, status: string) {
@@ -66,10 +67,6 @@ export function AdminBusinessesPage() {
   }
 
   const displayed = items.filter((b) => !search || b.name.toLowerCase().includes(search.toLowerCase()) || b.category?.toLowerCase().includes(search.toLowerCase()))
-
-  const tierColor = (tier: string) => ({
-    basic: '', verified: 'text-blue-600', featured: 'text-amber-600', sponsor: 'text-purple-600',
-  }[tier] ?? '')
 
   return (
     <div className="space-y-6">

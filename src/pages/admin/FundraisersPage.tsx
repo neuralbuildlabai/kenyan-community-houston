@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Search, Trash2, ShieldCheck } from 'lucide-react'
+import { Search, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { supabase } from '@/lib/supabase'
 import { moderationStatusPatch } from '@/lib/publishLifecycle'
-import { formatCurrency, formatDateShort } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 
 interface Fundraiser {
@@ -42,6 +41,9 @@ export function AdminFundraisersPage() {
     setLoading(false)
   }
 
+  // Reload only when the status filter changes; `load` is a closure
+  // recreated each render, so we keep it out of the dependency array.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [statusFilter])
 
   async function updateStatus(id: string, status: string) {
@@ -68,8 +70,6 @@ export function AdminFundraisersPage() {
   }
 
   const displayed = items.filter((f) => !search || f.title.toLowerCase().includes(search.toLowerCase()) || f.beneficiary_name?.toLowerCase().includes(search.toLowerCase()))
-
-  const verBadgeColor = (v: string) => v === 'verified' ? 'default' : v === 'flagged' ? 'destructive' : 'outline'
 
   return (
     <div className="space-y-6">

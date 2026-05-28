@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Plus, Pencil, Eye, Archive, Trash2, Search, Copy, ExternalLink, MessageCircle } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Plus, Pencil, Eye, Archive, Trash2, Search, Copy, ExternalLink, MessageCircle, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -42,6 +42,17 @@ import {
   buildVendorSignupUrl,
   buildVendorWhatsAppShareUrl,
 } from '@/lib/eventVendorSignup'
+import { publicRecurrenceGroupKey } from '@/lib/eventRecurrencePublic'
+import { isEventPast } from '@/lib/eventDate'
+
+/**
+ * Admin calendar keeps this many upcoming occurrences per recurring
+ * series visible so weekly events (e.g. Sunday Service) don't drown
+ * the list. Past occurrences are never capped — admins want full
+ * historical context. Hidden upcoming rows are surfaced via a
+ * per-group "show more" expander so they remain reachable.
+ */
+const ADMIN_MAX_UPCOMING_OCCURRENCES_PER_GROUP = 3
 
 type EventRow = Event
 
@@ -122,6 +133,7 @@ export function AdminCalendarPage() {
   const [form, setForm] = useState(() => defaultForm())
   const [saving, setSaving] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [showAllRecurring, setShowAllRecurring] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -147,6 +159,41 @@ export function AdminCalendarPage() {
     }
     return true
   })
+
+  /**
+   * IDs of upcoming recurring occurrences past the per-group cap. We
+   * keep the three soonest in each group and hide the rest (until the
+   * admin toggles "show all"). Past occurrences are never hidden so
+   * historical records stay reachable in one scroll.
+   */
+  const hiddenRecurringIds = useMemo(() => {
+    const futureByGroup = new Map<string, EventRow[]>()
+    for (const e of displayed) {
+      if (isEventPast(e.start_date)) continue
+      const k = publicRecurrenceGroupKey(e)
+      const list = futureByGroup.get(k) ?? []
+      list.push(e)
+      futureByGroup.set(k, list)
+    }
+    const hidden = new Set<string>()
+    for (const arr of futureByGroup.values()) {
+      if (arr.length <= ADMIN_MAX_UPCOMING_OCCURRENCES_PER_GROUP) continue
+      arr.sort((a, b) => {
+        const d = a.start_date.localeCompare(b.start_date)
+        if (d !== 0) return d
+        return (a.start_time ?? '').localeCompare(b.start_time ?? '')
+      })
+      for (let i = ADMIN_MAX_UPCOMING_OCCURRENCES_PER_GROUP; i < arr.length; i += 1) {
+        hidden.add(arr[i].id)
+      }
+    }
+    return hidden
+  }, [displayed])
+
+  const visibleRows = showAllRecurring
+    ? displayed
+    : displayed.filter((e) => !hiddenRecurringIds.has(e.id))
+  const hiddenCount = hiddenRecurringIds.size
 
   function openCreate() {
     setForm(defaultForm())
@@ -404,6 +451,28 @@ export function AdminCalendarPage() {
         </Select>
       </div>
 
+      {hiddenCount > 0 ? (
+        <div
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm"
+          data-testid="admin-calendar-recurring-collapse-banner"
+        >
+          <p className="text-muted-foreground">
+            <span className="font-medium text-foreground">
+              {hiddenCount} further-out recurring {hiddenCount === 1 ? 'occurrence is' : 'occurrences are'} hidden
+            </span>{' '}
+            so each series shows at most {ADMIN_MAX_UPCOMING_OCCURRENCES_PER_GROUP} upcoming dates.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setShowAllRecurring((v) => !v)}
+          >
+            {showAllRecurring ? 'Collapse recurring' : `Show all (${hiddenCount} more)`}
+          </Button>
+        </div>
+      ) : null}
+
       <div className="rounded-xl border overflow-x-auto">
         <Table>
           <TableHeader>
@@ -420,10 +489,10 @@ export function AdminCalendarPage() {
               Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i}><TableCell colSpan={5}><div className="h-8 bg-muted animate-pulse rounded" /></TableCell></TableRow>
               ))
-            ) : displayed.length === 0 ? (
+            ) : visibleRows.length === 0 ? (
               <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">No events match filters</TableCell></TableRow>
             ) : (
-              displayed.map((e) => (
+              visibleRows.map((e) => (
                 <TableRow key={e.id}>
                   <TableCell className="font-medium max-w-[220px]">
                     <div className="truncate">{e.title}</div>
@@ -447,8 +516,19 @@ export function AdminCalendarPage() {
                       <Button size="icon" variant="ghost" className="h-8 w-8" asChild>
                         <a href={`/events/${e.slug}`} target="_blank" rel="noopener noreferrer"><Eye className="h-3.5 w-3.5" /></a>
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(e)}>
+                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(e)} title="Edit">
                         <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        asChild
+                        title="Upload / manage materials for this event"
+                      >
+                        <a href={`/admin/resources?event_id=${e.id}`}>
+                          <FileText className="h-3.5 w-3.5" />
+                        </a>
                       </Button>
                       <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => archiveEvent(e.id)} title="Archive">
                         <Archive className="h-3.5 w-3.5" />

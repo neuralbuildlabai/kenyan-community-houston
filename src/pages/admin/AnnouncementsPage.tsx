@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Search, Trash2, Eye, Pin } from 'lucide-react'
+import { Search, Trash2, Pin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { supabase } from '@/lib/supabase'
 import { publishAnnouncementRow, type AnnouncementCalendarRow } from '@/lib/announcementCalendarPublish'
@@ -47,6 +46,9 @@ export function AdminAnnouncementsPage() {
     setLoading(false)
   }
 
+  // `load` is defined in this component and re-renders on every state
+  // change; including it would re-fetch on every keystroke.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [statusFilter])
 
   async function updateStatus(id: string, status: string) {

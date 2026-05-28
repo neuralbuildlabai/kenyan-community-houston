@@ -31,10 +31,16 @@ function compareOccurrence(a: Event, b: Event): number {
 }
 
 /**
- * One row per recurrence group: the earliest upcoming entry in `events` (caller usually passes only future rows).
- * Single-row / one-off events are unchanged.
+ * Keep at most `maxPerGroup` rows per recurrence group (earliest first).
+ * Single-row / one-off events are unaffected. The returned list is sorted
+ * chronologically.
+ *
+ * Callers usually pass a pre-filtered list (e.g. only future rows), since
+ * past instances of a recurring series are typically valuable to keep
+ * around in full.
  */
-export function dedupeToNextOccurrenceOnly(events: Event[]): Event[] {
+export function limitOccurrencesPerGroup(events: Event[], maxPerGroup: number): Event[] {
+  if (maxPerGroup <= 0) return []
   const groups = new Map<string, Event[]>()
   for (const e of events) {
     const k = publicRecurrenceGroupKey(e)
@@ -45,8 +51,19 @@ export function dedupeToNextOccurrenceOnly(events: Event[]): Event[] {
   const out: Event[] = []
   for (const arr of groups.values()) {
     arr.sort(compareOccurrence)
-    out.push(arr[0])
+    out.push(...arr.slice(0, maxPerGroup))
   }
   out.sort(compareOccurrence)
   return out
+}
+
+/**
+ * One row per recurrence group: the earliest upcoming entry in `events` (caller usually passes only future rows).
+ * Single-row / one-off events are unchanged.
+ *
+ * Thin wrapper over {@link limitOccurrencesPerGroup} for callers that
+ * only ever want the next occurrence (homepage "What's happening", etc.).
+ */
+export function dedupeToNextOccurrenceOnly(events: Event[]): Event[] {
+  return limitOccurrencesPerGroup(events, 1)
 }

@@ -55,6 +55,9 @@ interface Album {
   id: string
   name: string
   slug: string
+  cover_url: string | null
+  description: string | null
+  open_for_submissions: boolean
 }
 
 interface GalleryImageRow {
@@ -133,6 +136,14 @@ export function AdminGalleryPage() {
   const [caption, setCaption] = useState('')
   const [selectedAlbum, setSelectedAlbum] = useState<string>(NO_ALBUM)
   const fileRef = useRef<HTMLInputElement>(null)
+  /**
+   * Hidden multi-file picker for per-album uploads on the Albums tab.
+   * We point it at one album at a time via `albumUploadTargetId`.
+   */
+  const albumUploadFileRef = useRef<HTMLInputElement>(null)
+  const [albumUploadTargetId, setAlbumUploadTargetId] = useState<string | null>(null)
+  const [deleteAlbumTarget, setDeleteAlbumTarget] = useState<Album | null>(null)
+  const [albumActionBusy, setAlbumActionBusy] = useState(false)
   const [pendingThumbs, setPendingThumbs] = useState<Record<string, string>>({})
   const [approveRow, setApproveRow] = useState<GalleryImageRow | null>(null)
   const [approveAlbumId, setApproveAlbumId] = useState<string>('')
@@ -148,8 +159,22 @@ export function AdminGalleryPage() {
   const [publishedActionBusy, setPublishedActionBusy] = useState(false)
 
   const loadAlbums = useCallback(async () => {
-    const { data } = await supabase.from('gallery_albums').select('id, name, slug').order('name')
-    setAlbums(data ?? [])
+    const { data } = await supabase
+      .from('gallery_albums')
+      .select('id, name, slug, cover_url, description, open_for_submissions')
+      .order('name')
+    setAlbums(
+      (data ?? []).map((row) => ({
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        cover_url: row.cover_url ?? null,
+        description: row.description ?? null,
+        // Defaults to false so the public submit form doesn't accept
+        // images for new albums until the admin opts in explicitly.
+        open_for_submissions: !!row.open_for_submissions,
+      }))
+    )
   }, [])
 
   const loadImages = useCallback(async () => {
@@ -162,6 +187,16 @@ export function AdminGalleryPage() {
   }, [])
 
   const publishedCount = useMemo(() => images.filter((i) => i.status === 'published').length, [images])
+
+  /** Map of album id -> number of published images, used in the Albums tab. */
+  const imageCountByAlbum = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const img of images) {
+      if (img.status !== 'published' || !img.album_id) continue
+      counts.set(img.album_id, (counts.get(img.album_id) ?? 0) + 1)
+    }
+    return counts
+  }, [images])
 
   const pendingRows = useMemo(() => images.filter((i) => i.status === 'pending'), [images])
   const selectedPendingCount = selectedPendingIds.size
@@ -218,10 +253,79 @@ export function AdminGalleryPage() {
     }
   }
 
-  async function uploadImage(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploading(true)
+  /**
+   * Toggle whether an album is open for public submissions on the
+   * /gallery/submit form. Defaulting new albums to opt-in is a policy
+   * choice — see migration 035.
+   */
+  async function toggleAlbumOpenSubs(album: Album, next: boolean) {
+    const prev = album.open_for_submissions
+    // Optimistic update so the switch feels responsive.
+    setAlbums((arr) => arr.map((a) => (a.id === album.id ? { ...a, open_for_submissions: next } : a)))
+    const { error } = await supabase
+      .from('gallery_albums')
+      .update({ open_for_submissions: next })
+      .eq('id', album.id)
+    if (error) {
+      toast.error('Could not update album')
+      setAlbums((arr) => arr.map((a) => (a.id === album.id ? { ...a, open_for_submissions: prev } : a)))
+    } else {
+      toast.success(next ? 'Open for submissions' : 'Closed to submissions')
+    }
+  }
+
+  function startAlbumUpload(albumId: string) {
+    setAlbumUploadTargetId(albumId)
+    // The picker's `onChange` reads `albumUploadTargetId`. Defer until
+    // after React commits state so the click triggers the right album.
+    setTimeout(() => albumUploadFileRef.current?.click(), 0)
+  }
+
+  async function onAlbumFilesPicked(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    const targetId = albumUploadTargetId
+    if (!files || files.length === 0 || !targetId) {
+      if (albumUploadFileRef.current) albumUploadFileRef.current.value = ''
+      return
+    }
+    await uploadMany(files, { albumId: targetId, caption: null })
+    setAlbumUploadTargetId(null)
+    if (albumUploadFileRef.current) albumUploadFileRef.current.value = ''
+  }
+
+  async function confirmDeleteAlbum() {
+    if (!deleteAlbumTarget) return
+    setAlbumActionBusy(true)
+    try {
+      const { error } = await supabase.from('gallery_albums').delete().eq('id', deleteAlbumTarget.id)
+      if (error) {
+        // Most likely cause: foreign-key conflict because the album still
+        // has images. Surface that plainly so the admin knows to move or
+        // delete the images first.
+        toast.error('Could not delete album — it may still contain images')
+      } else {
+        toast.success('Album deleted')
+        setDeleteAlbumTarget(null)
+        void loadAlbums()
+        void loadImages()
+      }
+    } finally {
+      setAlbumActionBusy(false)
+    }
+  }
+
+  /**
+   * Process + upload a single file into the public gallery bucket and
+   * insert the matching `gallery_images` row. Returns true on success.
+   *
+   * Pulled out of the change handler so the same code path is shared by
+   * the legacy single-file picker AND the new per-album multi-file
+   * picker on the Albums tab.
+   */
+  async function uploadOneImage(
+    file: File,
+    options: { albumId: string | null; caption: string | null }
+  ): Promise<boolean> {
     try {
       const built = await buildGalleryWebAndThumb(file)
       const ext = built.mime === 'image/webp' ? 'webp' : 'jpg'
@@ -235,16 +339,16 @@ export function AdminGalleryPage() {
         upsert: false,
       })
       if (upWeb) {
-        toast.error(upWeb.message)
-        return
+        toast.error(`${file.name}: ${upWeb.message}`)
+        return false
       }
       const { error: upTh } = await supabase.storage.from(GALLERY_PUBLIC_BUCKET).upload(thumbPath, built.thumb, {
         contentType: ct,
         upsert: false,
       })
       if (upTh) {
-        toast.error(upTh.message)
-        return
+        toast.error(`${file.name}: ${upTh.message}`)
+        return false
       }
       const { data: webPub } = supabase.storage.from(GALLERY_PUBLIC_BUCKET).getPublicUrl(webPath)
       const { data: thPub } = supabase.storage.from(GALLERY_PUBLIC_BUCKET).getPublicUrl(thumbPath)
@@ -253,23 +357,71 @@ export function AdminGalleryPage() {
         {
           image_url: webPub.publicUrl,
           thumbnail_url: thPub.publicUrl,
-          caption: caption || null,
-          album_id: albumIdForDb(selectedAlbum),
+          caption: options.caption,
+          album_id: options.albumId,
           status: 'published',
         },
       ])
-      if (dbError) toast.error('Failed to save image record')
-      else {
-        toast.success('Image uploaded')
+      if (dbError) {
+        toast.error(`${file.name}: failed to save image record`)
+        return false
+      }
+      return true
+    } catch (err) {
+      toast.error(
+        err instanceof GalleryImageProcessingError
+          ? `${file.name}: ${err.message}`
+          : `${file.name}: upload failed`
+      )
+      return false
+    }
+  }
+
+  /**
+   * Multi-file upload entry point used by both the Published-tab
+   * "Direct upload" picker and the per-album "Upload images" buttons
+   * on the Albums tab. Reports a single aggregated toast at the end.
+   */
+  async function uploadMany(
+    files: FileList | File[] | null,
+    target: { albumId: string | null; caption: string | null }
+  ): Promise<void> {
+    const list = files ? Array.from(files) : []
+    if (list.length === 0) return
+    setUploading(true)
+    let ok = 0
+    let failed = 0
+    try {
+      // Sequential by design: keeps memory/network steady when an admin
+       // drops 20+ photos in at once, and lets us emit per-file toasts in order.
+      for (const file of list) {
+        const success = await uploadOneImage(file, target)
+        if (success) ok += 1
+        else failed += 1
+      }
+      if (ok > 0 && failed === 0) {
+        toast.success(`Uploaded ${ok} image${ok === 1 ? '' : 's'}`)
         setCaption('')
         void loadImages()
+      } else if (ok > 0 && failed > 0) {
+        toast.warning(`Uploaded ${ok}; ${failed} failed`)
+        void loadImages()
+      } else if (failed > 0) {
+        // Individual errors already toasted above.
       }
-    } catch (err) {
-      toast.error(err instanceof GalleryImageProcessingError ? err.message : 'Upload failed')
     } finally {
       setUploading(false)
-      if (fileRef.current) fileRef.current.value = ''
     }
+  }
+
+  async function uploadImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    await uploadMany(files, {
+      albumId: albumIdForDb(selectedAlbum),
+      caption: caption || null,
+    })
+    if (fileRef.current) fileRef.current.value = ''
   }
 
   async function deleteImage() {
@@ -738,7 +890,12 @@ export function AdminGalleryPage() {
 
         <TabsContent value="library" className="space-y-6 pt-4">
           <div className="rounded-xl border p-5 space-y-4">
-            <h2 className="font-semibold">Direct upload (published)</h2>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <h2 className="font-semibold">Direct upload (published)</h2>
+              <p className="text-xs text-muted-foreground">
+                Tip: pick multiple files at once — they upload in sequence.
+              </p>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Album (optional)</Label>
@@ -758,15 +915,37 @@ export function AdminGalleryPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="caption">Caption</Label>
-                <Input id="caption" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Optional caption" />
+                <Input
+                  id="caption"
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  placeholder="Optional — applied to every uploaded image"
+                />
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <Button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}>
                 <Upload className="h-4 w-4 mr-2" />
-                {uploading ? 'Uploading…' : 'Choose & Upload'}
+                {uploading ? 'Uploading…' : 'Choose images & upload'}
               </Button>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={uploadImage} />
+              {albums.length === 0 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setGalleryTab('albums')}
+                >
+                  Create your first album
+                </Button>
+              ) : null}
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={uploadImage}
+              />
             </div>
           </div>
 
@@ -943,36 +1122,142 @@ export function AdminGalleryPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="albums" className="space-y-4 pt-4">
-          <div className="rounded-xl border p-5 space-y-3 max-w-md">
-            <h2 className="font-semibold">Albums</h2>
+        <TabsContent value="albums" className="space-y-6 pt-4">
+          <div className="rounded-xl border p-5 space-y-3 max-w-xl" data-testid="gallery-album-create">
+            <div>
+              <h2 className="font-semibold">Create an album</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Albums group photos on the public gallery page and gate
+                what members can submit through the public form.
+              </p>
+            </div>
             <div className="flex gap-2">
               <Input
                 value={newAlbumName}
                 onChange={(e) => setNewAlbumName(e.target.value)}
-                placeholder="New album name"
+                placeholder="New album name (e.g. Madaraka Day 2026)"
                 onKeyDown={(e) => e.key === 'Enter' && createAlbum()}
+                data-testid="gallery-album-name-input"
               />
-              <Button onClick={() => void createAlbum()} size="sm">
-                Add
+              <Button
+                onClick={() => void createAlbum()}
+                size="sm"
+                disabled={!newAlbumName.trim()}
+                data-testid="gallery-album-create-submit"
+              >
+                Add album
               </Button>
             </div>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={newAlbumOpenSubs} onChange={(e) => setNewAlbumOpenSubs(e.target.checked)} />
-              Open for public submissions before first publish
+              <input
+                type="checkbox"
+                checked={newAlbumOpenSubs}
+                onChange={(e) => setNewAlbumOpenSubs(e.target.checked)}
+              />
+              Open for public submissions immediately
             </label>
-            <div className="space-y-1">
-              {albums.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No albums yet</p>
-              ) : (
-                albums.map((a) => (
-                  <div key={a.id} className="text-sm py-1.5 px-2 rounded hover:bg-muted flex items-center justify-between">
-                    <span>{a.name}</span>
-                  </div>
-                ))
-              )}
-            </div>
           </div>
+
+          {/* Hidden picker used by the per-album "Upload images" buttons. */}
+          <input
+            ref={albumUploadFileRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={onAlbumFilesPicked}
+            data-testid="gallery-album-upload-input"
+          />
+
+          {albums.length === 0 ? (
+            <div
+              className="rounded-xl border-2 border-dashed py-16 text-center text-muted-foreground"
+              data-testid="gallery-albums-empty"
+            >
+              <ImageIcon className="h-10 w-10 mx-auto mb-3 opacity-40" />
+              <p>No albums yet. Create one above to start uploading photos.</p>
+            </div>
+          ) : (
+            <div
+              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              data-testid="gallery-albums-grid"
+            >
+              {albums.map((a) => {
+                const imgCount = imageCountByAlbum.get(a.id) ?? 0
+                return (
+                  <Card key={a.id} className="overflow-hidden" data-testid={`gallery-album-card-${a.id}`}>
+                    <div className="aspect-[16/10] bg-muted relative">
+                      {a.cover_url ? (
+                        <img
+                          src={a.cover_url}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center text-muted-foreground/60">
+                          <ImageIcon className="h-10 w-10" />
+                        </div>
+                      )}
+                      <div className="absolute top-2 left-2 rounded bg-black/70 px-2 py-0.5 text-[10px] text-white">
+                        {imgCount} image{imgCount === 1 ? '' : 's'}
+                      </div>
+                    </div>
+                    <CardContent className="p-4 space-y-3">
+                      <div>
+                        <p className="font-medium text-sm truncate" title={a.name}>{a.name}</p>
+                        <p className="text-[11px] text-muted-foreground font-mono truncate" title={a.slug}>
+                          /{a.slug}
+                        </p>
+                      </div>
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          checked={a.open_for_submissions}
+                          onChange={(e) => void toggleAlbumOpenSubs(a, e.target.checked)}
+                          data-testid={`gallery-album-toggle-subs-${a.id}`}
+                        />
+                        Open for public submissions
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="gap-1"
+                          disabled={uploading}
+                          onClick={() => startAlbumUpload(a.id)}
+                          data-testid={`gallery-album-upload-${a.id}`}
+                        >
+                          <Upload className="h-3.5 w-3.5" />
+                          {uploading && albumUploadTargetId === a.id ? 'Uploading…' : 'Upload images'}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setAlbumFilter(a.id)
+                            setGalleryTab('library')
+                          }}
+                        >
+                          View
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setDeleteAlbumTarget(a)}
+                          data-testid={`gallery-album-delete-${a.id}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
@@ -1125,6 +1410,17 @@ export function AdminGalleryPage() {
         variant="destructive"
         loading={publishedActionBusy}
         onConfirm={() => void deleteImage()}
+      />
+
+      <ConfirmDialog
+        open={!!deleteAlbumTarget}
+        onOpenChange={(open) => !open && setDeleteAlbumTarget(null)}
+        title={`Delete album${deleteAlbumTarget ? ` "${deleteAlbumTarget.name}"` : ''}?`}
+        description="Albums with images can't be deleted — move or delete their photos first. This action cannot be undone."
+        confirmLabel="Delete album"
+        variant="destructive"
+        loading={albumActionBusy}
+        onConfirm={() => void confirmDeleteAlbum()}
       />
     </div>
   )

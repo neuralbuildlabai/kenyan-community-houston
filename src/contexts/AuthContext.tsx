@@ -188,6 +188,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       cancelled = true
       subscription.unsubscribe()
     }
+    // Bootstrap-once: re-running would re-subscribe to auth state on
+    // every render. `applySession` is referenced as a closure and is
+    // intentionally not in the dependency array.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function signIn(email: string, password: string) {
@@ -227,6 +231,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
+// Hook intentionally colocated with its provider. Splitting it would
+// fragment the context for no real benefit and break a lot of imports.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth must be used within AuthProvider')
