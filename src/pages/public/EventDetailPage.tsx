@@ -47,6 +47,9 @@ export function EventDetailPage() {
   const [relatedResources, setRelatedResources] = useState<Resource[]>([])
   const [loading, setLoading] = useState(true)
   const [volunteerCount, setVolunteerCount] = useState<number | null>(null)
+  const [vendors, setVendors] = useState<
+    Array<{ business_name: string; vendor_category: string; product_description: string | null }>
+  >([])
 
   useEffect(() => {
     async function load() {
@@ -85,6 +88,28 @@ export function EventDetailPage() {
       setVolunteerCount(typeof data === 'number' ? data : 0)
     })
   }, [event?.slug, event?.volunteer_signup_enabled])
+
+  useEffect(() => {
+    if (!event?.slug || !event.vendor_signup_enabled) {
+      setVendors([])
+      return
+    }
+    void supabase
+      .rpc('public_event_vendor_list', { p_event_slug: event.slug })
+      .then(({ data }) => {
+        if (!Array.isArray(data)) {
+          setVendors([])
+          return
+        }
+        setVendors(
+          data.map((r) => ({
+            business_name: String(r.business_name ?? ''),
+            vendor_category: String(r.vendor_category ?? ''),
+            product_description: (r.product_description as string | null) ?? null,
+          }))
+        )
+      })
+  }, [event?.slug, event?.vendor_signup_enabled])
 
   useEffect(() => {
     if (!event?.id) return
@@ -358,6 +383,39 @@ export function EventDetailPage() {
             )}
           </aside>
         </div>
+
+        {event.vendor_signup_enabled && vendors.length > 0 ? (
+          <section className="mt-12" data-testid="event-vendor-list">
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+              Vendors at this event
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Confirmed vendors for this event.
+            </p>
+            {(['food', 'other'] as const).map((category) => {
+              const inCategory = vendors.filter((v) => v.vendor_category === category)
+              if (inCategory.length === 0) return null
+              const heading = category === 'food' ? 'Food vendors' : 'Other vendors'
+              return (
+                <div key={category} className="mt-6">
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    {heading}
+                  </h3>
+                  <ul className="mt-3 flex flex-wrap gap-2">
+                    {inCategory.map((v) => (
+                      <li
+                        key={`${category}:${v.business_name}`}
+                        className="rounded-full border border-border/60 bg-card px-3 py-1.5 text-sm font-medium text-foreground"
+                      >
+                        {v.business_name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            })}
+          </section>
+        ) : null}
 
         <div className="mt-12">
           <EventComments eventId={event.id} />

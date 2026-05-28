@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, ExternalLink, Search } from 'lucide-react'
+import { CheckCircle2, ExternalLink, Search, XCircle } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -228,6 +228,37 @@ export function AdminVendorsPage() {
     )
   }
 
+  /**
+   * Soft-cancel: flips status to 'cancelled' so the row is hidden
+   * from the public vendor list but preserved for treasurer
+   * reconciliation. Reversible by changing the status dropdown.
+   */
+  async function cancelSignup(id: string, businessName: string) {
+    if (
+      !window.confirm(
+        `Cancel "${businessName}"? They will be removed from the public vendor list. You can reverse this from the status dropdown.`
+      )
+    ) {
+      return
+    }
+    setUpdatingId(id)
+    const { error } = await supabase
+      .from('event_vendor_signups')
+      .update({ status: 'cancelled' })
+      .eq('id', id)
+    setUpdatingId(null)
+    if (error) {
+      toast.error(error.message)
+      return
+    }
+    toast.success('Vendor cancelled')
+    setRows((prev) =>
+      prev.map((r) =>
+        r.id === id ? { ...r, status: 'cancelled' as const } : r
+      )
+    )
+  }
+
   function copyReference(code: string) {
     if (!code) return
     try {
@@ -388,8 +419,9 @@ export function AdminVendorsPage() {
                 filtered.map((r) => {
                   const isUpdating = updatingId === r.id
                   const slug = r.events?.slug ?? ''
+                  const isCancelled = r.status === 'cancelled' || r.status === 'declined'
                   return (
-                    <TableRow key={r.id}>
+                    <TableRow key={r.id} className={isCancelled ? 'opacity-60' : ''}>
                       <TableCell className="max-w-[180px] font-medium">
                         <div className="truncate" title={r.events?.title ?? ''}>
                           {r.events?.title ?? '—'}
@@ -480,7 +512,8 @@ export function AdminVendorsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          {r.payment_status !== 'paid' || r.status !== 'confirmed' ? (
+                          {!isCancelled &&
+                          (r.payment_status !== 'paid' || r.status !== 'confirmed') ? (
                             <Button
                               type="button"
                               size="sm"
@@ -492,6 +525,20 @@ export function AdminVendorsPage() {
                               title="Mark paid & confirm in one click"
                             >
                               <CheckCircle2 className="h-3.5 w-3.5" /> Mark paid
+                            </Button>
+                          ) : null}
+                          {!isCancelled ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 gap-1 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              disabled={isUpdating}
+                              onClick={() => void cancelSignup(r.id, r.business_name)}
+                              data-testid="admin-vendor-cancel"
+                              title="Cancel this vendor (removes from public list, reversible)"
+                            >
+                              <XCircle className="h-3.5 w-3.5" /> Cancel
                             </Button>
                           ) : null}
                           {slug ? (

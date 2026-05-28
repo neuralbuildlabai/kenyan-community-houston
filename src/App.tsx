@@ -74,6 +74,7 @@ import { AdminInvitesPage } from '@/pages/admin/AdminInvitesPage'
 import { AdminFeedPage } from '@/pages/admin/AdminFeedPage'
 import { AdminVolunteersPage } from '@/pages/admin/AdminVolunteersPage'
 import { AdminVendorsPage } from '@/pages/admin/AdminVendorsPage'
+import { AdminVendorDirectoryPage } from '@/pages/admin/AdminVendorDirectoryPage'
 import { SYSTEM_HEALTH_ADMIN_ROLES } from '@/lib/platformAdmin'
 
 import { RequireAuth } from '@/components/RequireAuth'
@@ -212,6 +213,7 @@ export default function App() {
               <Route path="event-comments" element={<AdminEventCommentsPage />} />
               <Route path="volunteers" element={<AdminVolunteersPage />} />
               <Route path="vendors" element={<AdminVendorsPage />} />
+              <Route path="vendors-directory" element={<AdminVendorDirectoryPage />} />
               <Route path="invites" element={<AdminInvitesPage />} />
               <Route path="feed" element={<AdminFeedPage />} />
               <Route path="service-interests" element={<AdminServiceInterestsPage />} />

@@ -83,6 +83,7 @@ function buildNavGroups(profileRole: string | null | undefined): NavGroup[] {
         { to: '/admin/event-comments', label: 'Event comments', Icon: ListTree },
         { to: '/admin/volunteers', label: 'Volunteers', Icon: HeartHandshake },
         { to: '/admin/vendors', label: 'Vendors', Icon: Store },
+        { to: '/admin/vendors-directory', label: 'Vendor directory', Icon: Store },
         { to: '/admin/invites', label: 'WhatsApp invites', Icon: MessageCircle },
         { to: '/admin/feed', label: 'Community Feed', Icon: Newspaper },
         { to: '/admin/service-interests', label: 'Call to Serve', Icon: HeartHandshake },
