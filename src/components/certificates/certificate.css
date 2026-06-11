@@ -47,7 +47,6 @@
   font-family: 'Libre Baskerville', Georgia, 'Times New Roman', Times, serif;
 }
 
-.cert-presented-label,
 .cert-meta-label,
 .cert-meta-caption,
 .cert-footer {
@@ -76,7 +75,7 @@
   position: absolute;
   left: 0.55in;
   right: 0.45in;
-  bottom: 1.05in;
+  bottom: 1.28in;
   height: 2.95in;
   z-index: 0;
   pointer-events: none;
@@ -120,25 +119,16 @@
   flex-shrink: 0;
   object-fit: contain;
   object-position: center;
-  margin-bottom: 0.1in;
+  margin-bottom: 0.24in;
 }
 
 .cert-title {
-  margin: 0 0 0.1in;
+  margin: 0 0 0.26in;
   font-size: 31pt;
   font-weight: 600;
   letter-spacing: 0.05em;
   line-height: 1.08;
   color: #14532d;
-}
-
-.cert-presented-label {
-  margin: 0 0 0.06in;
-  font-size: 8.5pt;
-  font-weight: 500;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #666;
 }
 
 .cert-recipient {
@@ -155,7 +145,7 @@
   position: relative;
   width: 3.5in;
   height: 1px;
-  margin: 0.08in 0 0.1in;
+  margin: 0.14in 0 0.22in;
   background: linear-gradient(
     90deg,
     transparent 0%,
@@ -187,7 +177,7 @@
 }
 
 .cert-body {
-  margin: 0 auto 0.06in;
+  margin: 0.08in auto 0.06in;
   max-width: 80%;
   font-size: 10.5pt;
   line-height: 1.55;

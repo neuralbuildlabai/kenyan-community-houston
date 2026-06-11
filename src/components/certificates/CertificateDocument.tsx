@@ -67,7 +67,6 @@ function CertificateContent({ data }: { data: CertificateFormData }) {
 
       <h1 className="cert-title">{template.title}</h1>
 
-      <p className="cert-presented-label">{template.presentedToLabel}</p>
       <p className="cert-recipient">{recipient}</p>
       <div className="cert-recipient-divider" aria-hidden>
         <span className="cert-divider-diamond" />
