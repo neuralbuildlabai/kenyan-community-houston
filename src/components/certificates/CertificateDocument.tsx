@@ -16,15 +16,29 @@ type CertificateDocumentProps = {
   scale?: number
 }
 
-function CertificateLogo({ heightIn = '0.72in', className }: { heightIn?: string; className?: string }) {
+function CertificateLogo({ heightIn = '0.68in', className }: { heightIn?: string; className?: string }) {
   return (
     <img
       src={KIGH_LOGO_PATH}
       alt={KIGH_LOGO_ALT}
       className={cn('cert-logo', className)}
-      style={{ height: heightIn, width: 'auto', maxWidth: '2.2in' }}
+      style={{ height: heightIn, width: 'auto', maxWidth: '2.15in' }}
       crossOrigin="anonymous"
     />
+  )
+}
+
+function GoldSeal({ className, variant = 'text' }: { className?: string; variant?: 'text' | 'logo' }) {
+  return (
+    <div className={cn('cert-gold-seal', className)} aria-hidden>
+      <div className="cert-gold-seal-ring">
+        {variant === 'logo' ? (
+          <img src={KIGH_LOGO_PATH} alt="" className="cert-gold-seal-logo" crossOrigin="anonymous" />
+        ) : (
+          <span className="cert-gold-seal-text">KIGH</span>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -45,6 +59,7 @@ function CertificateContent({ data }: { data: CertificateFormData }) {
 
       <p className="cert-presented-label">{template.presentedToLabel}</p>
       <p className="cert-recipient">{recipient}</p>
+      <div className="cert-recipient-divider" aria-hidden />
 
       {data.eventName.trim() ? (
         <p className="cert-event">In recognition of: {data.eventName.trim()}</p>
@@ -78,9 +93,11 @@ function ClassicOfficialDecor() {
   return (
     <>
       <div className="cert-classic-ribbon" aria-hidden />
-      <div className="cert-classic-seal" aria-hidden>
-        <div className="cert-classic-seal-inner">KIGH</div>
-      </div>
+      <div className="cert-classic-corner cert-classic-corner-tl" aria-hidden />
+      <div className="cert-classic-corner cert-classic-corner-tr" aria-hidden />
+      <div className="cert-classic-corner cert-classic-corner-bl" aria-hidden />
+      <div className="cert-classic-corner cert-classic-corner-br" aria-hidden />
+      <GoldSeal className="cert-classic-seal-pos" />
     </>
   )
 }
@@ -92,6 +109,7 @@ function ModernCommunityDecor() {
       <div className="cert-modern-watermark" aria-hidden>
         <img src={KIGH_LOGO_PATH} alt="" crossOrigin="anonymous" />
       </div>
+      <GoldSeal className="cert-modern-seal-pos" variant="logo" />
     </>
   )
 }
@@ -101,11 +119,12 @@ function HeritagePremiumDecor() {
     <>
       <div className="cert-heritage-pattern" aria-hidden />
       <div className="cert-heritage-frame" aria-hidden />
-      <div className="cert-heritage-crest" aria-hidden />
+      <div className="cert-heritage-accent-bar" aria-hidden />
       <div className="cert-heritage-corner cert-heritage-corner-tl" aria-hidden />
       <div className="cert-heritage-corner cert-heritage-corner-tr" aria-hidden />
       <div className="cert-heritage-corner cert-heritage-corner-bl" aria-hidden />
       <div className="cert-heritage-corner cert-heritage-corner-br" aria-hidden />
+      <GoldSeal className="cert-heritage-seal-pos" />
     </>
   )
 }
@@ -119,24 +138,32 @@ export function CertificateDocument({ data, id, className, scale = 1 }: Certific
         ? 'cert-style-heritage-premium'
         : 'cert-style-classic-official'
 
+  const sheet = (
+    <article
+      id={id}
+      className={cn('certificate-sheet', styleClass)}
+      aria-label="Certificate preview"
+    >
+      {style?.id === 'modern-community' && <ModernCommunityDecor />}
+      {style?.id === 'heritage-premium' && <HeritagePremiumDecor />}
+      {style?.id === 'classic-official' && <ClassicOfficialDecor />}
+
+      <CertificateContent data={data} />
+
+      <footer className="cert-footer">{CERTIFICATE_FOOTER_TEXT}</footer>
+    </article>
+  )
+
+  if (scale === 1 && !className) {
+    return sheet
+  }
+
   return (
     <div
       className={cn('certificate-preview-scale', className)}
       style={scale !== 1 ? { transform: `scale(${scale})` } : undefined}
     >
-      <article
-        id={id}
-        className={cn('certificate-sheet', styleClass)}
-        aria-label="Certificate preview"
-      >
-        {style?.id === 'modern-community' && <ModernCommunityDecor />}
-        {style?.id === 'heritage-premium' && <HeritagePremiumDecor />}
-        {style?.id === 'classic-official' && <ClassicOfficialDecor />}
-
-        <CertificateContent data={data} />
-
-        <footer className="cert-footer">{CERTIFICATE_FOOTER_TEXT}</footer>
-      </article>
+      {sheet}
     </div>
   )
 }

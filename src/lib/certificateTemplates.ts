@@ -25,14 +25,14 @@ export const DEFAULT_SIGNATURE_2_TITLE = 'KIGH Secretary / Community Representat
 
 export const CERTIFICATE_DESIGN_STYLES: CertificateDesignStyle[] = [
   {
-    id: 'classic-official',
-    label: 'Classic Official',
-    description: 'Formal border, centered logo, Kenya color ribbon, and gold seal accent.',
-  },
-  {
     id: 'modern-community',
     label: 'Modern Community',
-    description: 'Clean layout with Kenya color side accent and faint logo watermark.',
+    description: 'Clean layout with Kenya color side ribbon, faint logo watermark, and gold accents.',
+  },
+  {
+    id: 'classic-official',
+    label: 'Classic Official',
+    description: 'Formal border, gold corner ornaments, Kenya color ribbon, and gold seal accent.',
   },
   {
     id: 'heritage-premium',
@@ -134,7 +134,7 @@ export function createDefaultCertificateForm(): CertificateFormData {
   const template = CERTIFICATE_TEMPLATES[0]
   return {
     templateId: template.id,
-    designStyleId: 'classic-official',
+    designStyleId: 'modern-community',
     recipientName: '',
     issueDate: new Date().toISOString().slice(0, 10),
     eventName: '',

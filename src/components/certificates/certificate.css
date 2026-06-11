@@ -13,6 +13,12 @@
   box-sizing: border-box;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  break-before: avoid;
+  page-break-before: avoid;
+  break-after: avoid;
+  page-break-after: avoid;
 }
 
 .certificate-sheet *,
@@ -23,6 +29,30 @@
 
 .certificate-preview-scale {
   transform-origin: top center;
+  display: inline-block;
+  line-height: 0;
+}
+
+/* ─── Typography ─── */
+
+.cert-title,
+.cert-recipient {
+  font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+}
+
+.cert-body,
+.cert-closing,
+.cert-event,
+.cert-date-value,
+.cert-signature-line {
+  font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+.cert-presented-label,
+.cert-date-label,
+.cert-signature-title,
+.cert-footer {
+  font-family: Inter, system-ui, sans-serif;
 }
 
 /* ─── Shared layout ─── */
@@ -33,8 +63,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: 100%;
-  padding: 0.45in 0.65in 0.38in;
+  height: calc(100% - 0.28in);
+  padding: 0.38in 0.62in 0.32in;
   text-align: center;
 }
 
@@ -45,53 +75,69 @@
 }
 
 .cert-title {
-  margin: 0.12in 0 0.08in;
-  font-size: 28pt;
+  margin: 0.1in 0 0.06in;
+  font-size: 27pt;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  line-height: 1.15;
+  letter-spacing: 0.05em;
+  line-height: 1.12;
   color: #14532d;
 }
 
 .cert-presented-label {
-  margin: 0.06in 0 0.04in;
-  font-size: 11pt;
-  letter-spacing: 0.12em;
+  margin: 0.05in 0 0.03in;
+  font-size: 9.5pt;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #444;
+  color: #555;
 }
 
 .cert-recipient {
-  margin: 0.04in 0 0.1in;
-  font-size: 26pt;
+  margin: 0.03in 0 0;
+  font-size: 25pt;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.15;
   color: #111;
-  border-bottom: 2px solid #b8860b;
-  padding-bottom: 0.06in;
-  min-width: 55%;
-  max-width: 85%;
+  min-width: 52%;
+  max-width: 82%;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.cert-recipient-divider {
+  width: 3.2in;
+  height: 2px;
+  margin: 0.06in 0 0.08in;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #c9a227 15%,
+    #d4af37 50%,
+    #c9a227 85%,
+    transparent 100%
+  );
+  border-radius: 1px;
 }
 
 .cert-event {
-  margin: 0 0 0.08in;
-  font-size: 11pt;
+  margin: 0 0 0.06in;
+  font-size: 10.5pt;
   font-style: italic;
   color: #555;
 }
 
 .cert-body {
-  margin: 0 auto 0.1in;
-  max-width: 88%;
-  font-size: 11pt;
-  line-height: 1.55;
+  margin: 0 auto 0.07in;
+  max-width: 86%;
+  font-size: 10.5pt;
+  line-height: 1.5;
   color: #333;
   white-space: pre-line;
 }
 
 .cert-closing {
-  margin: 0.06in 0 0.14in;
-  font-size: 10.5pt;
+  margin: 0.04in 0 0.1in;
+  font-size: 10pt;
   font-style: italic;
   color: #444;
 }
@@ -102,8 +148,8 @@
   align-items: flex-end;
   width: 100%;
   margin-top: auto;
-  padding-top: 0.08in;
-  gap: 0.4in;
+  padding-top: 0.04in;
+  gap: 0.35in;
 }
 
 .cert-date-block {
@@ -112,132 +158,258 @@
 }
 
 .cert-date-label {
-  font-size: 8pt;
-  letter-spacing: 0.08em;
+  font-size: 7.5pt;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #666;
-  margin-bottom: 0.04in;
+  margin-bottom: 0.03in;
 }
 
 .cert-date-value {
-  font-size: 11pt;
+  font-size: 10.5pt;
   font-weight: 600;
   color: #111;
   border-top: 1px solid #333;
   padding-top: 0.04in;
-  min-width: 1.8in;
+  min-width: 1.75in;
 }
 
 .cert-signatures {
   display: flex;
   justify-content: center;
-  gap: 0.7in;
+  gap: 0.65in;
   flex: 1;
 }
 
 .cert-signature {
   text-align: center;
-  min-width: 2in;
+  min-width: 1.9in;
 }
 
 .cert-signature-line {
   border-top: 1px solid #333;
-  padding-top: 0.05in;
+  padding-top: 0.04in;
   font-size: 10pt;
   font-weight: 600;
   color: #111;
-  min-height: 0.22in;
+  min-height: 0.2in;
 }
 
 .cert-signature-title {
-  font-size: 8.5pt;
+  font-size: 8pt;
+  font-weight: 400;
   color: #555;
-  margin-top: 0.03in;
-  line-height: 1.3;
+  margin-top: 0.025in;
+  line-height: 1.25;
 }
 
 .cert-footer {
   position: absolute;
-  bottom: 0.18in;
+  bottom: 0.14in;
   left: 0;
   right: 0;
   text-align: center;
-  font-size: 7.5pt;
-  letter-spacing: 0.04em;
+  font-size: 7pt;
+  font-weight: 500;
+  letter-spacing: 0.05em;
   color: #666;
   z-index: 5;
+}
+
+/* ─── Gold seal (shared) ─── */
+
+.cert-gold-seal {
+  width: 0.78in;
+  height: 0.78in;
+  border-radius: 50%;
+  border: 2.5px solid #c9a227;
+  background: radial-gradient(circle at 32% 28%, #fffef8, #fef3c7 45%, #e8c547 100%);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.1),
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+}
+
+.cert-gold-seal-ring {
+  width: 0.58in;
+  height: 0.58in;
+  border-radius: 50%;
+  border: 1.5px solid #b8860b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cert-gold-seal-text {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 6pt;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #92400e;
+  line-height: 1;
+}
+
+.cert-gold-seal-logo {
+  width: 0.42in;
+  height: auto;
+  object-fit: contain;
 }
 
 /* ─── Style A: Classic Official ─── */
 
 .cert-style-classic-official {
-  border: 3px double #14532d;
-  box-shadow: inset 0 0 0 6px #fff, inset 0 0 0 8px #b8860b, inset 0 0 0 10px #fff, inset 0 0 0 12px #14532d;
+  border: 4px double #14532d;
+  box-shadow:
+    inset 0 0 0 5px #fff,
+    inset 0 0 0 7px #c9a227,
+    inset 0 0 0 9px #fff,
+    inset 0 0 0 11px #14532d;
 }
 
 .cert-style-classic-official::before {
   content: '';
   position: absolute;
-  inset: 0.22in;
-  border: 1px solid rgba(20, 83, 45, 0.25);
+  inset: 0.2in;
+  border: 1px solid rgba(20, 83, 45, 0.3);
   pointer-events: none;
   z-index: 1;
 }
 
 .cert-classic-ribbon {
   position: absolute;
-  top: 0.35in;
-  left: 0;
-  right: 0;
-  height: 5px;
+  top: 0.32in;
+  left: 0.28in;
+  right: 0.28in;
+  height: 6px;
+  border-radius: 1px;
   background: linear-gradient(
     90deg,
     #111 0%,
-    #111 33.33%,
-    #be123c 33.33%,
-    #be123c 66.66%,
-    #166534 66.66%,
+    #111 calc(33.33% - 1px),
+    #fff calc(33.33% - 1px),
+    #fff calc(33.33% + 1px),
+    #be123c calc(33.33% + 1px),
+    #be123c calc(66.66% - 1px),
+    #fff calc(66.66% - 1px),
+    #fff calc(66.66% + 1px),
+    #166534 calc(66.66% + 1px),
     #166534 100%
   );
   z-index: 3;
 }
 
-.cert-classic-seal {
+.cert-classic-corner {
   position: absolute;
-  bottom: 0.55in;
-  right: 0.55in;
-  width: 0.85in;
-  height: 0.85in;
-  border-radius: 50%;
-  border: 3px solid #b8860b;
-  background: radial-gradient(circle at 35% 35%, #fff8e7, #fef3c7 40%, #d97706 100%);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), inset 0 0 0 2px rgba(255, 255, 255, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 0.42in;
+  height: 0.42in;
   z-index: 3;
+  pointer-events: none;
 }
 
-.cert-classic-seal-inner {
-  width: 0.55in;
-  height: 0.55in;
-  border-radius: 50%;
-  border: 1.5px solid #b8860b;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 6pt;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #92400e;
-  text-align: center;
-  line-height: 1.2;
+.cert-classic-corner::before,
+.cert-classic-corner::after {
+  content: '';
+  position: absolute;
+  background: #c9a227;
 }
 
-/* ─── Style B: Modern Community ─── */
+.cert-classic-corner-tl {
+  top: 0.14in;
+  left: 0.14in;
+}
+.cert-classic-corner-tl::before {
+  top: 0;
+  left: 0;
+  width: 0.42in;
+  height: 2px;
+}
+.cert-classic-corner-tl::after {
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 0.42in;
+}
+
+.cert-classic-corner-tr {
+  top: 0.14in;
+  right: 0.14in;
+}
+.cert-classic-corner-tr::before {
+  top: 0;
+  right: 0;
+  width: 0.42in;
+  height: 2px;
+}
+.cert-classic-corner-tr::after {
+  top: 0;
+  right: 0;
+  width: 2px;
+  height: 0.42in;
+}
+
+.cert-classic-corner-bl {
+  bottom: 0.14in;
+  left: 0.14in;
+}
+.cert-classic-corner-bl::before {
+  bottom: 0;
+  left: 0;
+  width: 0.42in;
+  height: 2px;
+}
+.cert-classic-corner-bl::after {
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  height: 0.42in;
+}
+
+.cert-classic-corner-br {
+  bottom: 0.14in;
+  right: 0.14in;
+}
+.cert-classic-corner-br::before {
+  bottom: 0;
+  right: 0;
+  width: 0.42in;
+  height: 2px;
+}
+.cert-classic-corner-br::after {
+  bottom: 0;
+  right: 0;
+  width: 2px;
+  height: 0.42in;
+}
+
+.cert-classic-seal-pos {
+  position: absolute;
+  bottom: 0.48in;
+  right: 0.48in;
+}
+
+.cert-style-classic-official .cert-inner {
+  padding-top: 0.42in;
+}
+
+/* ─── Style B: Modern Community (default) ─── */
 
 .cert-style-modern-community {
-  border: 1px solid #e5e7eb;
+  border: 1.5px solid #d1d5db;
+  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.25);
+}
+
+.cert-style-modern-community::after {
+  content: '';
+  position: absolute;
+  inset: 0.1in;
+  border: 1px solid rgba(22, 101, 52, 0.12);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .cert-modern-accent {
@@ -245,14 +417,18 @@
   left: 0;
   top: 0;
   bottom: 0;
-  width: 0.18in;
+  width: 0.22in;
   background: linear-gradient(
     180deg,
     #111 0%,
-    #111 33%,
-    #be123c 33%,
-    #be123c 66%,
-    #166534 66%,
+    #111 calc(33.33% - 1px),
+    #fff calc(33.33% - 1px),
+    #fff calc(33.33% + 1px),
+    #be123c calc(33.33% + 1px),
+    #be123c calc(66.66% - 1px),
+    #fff calc(66.66% - 1px),
+    #fff calc(66.66% + 1px),
+    #166534 calc(66.66% + 1px),
     #166534 100%
   );
   z-index: 3;
@@ -269,20 +445,26 @@
 }
 
 .cert-modern-watermark img {
-  width: 4.5in;
+  width: 4.2in;
   height: auto;
-  opacity: 0.06;
+  opacity: 0.055;
   object-fit: contain;
 }
 
 .cert-style-modern-community .cert-inner {
-  padding-left: 0.55in;
+  padding-left: 0.52in;
 }
 
 .cert-style-modern-community .cert-title {
   color: #166534;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+}
+
+.cert-modern-seal-pos {
+  position: absolute;
+  bottom: 0.42in;
+  right: 0.42in;
 }
 
 /* ─── Style C: Heritage Premium ─── */
@@ -295,126 +477,165 @@
 .cert-heritage-pattern {
   position: absolute;
   inset: 0;
-  opacity: 0.04;
+  opacity: 0.035;
   background-image:
-    linear-gradient(45deg, #166534 25%, transparent 25%),
-    linear-gradient(-45deg, #166534 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #166534 75%),
-    linear-gradient(-45deg, transparent 75%, #166534 75%);
-  background-size: 28px 28px;
-  background-position: 0 0, 0 14px, 14px -14px, -14px 0;
+    repeating-linear-gradient(
+      45deg,
+      #166534 0,
+      #166534 1px,
+      transparent 1px,
+      transparent 12px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      #166534 0,
+      #166534 1px,
+      transparent 1px,
+      transparent 12px
+    );
   z-index: 0;
 }
 
 .cert-heritage-frame {
   position: absolute;
-  inset: 0.2in;
-  border: 1px solid rgba(184, 134, 11, 0.45);
+  inset: 0.18in;
+  border: 1px solid rgba(184, 134, 11, 0.5);
   pointer-events: none;
   z-index: 1;
 }
 
-.cert-heritage-crest {
+.cert-heritage-accent-bar {
   position: absolute;
-  top: 0.28in;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0.55in;
-  height: 0.55in;
-  border: 2px solid #b8860b;
-  border-radius: 4px;
-  background: linear-gradient(135deg, #fef3c7, #fff);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 4;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-.cert-heritage-crest::before {
-  content: '★';
-  font-size: 14pt;
-  color: #b8860b;
-}
-
-.cert-style-heritage-premium .cert-inner {
-  padding-top: 0.55in;
-}
-
-.cert-style-heritage-premium .cert-title {
-  color: #14532d;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+  top: 0.18in;
+  left: 0.18in;
+  right: 0.18in;
+  height: 3px;
+  background: linear-gradient(90deg, #166534, #c9a227, #166534);
+  z-index: 2;
 }
 
 .cert-heritage-corner {
   position: absolute;
-  width: 0.35in;
-  height: 0.35in;
+  width: 0.32in;
+  height: 0.32in;
   border-color: #b8860b;
   border-style: solid;
   z-index: 2;
 }
 
 .cert-heritage-corner-tl {
-  top: 0.12in;
-  left: 0.12in;
-  border-width: 2px 0 0 2px;
+  top: 0.1in;
+  left: 0.1in;
+  border-width: 2.5px 0 0 2.5px;
 }
 
 .cert-heritage-corner-tr {
-  top: 0.12in;
-  right: 0.12in;
-  border-width: 2px 2px 0 0;
+  top: 0.1in;
+  right: 0.1in;
+  border-width: 2.5px 2.5px 0 0;
 }
 
 .cert-heritage-corner-bl {
-  bottom: 0.12in;
-  left: 0.12in;
-  border-width: 0 0 2px 2px;
+  bottom: 0.1in;
+  left: 0.1in;
+  border-width: 0 0 2.5px 2.5px;
 }
 
 .cert-heritage-corner-br {
-  bottom: 0.12in;
-  right: 0.12in;
-  border-width: 0 2px 2px 0;
+  bottom: 0.1in;
+  right: 0.1in;
+  border-width: 0 2.5px 2.5px 0;
 }
 
-/* ─── Print portal ─── */
+.cert-style-heritage-premium .cert-inner {
+  padding-top: 0.4in;
+}
+
+.cert-style-heritage-premium .cert-title {
+  color: #14532d;
+}
+
+.cert-heritage-seal-pos {
+  position: absolute;
+  bottom: 0.44in;
+  right: 0.44in;
+}
+
+/* ─── Print / export portal ─── */
 
 #certificate-print-portal {
-  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
-body.certificate-printing #certificate-print-portal {
-  display: block;
+.certificate-export-host {
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 @media print {
   @page {
-    size: landscape letter;
+    size: letter landscape;
     margin: 0;
   }
 
-  body.certificate-printing > *:not(#certificate-print-portal) {
+  html.certificate-printing,
+  html.certificate-printing body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 11in !important;
+    height: 8.5in !important;
+    overflow: hidden !important;
+    background: #fff !important;
+  }
+
+  html.certificate-printing body > *:not(#certificate-print-portal) {
     display: none !important;
   }
 
-  body.certificate-printing #certificate-print-portal {
+  html.certificate-printing #certificate-print-portal {
     display: block !important;
+    visibility: visible !important;
     position: static !important;
+    width: 11in !important;
+    height: 8.5in !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip: auto !important;
+    pointer-events: none !important;
   }
 
-  body.certificate-printing #certificate-print-portal .certificate-sheet {
+  html.certificate-printing #certificate-print-portal .certificate-sheet,
+  html.certificate-printing #certificate-print-portal .certificate-export-clone {
     width: 11in !important;
     height: 8.5in !important;
     max-width: none !important;
     margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
     box-shadow: none !important;
-    page-break-after: avoid;
-    page-break-inside: avoid;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    break-before: avoid !important;
+    page-break-before: avoid !important;
+    break-after: avoid !important;
+    page-break-after: avoid !important;
   }
 
-  body.certificate-printing #certificate-print-portal .certificate-preview-scale {
+  html.certificate-printing .certificate-preview-scale {
     transform: none !important;
+    display: block !important;
+    line-height: normal !important;
   }
 }
