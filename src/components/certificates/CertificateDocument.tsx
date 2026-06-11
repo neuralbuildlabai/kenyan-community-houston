@@ -190,8 +190,3 @@ export function CertificateDocument({ data, id, className, scale = 1 }: Certific
     </div>
   )
 }
-
-/** Hidden mount point cloned into for window.print(). Lives at app root. */
-export function CertificatePrintPortal() {
-  return <div id="certificate-print-portal" aria-hidden="true" />
-}

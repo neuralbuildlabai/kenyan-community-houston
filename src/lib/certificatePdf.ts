@@ -1,6 +1,8 @@
 import html2pdf from 'html2pdf.js'
 import { certificatePdfFilename } from '@/lib/certificateTemplates'
 
+export const CERTIFICATE_PRINT_ROOT_ID = 'kigh-certificate-print-root'
+
 /** US Letter landscape at 96 CSS px per inch */
 const PAGE_WIDTH_PX = 11 * 96
 const PAGE_HEIGHT_PX = 8.5 * 96
@@ -31,8 +33,12 @@ export type CertificatePdfDebugMeta = {
   recipientNamePresent?: boolean
 }
 
-function isPdfDebugEnabled(): boolean {
+function isDevDebugEnabled(): boolean {
   return import.meta.env.DEV
+}
+
+function isPdfDebugEnabled(): boolean {
+  return isDevDebugEnabled()
 }
 
 function logPdfDebug(message: string, data?: Record<string, unknown>): void {
@@ -261,40 +267,65 @@ export async function downloadCertificatePdf(
   }
 }
 
-export async function printCertificate(elementOrId: HTMLElement | string): Promise<void> {
-  const sheet = getCertificateSheetElement(elementOrId)
-  if (!sheet) {
-    throw new Error('Certificate sheet not found')
-  }
+/** Wait for images inside the print root so print preview is not blank. */
+async function waitForPrintImages(root: HTMLElement): Promise<void> {
+  const images = Array.from(root.querySelectorAll('img'))
+  await Promise.all(
+    images.map((img) => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve()
+      return new Promise<void>((resolve) => {
+        img.addEventListener('load', () => resolve(), { once: true })
+        img.addEventListener('error', () => resolve(), { once: true })
+      })
+    })
+  )
+}
 
-  const printRoot = document.getElementById('certificate-print-portal')
+export async function printCertificate(elementOrId?: HTMLElement | string): Promise<void> {
+  const printRoot = document.getElementById(CERTIFICATE_PRINT_ROOT_ID)
   if (!printRoot) {
-    throw new Error('Print portal not found')
+    throw new Error('Print preview could not be prepared. Please try again.')
+  }
+
+  const sheet =
+    elementOrId != null
+      ? getCertificateSheetElement(elementOrId)
+      : getCertificateSheetElement(printRoot)
+
+  if (!sheet) {
+    throw new Error('Print preview could not be prepared. Please try again.')
   }
 
   await waitForLayout()
-  const clone = prepareSheetClone(sheet)
-  sanitizeCloneForCapture(clone)
-
-  const tempHost = createExportHost()
-  tempHost.appendChild(clone)
-  document.body.appendChild(tempHost)
+  await waitForPrintImages(printRoot)
   await waitForLayout()
-  reloadCloneImages(clone)
-  await waitForCloneImages(clone)
-  assertSheetDimensions(clone)
-  document.body.removeChild(tempHost)
 
-  printRoot.innerHTML = ''
-  printRoot.appendChild(clone)
+  const rect = sheet.getBoundingClientRect()
+  if (!rect.width || !rect.height) {
+    throw new Error('Print preview is not ready yet. Please try again.')
+  }
+
+  if (isDevDebugEnabled()) {
+    const imageSummary = getImageLoadSummary(printRoot)
+    console.info('[certificate-print]', {
+      printRootFound: Boolean(printRoot),
+      sheetFound: Boolean(sheet),
+      sheetRect: {
+        width: rect.width,
+        height: rect.height,
+        top: rect.top,
+        left: rect.left,
+      },
+      imageCount: imageSummary.count,
+      loadedImages: imageSummary.loaded,
+      imageDetails: imageSummary.details,
+    })
+  }
 
   document.documentElement.classList.add('certificate-printing')
-  document.body.classList.add('certificate-printing')
 
   const cleanup = () => {
     document.documentElement.classList.remove('certificate-printing')
-    document.body.classList.remove('certificate-printing')
-    printRoot.innerHTML = ''
     window.removeEventListener('afterprint', cleanup)
   }
 

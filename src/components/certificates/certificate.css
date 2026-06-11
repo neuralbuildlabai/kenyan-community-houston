@@ -665,10 +665,9 @@
   right: 0.4in;
 }
 
-/* ─── Print / export portal ─── */
+/* ─── Print root (full-size, scale 1, capture-safe — not display:none / opacity:0) ─── */
 
-/* Full-size export source — always scale 1, capture-safe (not display:none / opacity:0) */
-.certificate-export-source {
+.certificate-print-root {
   position: fixed;
   left: 0;
   top: 0;
@@ -679,22 +678,8 @@
   overflow: hidden;
   pointer-events: none;
   z-index: -1;
+  transform: none;
   background: #fff;
-}
-
-#certificate-print-portal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 0;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  border: 0;
-  visibility: hidden;
-  pointer-events: none;
 }
 
 .certificate-export-host {
@@ -723,28 +708,34 @@
     width: 11in !important;
     height: 8.5in !important;
     overflow: hidden !important;
-    background: #fff !important;
+    background: #ffffff !important;
   }
 
-  html.certificate-printing body > *:not(#certificate-print-portal) {
+  html.certificate-printing body > *:not(#kigh-certificate-print-root) {
     display: none !important;
   }
 
-  html.certificate-printing #certificate-print-portal {
+  html.certificate-printing #kigh-certificate-print-root {
     display: block !important;
     visibility: visible !important;
-    position: static !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
     width: 11in !important;
     height: 8.5in !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
-    clip: auto !important;
+    z-index: 999999 !important;
     pointer-events: none !important;
+    background: #ffffff !important;
+    transform: none !important;
   }
 
-  html.certificate-printing #certificate-print-portal .certificate-sheet,
-  html.certificate-printing #certificate-print-portal .certificate-export-clone {
+  html.certificate-printing #kigh-certificate-print-root .certificate-sheet {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
     width: 11in !important;
     height: 8.5in !important;
     max-width: none !important;

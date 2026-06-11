@@ -79,7 +79,6 @@ import { AdminVendorDirectoryPage } from '@/pages/admin/AdminVendorDirectoryPage
 import { AdminCertificatesPage } from '@/pages/admin/AdminCertificatesPage'
 import { CertificatePreviewPage } from '@/pages/dev/CertificatePreviewPage'
 import { SYSTEM_HEALTH_ADMIN_ROLES } from '@/lib/platformAdmin'
-import { CertificatePrintPortal } from '@/components/certificates/CertificateDocument'
 
 import { RequireAuth } from '@/components/RequireAuth'
 import { RequiresFreshPassword } from '@/components/RequiresFreshPassword'
@@ -232,7 +231,6 @@ export default function App() {
             </Route>
           </Routes>
           <Toaster richColors position="top-right" />
-          <CertificatePrintPortal />
         </BrowserRouter>
       </AuthProvider>
     </HelmetProvider>

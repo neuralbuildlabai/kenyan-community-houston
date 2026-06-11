@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal, flushSync } from 'react-dom'
 import {
   Download,
   Eye,
@@ -39,7 +40,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { downloadCertificatePdf, getCertificateSheetElement, printCertificate } from '@/lib/certificatePdf'
+import { downloadCertificatePdf, getCertificateSheetElement, printCertificate, CERTIFICATE_PRINT_ROOT_ID } from '@/lib/certificatePdf'
 import {
   CERTIFICATE_DESIGN_STYLES,
   CERTIFICATE_TEMPLATES,
@@ -80,6 +81,8 @@ async function waitForExportSheet(): Promise<HTMLElement | null> {
   await new Promise<void>((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
   })
+  const printRoot = document.getElementById(CERTIFICATE_PRINT_ROOT_ID)
+  if (!printRoot) return null
   return getCertificateSheetElement(CERTIFICATE_EXPORT_ID)
 }
 
@@ -209,14 +212,11 @@ export function AdminCertificatesPage() {
     if (!validateRecipientOnly()) return
     setIsPrinting(true)
     try {
-      const sheet = await waitForExportSheet()
-      if (!sheet) {
-        throw new Error('Certificate export sheet not ready')
-      }
-      await printCertificate(sheet)
+      await printCertificate(CERTIFICATE_EXPORT_ID)
     } catch (e) {
       console.error('Certificate print failed:', e)
-      toast.error('Print preview failed. Please try again.')
+      const message = e instanceof Error ? e.message : 'Print preview failed. Please try again.'
+      toast.error(message)
     } finally {
       setIsPrinting(false)
     }
@@ -289,18 +289,17 @@ export function AdminCertificatesPage() {
   }
 
   async function loadRecordAndPrint(record: CertificateRecord) {
-    setForm(recordToForm(record))
+    flushSync(() => {
+      setForm(recordToForm(record))
+    })
     toast.success('Certificate loaded for reprint.')
     setIsPrinting(true)
     try {
-      const sheet = await waitForExportSheet()
-      if (!sheet) {
-        throw new Error('Certificate export sheet not ready')
-      }
-      await printCertificate(sheet)
+      await printCertificate(CERTIFICATE_EXPORT_ID)
     } catch (e) {
       console.error('Certificate reprint failed:', e)
-      toast.error('Print preview failed. Please try again.')
+      const message = e instanceof Error ? e.message : 'Print preview failed. Please try again.'
+      toast.error(message)
     } finally {
       setIsPrinting(false)
     }
@@ -355,10 +354,13 @@ export function AdminCertificatesPage() {
     <>
       <SEOHead title="Certificates & Acknowledgements" noIndex />
 
-      {/* Full-size export source for reliable PDF/print capture (scale 1, off-screen-safe) */}
-      <div className="certificate-export-source no-print" aria-hidden="true">
-        <CertificateDocument id={CERTIFICATE_EXPORT_ID} data={displayForm} scale={1} />
-      </div>
+      {/* Full-size print/PDF source — portaled to body so print CSS can target it directly */}
+      {createPortal(
+        <div id={CERTIFICATE_PRINT_ROOT_ID} className="certificate-print-root" aria-hidden="true">
+          <CertificateDocument id={CERTIFICATE_EXPORT_ID} data={displayForm} scale={1} />
+        </div>,
+        document.body
+      )}
 
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
         <DialogContent className="no-print max-w-[96vw] w-[96vw] max-h-[96vh] overflow-hidden flex flex-col gap-4 p-4 sm:p-6">
