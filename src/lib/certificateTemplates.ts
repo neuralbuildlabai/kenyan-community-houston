@@ -71,8 +71,8 @@ export const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
     category: 'Volunteer Appreciation',
     presentedToLabel: 'Presented to:',
     bodyText:
-      'In sincere appreciation of your dedicated volunteer service, generous spirit, and meaningful contribution to the Kenyans in Greater Houston Community.\n\nYour time, effort, and commitment help strengthen our community, support our events, and create a welcoming space for families, friends, and future generations.',
-    closingLine: 'With gratitude from Kenyans in Greater Houston Community',
+      'In sincere recognition of your generous volunteer service, dedication, and meaningful contribution to the Kenyans in Greater Houston Community.\n\nThrough your time, effort, and willingness to serve, you have helped strengthen our programs, uplift our events, and create a welcoming space for families and the wider community.',
+    closingLine: 'Presented with heartfelt gratitude by Kenyans in Greater Houston Community',
     defaultSignature1Title: DEFAULT_SIGNATURE_1_TITLE,
     defaultSignature2Title: DEFAULT_SIGNATURE_2_TITLE,
   },
@@ -82,8 +82,8 @@ export const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
     category: 'Community Speaker Recognition',
     presentedToLabel: 'Presented to:',
     bodyText:
-      'In recognition of your valuable contribution as a speaker and community forum leader for the Kenyans in Greater Houston Community.\n\nYour knowledge, voice, and leadership have helped inform, inspire, and empower our community through meaningful dialogue and shared learning.',
-    closingLine: 'Presented with appreciation by Kenyans in Greater Houston Community',
+      'In honor of your valuable contribution as a speaker and community forum leader for the Kenyans in Greater Houston Community.\n\nYour insight, leadership, and willingness to share knowledge have helped inform, inspire, and empower our community through meaningful dialogue and shared learning.',
+    closingLine: 'Presented with sincere appreciation by Kenyans in Greater Houston Community',
     defaultSignature1Title: DEFAULT_SIGNATURE_1_TITLE,
     defaultSignature2Title: DEFAULT_SIGNATURE_2_TITLE,
   },
@@ -93,8 +93,8 @@ export const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
     category: 'Community Service & Leadership',
     presentedToLabel: 'Presented to:',
     bodyText:
-      'In honor of your outstanding service, leadership, and commitment to the growth and unity of the Kenyans in Greater Houston Community.\n\nYour contribution reflects the spirit of service, togetherness, and responsibility that continues to uplift our community.',
-    closingLine: 'With deep appreciation from Kenyans in Greater Houston Community',
+      'In recognition of your outstanding service, leadership, and commitment to the growth and unity of the Kenyans in Greater Houston Community.\n\nYour dedication reflects the spirit of service, responsibility, and togetherness that continues to strengthen and uplift our community.',
+    closingLine: 'Presented with deep appreciation by Kenyans in Greater Houston Community',
     defaultSignature1Title: DEFAULT_SIGNATURE_1_TITLE,
     defaultSignature2Title: DEFAULT_SIGNATURE_2_TITLE,
   },
@@ -104,7 +104,7 @@ export const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
     category: 'Donor & Sponsor Appreciation',
     presentedToLabel: 'Presented to:',
     bodyText:
-      'In grateful recognition of your generous support and contribution to the Kenyans in Greater Houston Community.\n\nYour kindness and partnership help make our community programs, events, and outreach efforts possible.',
+      'In grateful recognition of your generous support and valued partnership with the Kenyans in Greater Houston Community.\n\nYour contribution helps make our community programs, events, outreach, and shared initiatives possible, leaving a meaningful impact on the people we serve.',
     closingLine: 'Presented with sincere gratitude by Kenyans in Greater Houston Community',
     defaultSignature1Title: DEFAULT_SIGNATURE_1_TITLE,
     defaultSignature2Title: DEFAULT_SIGNATURE_2_TITLE,
@@ -115,8 +115,8 @@ export const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
     category: 'Youth Achievement',
     presentedToLabel: 'Presented to:',
     bodyText:
-      'In recognition of your achievement, participation, and positive representation within the Kenyans in Greater Houston Community.\n\nYour dedication, growth, and example bring pride to our community and inspire others to continue striving for excellence.',
-    closingLine: 'Presented with pride by Kenyans in Greater Houston Community',
+      'In recognition of your achievement, participation, and positive representation within the Kenyans in Greater Houston Community.\n\nYour dedication, growth, and example bring pride to our community and inspire others to pursue excellence with confidence and purpose.',
+    closingLine: 'Presented with pride and encouragement by Kenyans in Greater Houston Community',
     defaultSignature1Title: DEFAULT_SIGNATURE_1_TITLE,
     defaultSignature2Title: DEFAULT_SIGNATURE_2_TITLE,
   },
@@ -126,8 +126,8 @@ export const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
     category: 'Vendor & Community Partner',
     presentedToLabel: 'Presented to:',
     bodyText:
-      'In appreciation of your partnership, participation, and support of Kenyans in Greater Houston Community events and initiatives.\n\nYour presence and contribution help create meaningful community experiences and strengthen connections across Greater Houston.',
-    closingLine: 'With appreciation from Kenyans in Greater Houston Community',
+      'In appreciation of your valued partnership, participation, and support of Kenyans in Greater Houston Community events and initiatives.\n\nYour presence and contribution help create meaningful community experiences, strengthen local connections, and support the spirit of collaboration across Greater Houston.',
+    closingLine: 'Presented with sincere appreciation by Kenyans in Greater Houston Community',
     defaultSignature1Title: DEFAULT_SIGNATURE_1_TITLE,
     defaultSignature2Title: DEFAULT_SIGNATURE_2_TITLE,
   },
