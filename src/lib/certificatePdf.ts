@@ -323,9 +323,13 @@ export async function printCertificate(elementOrId?: HTMLElement | string): Prom
   }
 
   document.documentElement.classList.add('certificate-printing')
+  printRoot.removeAttribute('aria-hidden')
+
+  await waitForLayout()
 
   const cleanup = () => {
     document.documentElement.classList.remove('certificate-printing')
+    printRoot.setAttribute('aria-hidden', 'true')
     window.removeEventListener('afterprint', cleanup)
   }
 

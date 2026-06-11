@@ -711,6 +711,15 @@
     background: #ffffff !important;
   }
 
+  html.certificate-printing body * {
+    visibility: hidden !important;
+  }
+
+  html.certificate-printing #kigh-certificate-print-root,
+  html.certificate-printing #kigh-certificate-print-root * {
+    visibility: visible !important;
+  }
+
   html.certificate-printing body > *:not(#kigh-certificate-print-root) {
     display: none !important;
   }
