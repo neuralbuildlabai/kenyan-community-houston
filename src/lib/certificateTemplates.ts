@@ -27,17 +27,17 @@ export const CERTIFICATE_DESIGN_STYLES: CertificateDesignStyle[] = [
   {
     id: 'modern-community',
     label: 'Modern Community',
-    description: 'Clean layout with Kenya color side ribbon, faint logo watermark, and gold accents.',
+    description: 'Clean contemporary layout with slim Kenya accent, faint logo watermark, and subtle wildlife background.',
   },
   {
     id: 'classic-official',
     label: 'Classic Official',
-    description: 'Formal border, gold corner ornaments, Kenya color ribbon, and gold seal accent.',
+    description: 'Formal double-line border, elegant corner accents, and restrained gold seal for ceremonial recognition.',
   },
   {
     id: 'heritage-premium',
     label: 'Heritage Premium',
-    description: 'Ceremonial layout with geometric pattern, crest area, and gold accents.',
+    description: 'Refined heritage patterning with muted green and gold accents and distinguished cultural elegance.',
   },
 ]
 

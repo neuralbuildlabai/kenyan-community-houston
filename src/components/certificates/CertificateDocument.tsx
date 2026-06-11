@@ -7,6 +7,7 @@ import {
   getCertificateTemplate,
   type CertificateFormData,
 } from '@/lib/certificateTemplates'
+import { BigFiveWildlifeBackground } from '@/components/certificates/BigFiveWildlifeBackground'
 import './certificate.css'
 
 type CertificateDocumentProps = {
@@ -28,17 +29,24 @@ function CertificateLogo({ heightIn = '0.68in', className }: { heightIn?: string
   )
 }
 
-function GoldSeal({ className, variant = 'text' }: { className?: string; variant?: 'text' | 'logo' }) {
+function GoldSeal({ className }: { className?: string }) {
   return (
     <div className={cn('cert-gold-seal', className)} aria-hidden>
       <div className="cert-gold-seal-ring">
-        {variant === 'logo' ? (
-          <img src={KIGH_LOGO_PATH} alt="" className="cert-gold-seal-logo" crossOrigin="anonymous" />
-        ) : (
-          <span className="cert-gold-seal-text">KIGH</span>
-        )}
+        <span className="cert-gold-seal-text">KIGH</span>
       </div>
     </div>
+  )
+}
+
+function SharedCertificateDecor() {
+  return (
+    <>
+      <div className="cert-watermark" aria-hidden>
+        <img src={KIGH_LOGO_PATH} alt="" crossOrigin="anonymous" />
+      </div>
+      <BigFiveWildlifeBackground />
+    </>
   )
 }
 
@@ -92,7 +100,7 @@ function CertificateContent({ data }: { data: CertificateFormData }) {
 function ClassicOfficialDecor() {
   return (
     <>
-      <div className="cert-classic-ribbon" aria-hidden />
+      <div className="cert-classic-accent" aria-hidden />
       <div className="cert-classic-corner cert-classic-corner-tl" aria-hidden />
       <div className="cert-classic-corner cert-classic-corner-tr" aria-hidden />
       <div className="cert-classic-corner cert-classic-corner-bl" aria-hidden />
@@ -103,15 +111,7 @@ function ClassicOfficialDecor() {
 }
 
 function ModernCommunityDecor() {
-  return (
-    <>
-      <div className="cert-modern-accent" aria-hidden />
-      <div className="cert-modern-watermark" aria-hidden>
-        <img src={KIGH_LOGO_PATH} alt="" crossOrigin="anonymous" />
-      </div>
-      <GoldSeal className="cert-modern-seal-pos" variant="logo" />
-    </>
-  )
+  return <div className="cert-modern-accent" aria-hidden />
 }
 
 function HeritagePremiumDecor() {
@@ -144,6 +144,7 @@ export function CertificateDocument({ data, id, className, scale = 1 }: Certific
       className={cn('certificate-sheet', styleClass)}
       aria-label="Certificate preview"
     >
+      <SharedCertificateDecor />
       {style?.id === 'modern-community' && <ModernCommunityDecor />}
       {style?.id === 'heritage-premium' && <HeritagePremiumDecor />}
       {style?.id === 'classic-official' && <ClassicOfficialDecor />}

@@ -9,7 +9,7 @@
   overflow: hidden;
   background: #fff;
   color: #1a1a1a;
-  font-family: Georgia, 'Times New Roman', Times, serif;
+  font-family: Georgia, 'Libre Baskerville', 'Times New Roman', Times, serif;
   box-sizing: border-box;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
@@ -45,7 +45,7 @@
 .cert-event,
 .cert-date-value,
 .cert-signature-line {
-  font-family: Georgia, 'Times New Roman', Times, serif;
+  font-family: Georgia, 'Libre Baskerville', 'Times New Roman', Times, serif;
 }
 
 .cert-presented-label,
@@ -53,6 +53,58 @@
 .cert-signature-title,
 .cert-footer {
   font-family: Inter, system-ui, sans-serif;
+}
+
+/* ─── Shared decorative layers ─── */
+
+.cert-watermark {
+  position: absolute;
+  top: 0.55in;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.cert-watermark img {
+  width: 3.6in;
+  height: auto;
+  opacity: 0.042;
+  object-fit: contain;
+}
+
+.cert-wildlife-bg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 46%;
+  z-index: 0;
+  pointer-events: none;
+  color: #a89070;
+  opacity: 0.55;
+  mask-image: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.75) 0%,
+    rgba(0, 0, 0, 0.35) 45%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.75) 0%,
+    rgba(0, 0, 0, 0.35) 45%,
+    transparent 100%
+  );
+}
+
+.cert-wildlife-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.cert-wildlife-svg g {
+  fill: currentColor;
 }
 
 /* ─── Shared layout ─── */
@@ -63,8 +115,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: calc(100% - 0.28in);
-  padding: 0.38in 0.62in 0.32in;
+  height: calc(100% - 0.34in);
+  padding: 0.34in 0.58in 0.24in;
   text-align: center;
 }
 
@@ -75,8 +127,8 @@
 }
 
 .cert-title {
-  margin: 0.1in 0 0.06in;
-  font-size: 27pt;
+  margin: 0.08in 0 0.05in;
+  font-size: 26pt;
   font-weight: 700;
   letter-spacing: 0.05em;
   line-height: 1.12;
@@ -84,7 +136,7 @@
 }
 
 .cert-presented-label {
-  margin: 0.05in 0 0.03in;
+  margin: 0.04in 0 0.025in;
   font-size: 9.5pt;
   font-weight: 500;
   letter-spacing: 0.14em;
@@ -93,50 +145,48 @@
 }
 
 .cert-recipient {
-  margin: 0.03in 0 0;
-  font-size: 25pt;
+  margin: 0.02in 0 0;
+  font-size: 26pt;
   font-weight: 700;
   line-height: 1.15;
   color: #111;
   min-width: 52%;
   max-width: 82%;
-  border-bottom: none;
-  padding-bottom: 0;
 }
 
 .cert-recipient-divider {
-  width: 3.2in;
-  height: 2px;
-  margin: 0.06in 0 0.08in;
+  width: 3in;
+  height: 1.5px;
+  margin: 0.05in 0 0.06in;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    #c9a227 15%,
-    #d4af37 50%,
-    #c9a227 85%,
+    rgba(201, 162, 39, 0.45) 15%,
+    rgba(212, 175, 55, 0.65) 50%,
+    rgba(201, 162, 39, 0.45) 85%,
     transparent 100%
   );
   border-radius: 1px;
 }
 
 .cert-event {
-  margin: 0 0 0.06in;
+  margin: 0 0 0.05in;
   font-size: 10.5pt;
   font-style: italic;
   color: #555;
 }
 
 .cert-body {
-  margin: 0 auto 0.07in;
-  max-width: 86%;
-  font-size: 10.5pt;
-  line-height: 1.5;
+  margin: 0 auto 0.05in;
+  max-width: 84%;
+  font-size: 10.25pt;
+  line-height: 1.45;
   color: #333;
   white-space: pre-line;
 }
 
 .cert-closing {
-  margin: 0.04in 0 0.1in;
+  margin: 0.03in 0 0.06in;
   font-size: 10pt;
   font-style: italic;
   color: #444;
@@ -148,7 +198,8 @@
   align-items: flex-end;
   width: 100%;
   margin-top: auto;
-  padding-top: 0.04in;
+  padding-top: 0.02in;
+  margin-bottom: 0.06in;
   gap: 0.35in;
 }
 
@@ -163,50 +214,50 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #666;
-  margin-bottom: 0.03in;
+  margin-bottom: 0.025in;
 }
 
 .cert-date-value {
   font-size: 10.5pt;
   font-weight: 600;
   color: #111;
-  border-top: 1px solid #333;
-  padding-top: 0.04in;
+  border-top: 1px solid #444;
+  padding-top: 0.035in;
   min-width: 1.75in;
 }
 
 .cert-signatures {
   display: flex;
   justify-content: center;
-  gap: 0.65in;
+  gap: 0.6in;
   flex: 1;
 }
 
 .cert-signature {
   text-align: center;
-  min-width: 1.9in;
+  min-width: 1.85in;
 }
 
 .cert-signature-line {
-  border-top: 1px solid #333;
-  padding-top: 0.04in;
+  border-top: 1px solid #444;
+  padding-top: 0.035in;
   font-size: 10pt;
   font-weight: 600;
   color: #111;
-  min-height: 0.2in;
+  min-height: 0.18in;
 }
 
 .cert-signature-title {
   font-size: 8pt;
   font-weight: 400;
   color: #555;
-  margin-top: 0.025in;
+  margin-top: 0.02in;
   line-height: 1.25;
 }
 
 .cert-footer {
   position: absolute;
-  bottom: 0.14in;
+  bottom: 0.16in;
   left: 0;
   right: 0;
   text-align: center;
@@ -217,17 +268,15 @@
   z-index: 5;
 }
 
-/* ─── Gold seal (shared) ─── */
+/* ─── Gold seal (shared, restrained) ─── */
 
 .cert-gold-seal {
-  width: 0.78in;
-  height: 0.78in;
+  width: 0.62in;
+  height: 0.62in;
   border-radius: 50%;
-  border: 2.5px solid #c9a227;
-  background: radial-gradient(circle at 32% 28%, #fffef8, #fef3c7 45%, #e8c547 100%);
-  box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.1),
-    inset 0 0 0 1.5px rgba(255, 255, 255, 0.7);
+  border: 1.5px solid rgba(201, 162, 39, 0.55);
+  background: radial-gradient(circle at 32% 28%, #fffef8, #fef9e8 50%, #f0e4c4 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -235,78 +284,120 @@
 }
 
 .cert-gold-seal-ring {
-  width: 0.58in;
-  height: 0.58in;
+  width: 0.46in;
+  height: 0.46in;
   border-radius: 50%;
-  border: 1.5px solid #b8860b;
+  border: 1px solid rgba(184, 134, 11, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
 }
 
 .cert-gold-seal-text {
   font-family: Inter, system-ui, sans-serif;
-  font-size: 6pt;
+  font-size: 5.5pt;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #92400e;
+  color: #92700c;
   line-height: 1;
 }
 
-.cert-gold-seal-logo {
-  width: 0.42in;
-  height: auto;
-  object-fit: contain;
+/* ─── Style 1: Modern Community ─── */
+
+.cert-style-modern-community {
+  border: 1px solid rgba(180, 180, 180, 0.65);
+  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.12);
 }
 
-/* ─── Style A: Classic Official ─── */
+.cert-style-modern-community::after {
+  content: '';
+  position: absolute;
+  inset: 0.08in;
+  border: 1px solid rgba(22, 101, 52, 0.08);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cert-modern-accent {
+  position: absolute;
+  left: 0;
+  top: 0.35in;
+  bottom: 0.35in;
+  width: 0.07in;
+  border-radius: 0 2px 2px 0;
+  background: linear-gradient(
+    180deg,
+    rgba(17, 17, 17, 0.55) 0%,
+    rgba(17, 17, 17, 0.55) calc(33.33% - 0.5px),
+    rgba(255, 255, 255, 0.9) calc(33.33% - 0.5px),
+    rgba(255, 255, 255, 0.9) calc(33.33% + 0.5px),
+    rgba(190, 18, 60, 0.45) calc(33.33% + 0.5px),
+    rgba(190, 18, 60, 0.45) calc(66.66% - 0.5px),
+    rgba(255, 255, 255, 0.9) calc(66.66% - 0.5px),
+    rgba(255, 255, 255, 0.9) calc(66.66% + 0.5px),
+    rgba(22, 101, 52, 0.5) calc(66.66% + 0.5px),
+    rgba(22, 101, 52, 0.5) 100%
+  );
+  z-index: 3;
+}
+
+.cert-style-modern-community .cert-inner {
+  padding-left: 0.48in;
+}
+
+.cert-style-modern-community .cert-title {
+  color: #166534;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+/* ─── Style 2: Classic Official ─── */
 
 .cert-style-classic-official {
-  border: 4px double #14532d;
+  border: 1.5px solid rgba(20, 83, 45, 0.4);
   box-shadow:
-    inset 0 0 0 5px #fff,
-    inset 0 0 0 7px #c9a227,
-    inset 0 0 0 9px #fff,
-    inset 0 0 0 11px #14532d;
+    inset 0 0 0 2.5px #fff,
+    inset 0 0 0 3.5px rgba(201, 162, 39, 0.28),
+    inset 0 0 0 4.5px #fff,
+    inset 0 0 0 5.5px rgba(20, 83, 45, 0.18);
 }
 
 .cert-style-classic-official::before {
   content: '';
   position: absolute;
-  inset: 0.2in;
-  border: 1px solid rgba(20, 83, 45, 0.3);
+  inset: 0.14in;
+  border: 1px solid rgba(20, 83, 45, 0.12);
   pointer-events: none;
   z-index: 1;
 }
 
-.cert-classic-ribbon {
+.cert-classic-accent {
   position: absolute;
-  top: 0.32in;
-  left: 0.28in;
-  right: 0.28in;
-  height: 6px;
+  top: 0.22in;
+  left: 0.22in;
+  right: 0.22in;
+  height: 2px;
   border-radius: 1px;
   background: linear-gradient(
     90deg,
-    #111 0%,
-    #111 calc(33.33% - 1px),
-    #fff calc(33.33% - 1px),
-    #fff calc(33.33% + 1px),
-    #be123c calc(33.33% + 1px),
-    #be123c calc(66.66% - 1px),
-    #fff calc(66.66% - 1px),
-    #fff calc(66.66% + 1px),
-    #166534 calc(66.66% + 1px),
-    #166534 100%
+    rgba(17, 17, 17, 0.35) 0%,
+    rgba(17, 17, 17, 0.35) calc(33.33% - 0.5px),
+    transparent calc(33.33% - 0.5px),
+    transparent calc(33.33% + 0.5px),
+    rgba(190, 18, 60, 0.3) calc(33.33% + 0.5px),
+    rgba(190, 18, 60, 0.3) calc(66.66% - 0.5px),
+    transparent calc(66.66% - 0.5px),
+    transparent calc(66.66% + 0.5px),
+    rgba(22, 101, 52, 0.35) calc(66.66% + 0.5px),
+    rgba(22, 101, 52, 0.35) 100%
   );
   z-index: 3;
 }
 
 .cert-classic-corner {
   position: absolute;
-  width: 0.42in;
-  height: 0.42in;
+  width: 0.22in;
+  height: 0.22in;
   z-index: 3;
   pointer-events: none;
 }
@@ -315,240 +406,174 @@
 .cert-classic-corner::after {
   content: '';
   position: absolute;
-  background: #c9a227;
+  background: rgba(201, 162, 39, 0.55);
 }
 
 .cert-classic-corner-tl {
-  top: 0.14in;
-  left: 0.14in;
+  top: 0.12in;
+  left: 0.12in;
 }
 .cert-classic-corner-tl::before {
   top: 0;
   left: 0;
-  width: 0.42in;
-  height: 2px;
+  width: 0.22in;
+  height: 1px;
 }
 .cert-classic-corner-tl::after {
   top: 0;
   left: 0;
-  width: 2px;
-  height: 0.42in;
+  width: 1px;
+  height: 0.22in;
 }
 
 .cert-classic-corner-tr {
-  top: 0.14in;
-  right: 0.14in;
+  top: 0.12in;
+  right: 0.12in;
 }
 .cert-classic-corner-tr::before {
   top: 0;
   right: 0;
-  width: 0.42in;
-  height: 2px;
+  width: 0.22in;
+  height: 1px;
 }
 .cert-classic-corner-tr::after {
   top: 0;
   right: 0;
-  width: 2px;
-  height: 0.42in;
+  width: 1px;
+  height: 0.22in;
 }
 
 .cert-classic-corner-bl {
-  bottom: 0.14in;
-  left: 0.14in;
+  bottom: 0.12in;
+  left: 0.12in;
 }
 .cert-classic-corner-bl::before {
   bottom: 0;
   left: 0;
-  width: 0.42in;
-  height: 2px;
+  width: 0.22in;
+  height: 1px;
 }
 .cert-classic-corner-bl::after {
   bottom: 0;
   left: 0;
-  width: 2px;
-  height: 0.42in;
+  width: 1px;
+  height: 0.22in;
 }
 
 .cert-classic-corner-br {
-  bottom: 0.14in;
-  right: 0.14in;
+  bottom: 0.12in;
+  right: 0.12in;
 }
 .cert-classic-corner-br::before {
   bottom: 0;
   right: 0;
-  width: 0.42in;
-  height: 2px;
+  width: 0.22in;
+  height: 1px;
 }
 .cert-classic-corner-br::after {
   bottom: 0;
   right: 0;
-  width: 2px;
-  height: 0.42in;
+  width: 1px;
+  height: 0.22in;
 }
 
 .cert-classic-seal-pos {
   position: absolute;
-  bottom: 0.48in;
-  right: 0.48in;
-}
-
-.cert-style-classic-official .cert-inner {
-  padding-top: 0.42in;
-}
-
-/* ─── Style B: Modern Community (default) ─── */
-
-.cert-style-modern-community {
-  border: 1.5px solid #d1d5db;
-  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.25);
-}
-
-.cert-style-modern-community::after {
-  content: '';
-  position: absolute;
-  inset: 0.1in;
-  border: 1px solid rgba(22, 101, 52, 0.12);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.cert-modern-accent {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 0.22in;
-  background: linear-gradient(
-    180deg,
-    #111 0%,
-    #111 calc(33.33% - 1px),
-    #fff calc(33.33% - 1px),
-    #fff calc(33.33% + 1px),
-    #be123c calc(33.33% + 1px),
-    #be123c calc(66.66% - 1px),
-    #fff calc(66.66% - 1px),
-    #fff calc(66.66% + 1px),
-    #166534 calc(66.66% + 1px),
-    #166534 100%
-  );
-  z-index: 3;
-}
-
-.cert-modern-watermark {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.cert-modern-watermark img {
-  width: 4.2in;
-  height: auto;
-  opacity: 0.055;
-  object-fit: contain;
-}
-
-.cert-style-modern-community .cert-inner {
-  padding-left: 0.52in;
-}
-
-.cert-style-modern-community .cert-title {
-  color: #166534;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-}
-
-.cert-modern-seal-pos {
-  position: absolute;
-  bottom: 0.42in;
+  bottom: 0.52in;
   right: 0.42in;
 }
 
-/* ─── Style C: Heritage Premium ─── */
+.cert-style-classic-official .cert-inner {
+  padding-top: 0.38in;
+}
+
+/* ─── Style 3: Heritage Premium ─── */
 
 .cert-style-heritage-premium {
-  border: 2px solid #b8860b;
+  border: 1px solid rgba(184, 134, 11, 0.35);
   background-color: #fff;
 }
 
 .cert-heritage-pattern {
   position: absolute;
   inset: 0;
-  opacity: 0.035;
+  opacity: 0.022;
   background-image:
     repeating-linear-gradient(
       45deg,
       #166534 0,
       #166534 1px,
       transparent 1px,
-      transparent 12px
+      transparent 14px
     ),
     repeating-linear-gradient(
       -45deg,
       #166534 0,
       #166534 1px,
       transparent 1px,
-      transparent 12px
+      transparent 14px
     );
   z-index: 0;
 }
 
 .cert-heritage-frame {
   position: absolute;
-  inset: 0.18in;
-  border: 1px solid rgba(184, 134, 11, 0.5);
+  inset: 0.12in;
+  border: 1px solid rgba(184, 134, 11, 0.22);
   pointer-events: none;
   z-index: 1;
 }
 
 .cert-heritage-accent-bar {
   position: absolute;
-  top: 0.18in;
-  left: 0.18in;
-  right: 0.18in;
-  height: 3px;
-  background: linear-gradient(90deg, #166534, #c9a227, #166534);
+  top: 0.14in;
+  left: 0.14in;
+  right: 0.14in;
+  height: 1.5px;
+  background: linear-gradient(
+    90deg,
+    rgba(22, 101, 52, 0.35),
+    rgba(201, 162, 39, 0.4),
+    rgba(22, 101, 52, 0.35)
+  );
   z-index: 2;
 }
 
 .cert-heritage-corner {
   position: absolute;
-  width: 0.32in;
-  height: 0.32in;
-  border-color: #b8860b;
+  width: 0.2in;
+  height: 0.2in;
+  border-color: rgba(184, 134, 11, 0.4);
   border-style: solid;
   z-index: 2;
 }
 
 .cert-heritage-corner-tl {
-  top: 0.1in;
-  left: 0.1in;
-  border-width: 2.5px 0 0 2.5px;
+  top: 0.08in;
+  left: 0.08in;
+  border-width: 1.5px 0 0 1.5px;
 }
 
 .cert-heritage-corner-tr {
-  top: 0.1in;
-  right: 0.1in;
-  border-width: 2.5px 2.5px 0 0;
+  top: 0.08in;
+  right: 0.08in;
+  border-width: 1.5px 1.5px 0 0;
 }
 
 .cert-heritage-corner-bl {
-  bottom: 0.1in;
-  left: 0.1in;
-  border-width: 0 0 2.5px 2.5px;
+  bottom: 0.08in;
+  left: 0.08in;
+  border-width: 0 0 1.5px 1.5px;
 }
 
 .cert-heritage-corner-br {
-  bottom: 0.1in;
-  right: 0.1in;
-  border-width: 0 2.5px 2.5px 0;
+  bottom: 0.08in;
+  right: 0.08in;
+  border-width: 0 1.5px 1.5px 0;
 }
 
 .cert-style-heritage-premium .cert-inner {
-  padding-top: 0.4in;
+  padding-top: 0.36in;
 }
 
 .cert-style-heritage-premium .cert-title {
@@ -557,8 +582,8 @@
 
 .cert-heritage-seal-pos {
   position: absolute;
-  bottom: 0.44in;
-  right: 0.44in;
+  bottom: 0.5in;
+  right: 0.4in;
 }
 
 /* ─── Print / export portal ─── */
