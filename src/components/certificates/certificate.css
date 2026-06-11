@@ -9,7 +9,7 @@
   overflow: hidden;
   background: #fff;
   color: #1a1a1a;
-  font-family: Georgia, 'Libre Baskerville', 'Times New Roman', Times, serif;
+  font-family: 'Libre Baskerville', Georgia, 'Times New Roman', Times, serif;
   box-sizing: border-box;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
@@ -37,20 +37,19 @@
 
 .cert-title,
 .cert-recipient {
-  font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Cormorant Garamond', 'Playfair Display', 'Libre Baskerville', Georgia, serif;
 }
 
 .cert-body,
 .cert-closing,
 .cert-event,
-.cert-date-value,
-.cert-signature-line {
-  font-family: Georgia, 'Libre Baskerville', 'Times New Roman', Times, serif;
+.cert-meta-line {
+  font-family: 'Libre Baskerville', Georgia, 'Times New Roman', Times, serif;
 }
 
 .cert-presented-label,
-.cert-date-label,
-.cert-signature-title,
+.cert-meta-label,
+.cert-meta-caption,
 .cert-footer {
   font-family: Inter, system-ui, sans-serif;
 }
@@ -59,7 +58,7 @@
 
 .cert-watermark {
   position: absolute;
-  top: 0.42in;
+  top: 0.48in;
   left: 50%;
   transform: translateX(-50%);
   z-index: 0;
@@ -75,10 +74,10 @@
 
 .cert-wildlife-bg {
   position: absolute;
-  left: 0.65in;
-  right: 0.55in;
-  bottom: 1.32in;
-  height: 2.5in;
+  left: 0.55in;
+  right: 0.45in;
+  bottom: 1.05in;
+  height: 2.95in;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
@@ -93,15 +92,15 @@
 }
 
 .cert-style-modern-community .cert-wildlife-img {
-  opacity: 0.19;
+  opacity: 0.24;
 }
 
 .cert-style-classic-official .cert-wildlife-img {
-  opacity: 0.17;
+  opacity: 0.22;
 }
 
 .cert-style-heritage-premium .cert-wildlife-img {
-  opacity: 0.18;
+  opacity: 0.26;
 }
 
 /* ─── Shared layout ─── */
@@ -112,8 +111,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: calc(100% - 0.28in);
-  padding: 0.38in 0.54in 0.12in;
+  height: calc(100% - 0.32in);
+  padding: 0.46in 0.56in 0.14in;
   text-align: center;
 }
 
@@ -121,31 +120,32 @@
   flex-shrink: 0;
   object-fit: contain;
   object-position: center;
+  margin-bottom: 0.1in;
 }
 
 .cert-title {
-  margin: 0.08in 0 0.04in;
-  font-size: 30pt;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  line-height: 1.1;
+  margin: 0 0 0.1in;
+  font-size: 31pt;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1.08;
   color: #14532d;
 }
 
 .cert-presented-label {
-  margin: 0.035in 0 0.02in;
-  font-size: 9pt;
+  margin: 0 0 0.06in;
+  font-size: 8.5pt;
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: #666;
 }
 
 .cert-recipient {
-  margin: 0.015in 0 0;
-  font-size: 30pt;
+  margin: 0;
+  font-size: 32pt;
   font-weight: 700;
-  line-height: 1.12;
+  line-height: 1.1;
   color: #111;
   min-width: 52%;
   max-width: 82%;
@@ -153,9 +153,9 @@
 
 .cert-recipient-divider {
   position: relative;
-  width: 3.4in;
+  width: 3.5in;
   height: 1px;
-  margin: 0.045in 0 0.055in;
+  margin: 0.08in 0 0.1in;
   background: linear-gradient(
     90deg,
     transparent 0%,
@@ -178,7 +178,7 @@
 }
 
 .cert-event {
-  margin: 0 0 0.04in;
+  margin: 0 0 0.06in;
   font-size: 9.5pt;
   font-style: italic;
   font-weight: 400;
@@ -187,30 +187,32 @@
 }
 
 .cert-body {
-  margin: 0 auto 0.04in;
-  max-width: 82%;
+  margin: 0 auto 0.06in;
+  max-width: 80%;
   font-size: 10.5pt;
-  line-height: 1.48;
+  line-height: 1.55;
   color: #333;
   white-space: pre-line;
 }
 
 .cert-closing {
-  margin: 0.025in 0 0.05in;
+  margin: 0.04in 0 0.08in;
   font-size: 10pt;
   font-style: italic;
+  line-height: 1.4;
   color: #444;
 }
 
 .cert-meta-zone {
   width: 100%;
   margin-top: auto;
-  padding: 0.06in 0.08in 0.08in;
+  padding: 0.08in 0.1in 0.38in;
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.5) 18%,
-    rgba(255, 255, 255, 0.92) 100%
+    rgba(255, 255, 255, 0.45) 12%,
+    rgba(255, 255, 255, 0.88) 55%,
+    rgba(255, 255, 255, 0.96) 100%
   );
   position: relative;
   z-index: 3;
@@ -221,77 +223,92 @@
   grid-template-columns: 1fr 1.15fr 1.15fr;
   align-items: end;
   width: 100%;
-  gap: 0.25in;
+  gap: 0.28in;
 }
 
-.cert-date-block {
+.cert-meta-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cert-date-col {
   text-align: left;
 }
 
-.cert-date-label {
+.cert-meta-col:not(.cert-date-col) {
+  text-align: center;
+}
+
+.cert-meta-label {
+  min-height: 0.15in;
   font-size: 7pt;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #666;
-  margin-bottom: 0.02in;
+  margin-bottom: 0.025in;
+  line-height: 1.2;
 }
 
-.cert-date-value {
+.cert-meta-label-spacer {
+  visibility: hidden;
+}
+
+.cert-meta-line {
+  border-top: 1px solid #555;
+  padding-top: 0.035in;
   font-size: 10.5pt;
   font-weight: 600;
   color: #111;
-  border-top: 1px solid #555;
-  padding-top: 0.03in;
-  min-width: 1.6in;
+  min-height: 0.2in;
+  line-height: 1.25;
 }
 
-.cert-signature {
-  text-align: center;
-  min-width: 0;
+.cert-date-col .cert-meta-line {
+  min-width: 1.65in;
 }
 
-.cert-signature-line {
-  border-top: 1px solid #555;
-  padding-top: 0.03in;
-  font-size: 10pt;
-  font-weight: 600;
-  color: #111;
-  min-height: 0.16in;
-}
-
-.cert-signature-title {
+.cert-meta-caption {
+  min-height: 0.24in;
   font-size: 7.5pt;
   font-weight: 400;
   color: #555;
-  margin-top: 0.018in;
-  line-height: 1.25;
+  margin-top: 0.02in;
+  line-height: 1.3;
+}
+
+.cert-meta-caption-empty {
+  visibility: hidden;
 }
 
 .cert-footer {
   position: absolute;
-  bottom: 0.2in;
+  bottom: 0.22in;
   left: 0;
   right: 0;
   text-align: center;
-  font-size: 7pt;
+  font-size: 8.5pt;
   font-weight: 500;
   letter-spacing: 0.06em;
-  color: #777;
+  color: #666;
   z-index: 5;
 }
 
-/* ─── Gold seal (shared, sample-inspired) ─── */
+/* ─── Gold seal (embossed medallion) ─── */
 
 .cert-gold-seal {
-  width: 0.68in;
-  height: 0.68in;
+  width: 0.72in;
+  height: 0.72in;
   border-radius: 50%;
-  border: 2px solid rgba(201, 162, 39, 0.65);
-  background: radial-gradient(circle at 35% 30%, #fffef6, #fef3c7 48%, #e8c547 100%);
+  border: 2.5px solid #b8860b;
+  background:
+    radial-gradient(circle at 32% 28%, #fffef8 0%, #fef3c7 22%, #f0d060 52%, #c9a020 78%, #9a7209 100%);
   box-shadow:
-    0 1px 4px rgba(0, 0, 0, 0.08),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.75);
+    0 2px 6px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.6),
+    inset 0 2px 4px rgba(255, 255, 255, 0.65),
+    inset 0 -2px 5px rgba(120, 80, 0, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -299,38 +316,53 @@
 }
 
 .cert-gold-seal-ring {
-  width: 0.5in;
-  height: 0.5in;
+  width: 0.54in;
+  height: 0.54in;
   border-radius: 50%;
-  border: 1px solid rgba(184, 134, 11, 0.5);
+  border: 1.5px solid rgba(154, 114, 9, 0.65);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.5),
+    inset 0 -1px 2px rgba(120, 80, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.cert-gold-seal-text {
-  font-family: Inter, system-ui, sans-serif;
-  font-size: 6pt;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: #92400e;
-  line-height: 1;
+.cert-gold-seal-inner {
+  width: 0.38in;
+  height: 0.38in;
+  border-radius: 50%;
+  border: 1px solid rgba(184, 134, 11, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 40% 35%, rgba(255, 254, 248, 0.9), rgba(240, 208, 96, 0.35));
 }
 
-/* ─── Style 1: Modern Community (sample-inspired) ─── */
+.cert-gold-seal-text {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 5.5pt;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #7c4a03;
+  line-height: 1;
+  text-shadow: 0 0.5px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* ─── Style 1: Modern Community ─── */
 
 .cert-style-modern-community {
-  border: 1px solid rgba(60, 60, 60, 0.55);
+  border: 1px solid rgba(80, 80, 80, 0.4);
   box-shadow:
     inset 0 0 0 2px #fff,
-    inset 0 0 0 3px rgba(201, 162, 39, 0.32);
+    inset 0 0 0 3px rgba(201, 162, 39, 0.22);
 }
 
 .cert-style-modern-community::after {
   content: '';
   position: absolute;
-  inset: 0.1in;
-  border: 1px solid rgba(201, 162, 39, 0.18);
+  inset: 0.11in;
+  border: 1px solid rgba(201, 162, 39, 0.12);
   pointer-events: none;
   z-index: 1;
 }
@@ -338,57 +370,77 @@
 .cert-modern-accent {
   position: absolute;
   left: 0;
-  top: 0.12in;
-  bottom: 0.12in;
-  width: 0.09in;
+  top: 0.14in;
+  bottom: 0.14in;
+  width: 0.07in;
   background: linear-gradient(
     180deg,
-    rgba(17, 17, 17, 0.7) 0%,
-    rgba(17, 17, 17, 0.7) calc(33.33% - 0.5px),
+    rgba(17, 17, 17, 0.65) 0%,
+    rgba(17, 17, 17, 0.65) calc(33.33% - 0.5px),
     rgba(255, 255, 255, 0.95) calc(33.33% - 0.5px),
     rgba(255, 255, 255, 0.95) calc(33.33% + 0.5px),
-    rgba(190, 18, 60, 0.55) calc(33.33% + 0.5px),
-    rgba(190, 18, 60, 0.55) calc(66.66% - 0.5px),
+    rgba(190, 18, 60, 0.5) calc(33.33% + 0.5px),
+    rgba(190, 18, 60, 0.5) calc(66.66% - 0.5px),
     rgba(255, 255, 255, 0.95) calc(66.66% - 0.5px),
     rgba(255, 255, 255, 0.95) calc(66.66% + 0.5px),
-    rgba(22, 101, 52, 0.6) calc(66.66% + 0.5px),
-    rgba(22, 101, 52, 0.6) 100%
+    rgba(22, 101, 52, 0.55) calc(66.66% + 0.5px),
+    rgba(22, 101, 52, 0.55) 100%
   );
   z-index: 3;
 }
 
 .cert-style-modern-community .cert-inner {
-  padding-left: 0.5in;
+  padding-left: 0.52in;
 }
 
 .cert-style-modern-community .cert-title {
   color: #14532d;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.cert-style-modern-community .cert-recipient-divider {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(201, 162, 39, 0.25) 15%,
+    rgba(212, 175, 55, 0.4) 50%,
+    rgba(201, 162, 39, 0.25) 85%,
+    transparent 100%
+  );
 }
 
 .cert-modern-seal-pos {
   position: absolute;
-  bottom: 0.52in;
-  right: 0.38in;
+  bottom: 0.54in;
+  right: 0.4in;
 }
 
 /* ─── Style 2: Classic Official ─── */
 
 .cert-style-classic-official {
-  border: 1px solid rgba(60, 60, 60, 0.5);
+  border: 1.5px solid rgba(60, 60, 60, 0.55);
   box-shadow:
-    inset 0 0 0 2.5px #fff,
-    inset 0 0 0 3.5px rgba(201, 162, 39, 0.38),
-    inset 0 0 0 4.5px #fff,
-    inset 0 0 0 5.5px rgba(20, 83, 45, 0.22);
+    inset 0 0 0 3px #fff,
+    inset 0 0 0 4px rgba(201, 162, 39, 0.42),
+    inset 0 0 0 5.5px #fff,
+    inset 0 0 0 6.5px rgba(20, 83, 45, 0.28);
 }
 
 .cert-style-classic-official::before {
   content: '';
   position: absolute;
-  inset: 0.12in;
-  border: 1px solid rgba(201, 162, 39, 0.15);
+  inset: 0.14in;
+  border: 1px solid rgba(201, 162, 39, 0.22);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cert-style-classic-official::after {
+  content: '';
+  position: absolute;
+  inset: 0.19in;
+  border: 1px solid rgba(20, 83, 45, 0.1);
   pointer-events: none;
   z-index: 1;
 }
@@ -396,29 +448,29 @@
 .cert-classic-accent {
   position: absolute;
   left: 0;
-  top: 0.12in;
-  bottom: 0.12in;
-  width: 0.07in;
+  top: 0.14in;
+  bottom: 0.14in;
+  width: 0.08in;
   background: linear-gradient(
     180deg,
-    rgba(17, 17, 17, 0.55) 0%,
-    rgba(17, 17, 17, 0.55) calc(33.33% - 0.5px),
+    rgba(17, 17, 17, 0.6) 0%,
+    rgba(17, 17, 17, 0.6) calc(33.33% - 0.5px),
     rgba(255, 255, 255, 0.95) calc(33.33% - 0.5px),
     rgba(255, 255, 255, 0.95) calc(33.33% + 0.5px),
-    rgba(190, 18, 60, 0.4) calc(33.33% + 0.5px),
-    rgba(190, 18, 60, 0.4) calc(66.66% - 0.5px),
+    rgba(190, 18, 60, 0.45) calc(33.33% + 0.5px),
+    rgba(190, 18, 60, 0.45) calc(66.66% - 0.5px),
     rgba(255, 255, 255, 0.95) calc(66.66% - 0.5px),
     rgba(255, 255, 255, 0.95) calc(66.66% + 0.5px),
-    rgba(22, 101, 52, 0.45) calc(66.66% + 0.5px),
-    rgba(22, 101, 52, 0.45) 100%
+    rgba(22, 101, 52, 0.5) calc(66.66% + 0.5px),
+    rgba(22, 101, 52, 0.5) 100%
   );
   z-index: 3;
 }
 
 .cert-classic-corner {
   position: absolute;
-  width: 0.22in;
-  height: 0.22in;
+  width: 0.26in;
+  height: 0.26in;
   z-index: 3;
   pointer-events: none;
 }
@@ -427,188 +479,211 @@
 .cert-classic-corner::after {
   content: '';
   position: absolute;
-  background: rgba(201, 162, 39, 0.55);
+  background: rgba(201, 162, 39, 0.6);
 }
 
 .cert-classic-corner-tl {
-  top: 0.12in;
-  left: 0.12in;
+  top: 0.14in;
+  left: 0.14in;
 }
 .cert-classic-corner-tl::before {
   top: 0;
   left: 0;
-  width: 0.22in;
-  height: 1px;
+  width: 0.26in;
+  height: 1.5px;
 }
 .cert-classic-corner-tl::after {
   top: 0;
   left: 0;
-  width: 1px;
-  height: 0.22in;
+  width: 1.5px;
+  height: 0.26in;
 }
 
 .cert-classic-corner-tr {
-  top: 0.12in;
-  right: 0.12in;
+  top: 0.14in;
+  right: 0.14in;
 }
 .cert-classic-corner-tr::before {
   top: 0;
   right: 0;
-  width: 0.22in;
-  height: 1px;
+  width: 0.26in;
+  height: 1.5px;
 }
 .cert-classic-corner-tr::after {
   top: 0;
   right: 0;
-  width: 1px;
-  height: 0.22in;
+  width: 1.5px;
+  height: 0.26in;
 }
 
 .cert-classic-corner-bl {
-  bottom: 0.12in;
-  left: 0.12in;
+  bottom: 0.14in;
+  left: 0.14in;
 }
 .cert-classic-corner-bl::before {
   bottom: 0;
   left: 0;
-  width: 0.22in;
-  height: 1px;
+  width: 0.26in;
+  height: 1.5px;
 }
 .cert-classic-corner-bl::after {
   bottom: 0;
   left: 0;
-  width: 1px;
-  height: 0.22in;
+  width: 1.5px;
+  height: 0.26in;
 }
 
 .cert-classic-corner-br {
-  bottom: 0.12in;
-  right: 0.12in;
+  bottom: 0.14in;
+  right: 0.14in;
 }
 .cert-classic-corner-br::before {
   bottom: 0;
   right: 0;
-  width: 0.22in;
-  height: 1px;
+  width: 0.26in;
+  height: 1.5px;
 }
 .cert-classic-corner-br::after {
   bottom: 0;
   right: 0;
-  width: 1px;
-  height: 0.22in;
+  width: 1.5px;
+  height: 0.26in;
 }
 
 .cert-classic-seal-pos {
   position: absolute;
-  bottom: 0.52in;
-  right: 0.38in;
+  bottom: 0.54in;
+  right: 0.4in;
 }
 
 .cert-style-classic-official .cert-inner {
-  padding-left: 0.46in;
-  padding-top: 0.4in;
+  padding-left: 0.5in;
+}
+
+.cert-style-classic-official .cert-title {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #134e28;
+}
+
+.cert-style-classic-official .cert-recipient-divider {
+  width: 3.7in;
 }
 
 /* ─── Style 3: Heritage Premium ─── */
 
 .cert-style-heritage-premium {
   border: 1px solid rgba(60, 60, 60, 0.45);
-  background-color: #fff;
+  background-color: #fdfbf6;
   box-shadow:
-    inset 0 0 0 2px #fff,
-    inset 0 0 0 3px rgba(184, 134, 11, 0.25);
+    inset 0 0 0 2.5px #fff,
+    inset 0 0 0 3.5px rgba(184, 134, 11, 0.32),
+    inset 0 0 0 4.5px rgba(22, 101, 52, 0.12);
 }
 
+/* SVG tile pattern — avoids html2canvas createPattern crash from repeating-linear-gradient */
 .cert-heritage-pattern {
   position: absolute;
   inset: 0;
-  opacity: 0.022;
-  background-image:
-    repeating-linear-gradient(
-      45deg,
-      #166534 0,
-      #166534 1px,
-      transparent 1px,
-      transparent 14px
-    ),
-    repeating-linear-gradient(
-      -45deg,
-      #166534 0,
-      #166534 1px,
-      transparent 1px,
-      transparent 14px
-    );
+  opacity: 0.038;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath d='M0 20L20 0M-5 5L5 -5M15 25L25 15' stroke='%23166534' stroke-width='0.6' fill='none'/%3E%3C/svg%3E");
+  background-size: 20px 20px;
   z-index: 0;
+  pointer-events: none;
 }
 
 .cert-heritage-frame {
   position: absolute;
-  inset: 0.12in;
-  border: 1px solid rgba(184, 134, 11, 0.22);
+  inset: 0.13in;
+  border: 1px solid rgba(184, 134, 11, 0.28);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cert-heritage-frame-inner {
+  position: absolute;
+  inset: 0.19in;
+  border: 1px solid rgba(22, 101, 52, 0.14);
   pointer-events: none;
   z-index: 1;
 }
 
 .cert-heritage-accent-bar {
   position: absolute;
-  top: 0.14in;
-  left: 0.14in;
-  right: 0.14in;
-  height: 1.5px;
+  top: 0.15in;
+  left: 0.15in;
+  right: 0.15in;
+  height: 2px;
   background: linear-gradient(
     90deg,
-    rgba(22, 101, 52, 0.35),
-    rgba(201, 162, 39, 0.4),
-    rgba(22, 101, 52, 0.35)
+    rgba(22, 101, 52, 0.45),
+    rgba(201, 162, 39, 0.55),
+    rgba(22, 101, 52, 0.45)
   );
   z-index: 2;
 }
 
 .cert-heritage-corner {
   position: absolute;
-  width: 0.2in;
-  height: 0.2in;
-  border-color: rgba(184, 134, 11, 0.4);
+  width: 0.24in;
+  height: 0.24in;
+  border-color: rgba(184, 134, 11, 0.5);
   border-style: solid;
   z-index: 2;
 }
 
 .cert-heritage-corner-tl {
-  top: 0.08in;
-  left: 0.08in;
-  border-width: 1.5px 0 0 1.5px;
+  top: 0.09in;
+  left: 0.09in;
+  border-width: 2px 0 0 2px;
 }
 
 .cert-heritage-corner-tr {
-  top: 0.08in;
-  right: 0.08in;
-  border-width: 1.5px 1.5px 0 0;
+  top: 0.09in;
+  right: 0.09in;
+  border-width: 2px 2px 0 0;
 }
 
 .cert-heritage-corner-bl {
-  bottom: 0.08in;
-  left: 0.08in;
-  border-width: 0 0 1.5px 1.5px;
+  bottom: 0.09in;
+  left: 0.09in;
+  border-width: 0 0 2px 2px;
 }
 
 .cert-heritage-corner-br {
-  bottom: 0.08in;
-  right: 0.08in;
-  border-width: 0 1.5px 1.5px 0;
+  bottom: 0.09in;
+  right: 0.09in;
+  border-width: 0 2px 2px 0;
 }
 
 .cert-style-heritage-premium .cert-inner {
-  padding-top: 0.4in;
+  padding-top: 0.48in;
 }
 
 .cert-style-heritage-premium .cert-title {
   color: #14532d;
+  font-weight: 700;
+}
+
+.cert-style-heritage-premium .cert-recipient {
+  color: #1a2e1a;
+}
+
+.cert-style-heritage-premium .cert-recipient-divider {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(22, 101, 52, 0.3) 15%,
+    rgba(201, 162, 39, 0.55) 50%,
+    rgba(22, 101, 52, 0.3) 85%,
+    transparent 100%
+  );
 }
 
 .cert-heritage-seal-pos {
   position: absolute;
-  bottom: 0.52in;
-  right: 0.38in;
+  bottom: 0.54in;
+  right: 0.4in;
 }
 
 /* ─── Print / export portal ─── */

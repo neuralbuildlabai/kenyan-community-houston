@@ -54,6 +54,25 @@ function prepareSheetClone(sheet: HTMLElement): HTMLElement {
   return clone
 }
 
+/** Wait for images inside the export clone so html2canvas never receives 0×0 canvases. */
+async function waitForCloneImages(root: HTMLElement): Promise<void> {
+  const images = Array.from(root.querySelectorAll('img'))
+  await Promise.all(
+    images.map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          if (img.complete && img.naturalWidth > 0) {
+            resolve()
+            return
+          }
+          const done = () => resolve()
+          img.addEventListener('load', done, { once: true })
+          img.addEventListener('error', done, { once: true })
+        })
+    )
+  )
+}
+
 function createExportHost(): HTMLDivElement {
   const host = document.createElement('div')
   host.setAttribute('aria-hidden', 'true')
@@ -91,6 +110,7 @@ export async function downloadCertificatePdf(
   document.body.appendChild(host)
 
   try {
+    await waitForCloneImages(clone)
     await html2pdf()
       .set({
         ...PDF_OPTIONS,

@@ -26,6 +26,8 @@ export function BigFiveWildlifeBackground({ designStyleId }: BigFiveWildlifeBack
         alt=""
         className="cert-wildlife-img"
         crossOrigin="anonymous"
+        loading="eager"
+        decoding="sync"
         onError={() => {
           if (import.meta.env.DEV) {
             console.warn(`Big Five certificate background asset missing: ${src || BIG_FIVE_CERTIFICATE_BG_PATH}`)

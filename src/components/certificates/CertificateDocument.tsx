@@ -33,7 +33,9 @@ function GoldSeal({ className }: { className?: string }) {
   return (
     <div className={cn('cert-gold-seal', className)} aria-hidden>
       <div className="cert-gold-seal-ring">
-        <span className="cert-gold-seal-text">KIGH</span>
+        <div className="cert-gold-seal-inner">
+          <span className="cert-gold-seal-text">KIGH</span>
+        </div>
       </div>
     </div>
   )
@@ -80,19 +82,32 @@ function CertificateContent({ data }: { data: CertificateFormData }) {
 
       <div className="cert-meta-zone">
         <div className="cert-meta-row">
-          <div className="cert-date-block">
-            <div className="cert-date-label">Date</div>
-            <div className="cert-date-value">{displayDate || '—'}</div>
+          <div className="cert-meta-col cert-date-col">
+            <div className="cert-meta-label">Date</div>
+            <div className="cert-meta-line">{displayDate || '—'}</div>
+            <div className="cert-meta-caption cert-meta-caption-empty" aria-hidden>
+              &nbsp;
+            </div>
           </div>
 
-          <div className="cert-signature">
-            <div className="cert-signature-line">{sig1Name}</div>
-            <div className="cert-signature-title">{data.signature1Title.trim() || 'Signature Title'}</div>
+          <div className="cert-meta-col">
+            <div className="cert-meta-label cert-meta-label-spacer" aria-hidden>
+              &nbsp;
+            </div>
+            <div className="cert-meta-line">{sig1Name}</div>
+            <div className="cert-meta-caption">
+              {data.signature1Title.trim() || 'Signature Title'}
+            </div>
           </div>
 
-          <div className="cert-signature">
-            <div className="cert-signature-line">{sig2Name}</div>
-            <div className="cert-signature-title">{data.signature2Title.trim() || 'Signature Title'}</div>
+          <div className="cert-meta-col">
+            <div className="cert-meta-label cert-meta-label-spacer" aria-hidden>
+              &nbsp;
+            </div>
+            <div className="cert-meta-line">{sig2Name}</div>
+            <div className="cert-meta-caption">
+              {data.signature2Title.trim() || 'Signature Title'}
+            </div>
           </div>
         </div>
       </div>
@@ -127,6 +142,7 @@ function HeritagePremiumDecor() {
     <>
       <div className="cert-heritage-pattern" aria-hidden />
       <div className="cert-heritage-frame" aria-hidden />
+      <div className="cert-heritage-frame-inner" aria-hidden />
       <div className="cert-heritage-accent-bar" aria-hidden />
       <div className="cert-heritage-corner cert-heritage-corner-tl" aria-hidden />
       <div className="cert-heritage-corner cert-heritage-corner-tr" aria-hidden />
