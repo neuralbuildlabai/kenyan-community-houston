@@ -17,7 +17,7 @@ type CertificateDocumentProps = {
   scale?: number
 }
 
-function CertificateLogo({ heightIn = '0.68in', className }: { heightIn?: string; className?: string }) {
+function CertificateLogo({ heightIn = '0.62in', className }: { heightIn?: string; className?: string }) {
   return (
     <img
       src={KIGH_LOGO_PATH}
@@ -39,13 +39,13 @@ function GoldSeal({ className }: { className?: string }) {
   )
 }
 
-function SharedCertificateDecor() {
+function SharedCertificateDecor({ designStyleId }: { designStyleId: CertificateFormData['designStyleId'] }) {
   return (
     <>
       <div className="cert-watermark" aria-hidden>
         <img src={KIGH_LOGO_PATH} alt="" crossOrigin="anonymous" />
       </div>
-      <BigFiveWildlifeBackground />
+      <BigFiveWildlifeBackground designStyleId={designStyleId} />
     </>
   )
 }
@@ -67,7 +67,9 @@ function CertificateContent({ data }: { data: CertificateFormData }) {
 
       <p className="cert-presented-label">{template.presentedToLabel}</p>
       <p className="cert-recipient">{recipient}</p>
-      <div className="cert-recipient-divider" aria-hidden />
+      <div className="cert-recipient-divider" aria-hidden>
+        <span className="cert-divider-diamond" />
+      </div>
 
       {data.eventName.trim() ? (
         <p className="cert-event">In recognition of: {data.eventName.trim()}</p>
@@ -76,17 +78,18 @@ function CertificateContent({ data }: { data: CertificateFormData }) {
       <p className="cert-body">{template.bodyText}</p>
       <p className="cert-closing">{template.closingLine}</p>
 
-      <div className="cert-meta-row">
-        <div className="cert-date-block">
-          <div className="cert-date-label">Date</div>
-          <div className="cert-date-value">{displayDate || '—'}</div>
-        </div>
+      <div className="cert-meta-zone">
+        <div className="cert-meta-row">
+          <div className="cert-date-block">
+            <div className="cert-date-label">Date</div>
+            <div className="cert-date-value">{displayDate || '—'}</div>
+          </div>
 
-        <div className="cert-signatures">
           <div className="cert-signature">
             <div className="cert-signature-line">{sig1Name}</div>
             <div className="cert-signature-title">{data.signature1Title.trim() || 'Signature Title'}</div>
           </div>
+
           <div className="cert-signature">
             <div className="cert-signature-line">{sig2Name}</div>
             <div className="cert-signature-title">{data.signature2Title.trim() || 'Signature Title'}</div>
@@ -111,7 +114,12 @@ function ClassicOfficialDecor() {
 }
 
 function ModernCommunityDecor() {
-  return <div className="cert-modern-accent" aria-hidden />
+  return (
+    <>
+      <div className="cert-modern-accent" aria-hidden />
+      <GoldSeal className="cert-modern-seal-pos" />
+    </>
+  )
 }
 
 function HeritagePremiumDecor() {
@@ -144,7 +152,7 @@ export function CertificateDocument({ data, id, className, scale = 1 }: Certific
       className={cn('certificate-sheet', styleClass)}
       aria-label="Certificate preview"
     >
-      <SharedCertificateDecor />
+      <SharedCertificateDecor designStyleId={data.designStyleId} />
       {style?.id === 'modern-community' && <ModernCommunityDecor />}
       {style?.id === 'heritage-premium' && <HeritagePremiumDecor />}
       {style?.id === 'classic-official' && <ClassicOfficialDecor />}

@@ -59,7 +59,7 @@
 
 .cert-watermark {
   position: absolute;
-  top: 0.55in;
+  top: 0.42in;
   left: 50%;
   transform: translateX(-50%);
   z-index: 0;
@@ -67,44 +67,41 @@
 }
 
 .cert-watermark img {
-  width: 3.6in;
+  width: 4.4in;
   height: auto;
-  opacity: 0.042;
+  opacity: 0.048;
   object-fit: contain;
 }
 
 .cert-wildlife-bg {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 46%;
+  left: 0.65in;
+  right: 0.55in;
+  bottom: 1.05in;
+  height: 2.45in;
   z-index: 0;
   pointer-events: none;
-  color: #a89070;
-  opacity: 0.55;
-  mask-image: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.75) 0%,
-    rgba(0, 0, 0, 0.35) 45%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.75) 0%,
-    rgba(0, 0, 0, 0.35) 45%,
-    transparent 100%
-  );
+  overflow: hidden;
 }
 
-.cert-wildlife-svg {
+.cert-wildlife-img {
   width: 100%;
   height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
   display: block;
 }
 
-.cert-wildlife-svg g {
-  fill: currentColor;
+.cert-style-modern-community .cert-wildlife-img {
+  opacity: 0.19;
+}
+
+.cert-style-classic-official .cert-wildlife-img {
+  opacity: 0.17;
+}
+
+.cert-style-heritage-premium .cert-wildlife-img {
+  opacity: 0.18;
 }
 
 /* ─── Shared layout ─── */
@@ -115,8 +112,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: calc(100% - 0.34in);
-  padding: 0.34in 0.58in 0.24in;
+  height: calc(100% - 0.3in);
+  padding: 0.28in 0.54in 0.16in;
   text-align: center;
 }
 
@@ -127,156 +124,172 @@
 }
 
 .cert-title {
-  margin: 0.08in 0 0.05in;
-  font-size: 26pt;
+  margin: 0.06in 0 0.04in;
+  font-size: 28pt;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  line-height: 1.12;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
   color: #14532d;
 }
 
 .cert-presented-label {
-  margin: 0.04in 0 0.025in;
-  font-size: 9.5pt;
+  margin: 0.035in 0 0.02in;
+  font-size: 9pt;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #555;
+  color: #666;
 }
 
 .cert-recipient {
-  margin: 0.02in 0 0;
-  font-size: 26pt;
+  margin: 0.015in 0 0;
+  font-size: 28pt;
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.12;
   color: #111;
   min-width: 52%;
   max-width: 82%;
 }
 
 .cert-recipient-divider {
-  width: 3in;
-  height: 1.5px;
-  margin: 0.05in 0 0.06in;
+  position: relative;
+  width: 3.4in;
+  height: 1px;
+  margin: 0.045in 0 0.055in;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(201, 162, 39, 0.45) 15%,
-    rgba(212, 175, 55, 0.65) 50%,
-    rgba(201, 162, 39, 0.45) 85%,
+    rgba(201, 162, 39, 0.35) 12%,
+    rgba(212, 175, 55, 0.55) 50%,
+    rgba(201, 162, 39, 0.35) 88%,
     transparent 100%
   );
-  border-radius: 1px;
+}
+
+.cert-divider-diamond {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  width: 5px;
+  height: 5px;
+  background: rgba(212, 175, 55, 0.55);
+  border: 1px solid rgba(201, 162, 39, 0.45);
 }
 
 .cert-event {
-  margin: 0 0 0.05in;
+  margin: 0 0 0.045in;
   font-size: 10.5pt;
   font-style: italic;
   color: #555;
 }
 
 .cert-body {
-  margin: 0 auto 0.05in;
-  max-width: 84%;
-  font-size: 10.25pt;
-  line-height: 1.45;
+  margin: 0 auto 0.04in;
+  max-width: 82%;
+  font-size: 10.5pt;
+  line-height: 1.48;
   color: #333;
   white-space: pre-line;
 }
 
 .cert-closing {
-  margin: 0.03in 0 0.06in;
+  margin: 0.025in 0 0.05in;
   font-size: 10pt;
   font-style: italic;
   color: #444;
 }
 
-.cert-meta-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
+.cert-meta-zone {
   width: 100%;
   margin-top: auto;
-  padding-top: 0.02in;
-  margin-bottom: 0.06in;
-  gap: 0.35in;
+  padding: 0.12in 0.08in 0.04in;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.5) 18%,
+    rgba(255, 255, 255, 0.92) 100%
+  );
+  position: relative;
+  z-index: 3;
+}
+
+.cert-meta-row {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1.15fr;
+  align-items: end;
+  width: 100%;
+  gap: 0.25in;
 }
 
 .cert-date-block {
   text-align: left;
-  flex: 0 0 auto;
 }
 
 .cert-date-label {
-  font-size: 7.5pt;
+  font-size: 7pt;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #666;
-  margin-bottom: 0.025in;
+  margin-bottom: 0.02in;
 }
 
 .cert-date-value {
   font-size: 10.5pt;
   font-weight: 600;
   color: #111;
-  border-top: 1px solid #444;
-  padding-top: 0.035in;
-  min-width: 1.75in;
-}
-
-.cert-signatures {
-  display: flex;
-  justify-content: center;
-  gap: 0.6in;
-  flex: 1;
+  border-top: 1px solid #555;
+  padding-top: 0.03in;
+  min-width: 1.6in;
 }
 
 .cert-signature {
   text-align: center;
-  min-width: 1.85in;
+  min-width: 0;
 }
 
 .cert-signature-line {
-  border-top: 1px solid #444;
-  padding-top: 0.035in;
+  border-top: 1px solid #555;
+  padding-top: 0.03in;
   font-size: 10pt;
   font-weight: 600;
   color: #111;
-  min-height: 0.18in;
+  min-height: 0.16in;
 }
 
 .cert-signature-title {
-  font-size: 8pt;
+  font-size: 7.5pt;
   font-weight: 400;
   color: #555;
-  margin-top: 0.02in;
+  margin-top: 0.018in;
   line-height: 1.25;
 }
 
 .cert-footer {
   position: absolute;
-  bottom: 0.16in;
+  bottom: 0.14in;
   left: 0;
   right: 0;
   text-align: center;
   font-size: 7pt;
   font-weight: 500;
-  letter-spacing: 0.05em;
-  color: #666;
+  letter-spacing: 0.06em;
+  color: #777;
   z-index: 5;
 }
 
-/* ─── Gold seal (shared, restrained) ─── */
+/* ─── Gold seal (shared, sample-inspired) ─── */
 
 .cert-gold-seal {
-  width: 0.62in;
-  height: 0.62in;
+  width: 0.68in;
+  height: 0.68in;
   border-radius: 50%;
-  border: 1.5px solid rgba(201, 162, 39, 0.55);
-  background: radial-gradient(circle at 32% 28%, #fffef8, #fef9e8 50%, #f0e4c4 100%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+  border: 2px solid rgba(201, 162, 39, 0.65);
+  background: radial-gradient(circle at 35% 30%, #fffef6, #fef3c7 48%, #e8c547 100%);
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.75);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -284,10 +297,10 @@
 }
 
 .cert-gold-seal-ring {
-  width: 0.46in;
-  height: 0.46in;
+  width: 0.5in;
+  height: 0.5in;
   border-radius: 50%;
-  border: 1px solid rgba(184, 134, 11, 0.45);
+  border: 1px solid rgba(184, 134, 11, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -295,25 +308,27 @@
 
 .cert-gold-seal-text {
   font-family: Inter, system-ui, sans-serif;
-  font-size: 5.5pt;
+  font-size: 6pt;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #92700c;
+  letter-spacing: 0.1em;
+  color: #92400e;
   line-height: 1;
 }
 
-/* ─── Style 1: Modern Community ─── */
+/* ─── Style 1: Modern Community (sample-inspired) ─── */
 
 .cert-style-modern-community {
-  border: 1px solid rgba(180, 180, 180, 0.65);
-  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.12);
+  border: 1px solid rgba(60, 60, 60, 0.55);
+  box-shadow:
+    inset 0 0 0 2px #fff,
+    inset 0 0 0 3px rgba(201, 162, 39, 0.32);
 }
 
 .cert-style-modern-community::after {
   content: '';
   position: absolute;
-  inset: 0.08in;
-  border: 1px solid rgba(22, 101, 52, 0.08);
+  inset: 0.1in;
+  border: 1px solid rgba(201, 162, 39, 0.18);
   pointer-events: none;
   z-index: 1;
 }
@@ -321,75 +336,79 @@
 .cert-modern-accent {
   position: absolute;
   left: 0;
-  top: 0.35in;
-  bottom: 0.35in;
-  width: 0.07in;
-  border-radius: 0 2px 2px 0;
+  top: 0.12in;
+  bottom: 0.12in;
+  width: 0.09in;
   background: linear-gradient(
     180deg,
-    rgba(17, 17, 17, 0.55) 0%,
-    rgba(17, 17, 17, 0.55) calc(33.33% - 0.5px),
-    rgba(255, 255, 255, 0.9) calc(33.33% - 0.5px),
-    rgba(255, 255, 255, 0.9) calc(33.33% + 0.5px),
-    rgba(190, 18, 60, 0.45) calc(33.33% + 0.5px),
-    rgba(190, 18, 60, 0.45) calc(66.66% - 0.5px),
-    rgba(255, 255, 255, 0.9) calc(66.66% - 0.5px),
-    rgba(255, 255, 255, 0.9) calc(66.66% + 0.5px),
-    rgba(22, 101, 52, 0.5) calc(66.66% + 0.5px),
-    rgba(22, 101, 52, 0.5) 100%
+    rgba(17, 17, 17, 0.7) 0%,
+    rgba(17, 17, 17, 0.7) calc(33.33% - 0.5px),
+    rgba(255, 255, 255, 0.95) calc(33.33% - 0.5px),
+    rgba(255, 255, 255, 0.95) calc(33.33% + 0.5px),
+    rgba(190, 18, 60, 0.55) calc(33.33% + 0.5px),
+    rgba(190, 18, 60, 0.55) calc(66.66% - 0.5px),
+    rgba(255, 255, 255, 0.95) calc(66.66% - 0.5px),
+    rgba(255, 255, 255, 0.95) calc(66.66% + 0.5px),
+    rgba(22, 101, 52, 0.6) calc(66.66% + 0.5px),
+    rgba(22, 101, 52, 0.6) 100%
   );
   z-index: 3;
 }
 
 .cert-style-modern-community .cert-inner {
-  padding-left: 0.48in;
+  padding-left: 0.5in;
 }
 
 .cert-style-modern-community .cert-title {
-  color: #166534;
+  color: #14532d;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
+}
+
+.cert-modern-seal-pos {
+  position: absolute;
+  bottom: 0.46in;
+  right: 0.38in;
 }
 
 /* ─── Style 2: Classic Official ─── */
 
 .cert-style-classic-official {
-  border: 1.5px solid rgba(20, 83, 45, 0.4);
+  border: 1px solid rgba(60, 60, 60, 0.5);
   box-shadow:
     inset 0 0 0 2.5px #fff,
-    inset 0 0 0 3.5px rgba(201, 162, 39, 0.28),
+    inset 0 0 0 3.5px rgba(201, 162, 39, 0.38),
     inset 0 0 0 4.5px #fff,
-    inset 0 0 0 5.5px rgba(20, 83, 45, 0.18);
+    inset 0 0 0 5.5px rgba(20, 83, 45, 0.22);
 }
 
 .cert-style-classic-official::before {
   content: '';
   position: absolute;
-  inset: 0.14in;
-  border: 1px solid rgba(20, 83, 45, 0.12);
+  inset: 0.12in;
+  border: 1px solid rgba(201, 162, 39, 0.15);
   pointer-events: none;
   z-index: 1;
 }
 
 .cert-classic-accent {
   position: absolute;
-  top: 0.22in;
-  left: 0.22in;
-  right: 0.22in;
-  height: 2px;
-  border-radius: 1px;
+  left: 0;
+  top: 0.12in;
+  bottom: 0.12in;
+  width: 0.07in;
   background: linear-gradient(
-    90deg,
-    rgba(17, 17, 17, 0.35) 0%,
-    rgba(17, 17, 17, 0.35) calc(33.33% - 0.5px),
-    transparent calc(33.33% - 0.5px),
-    transparent calc(33.33% + 0.5px),
-    rgba(190, 18, 60, 0.3) calc(33.33% + 0.5px),
-    rgba(190, 18, 60, 0.3) calc(66.66% - 0.5px),
-    transparent calc(66.66% - 0.5px),
-    transparent calc(66.66% + 0.5px),
-    rgba(22, 101, 52, 0.35) calc(66.66% + 0.5px),
-    rgba(22, 101, 52, 0.35) 100%
+    180deg,
+    rgba(17, 17, 17, 0.55) 0%,
+    rgba(17, 17, 17, 0.55) calc(33.33% - 0.5px),
+    rgba(255, 255, 255, 0.95) calc(33.33% - 0.5px),
+    rgba(255, 255, 255, 0.95) calc(33.33% + 0.5px),
+    rgba(190, 18, 60, 0.4) calc(33.33% + 0.5px),
+    rgba(190, 18, 60, 0.4) calc(66.66% - 0.5px),
+    rgba(255, 255, 255, 0.95) calc(66.66% - 0.5px),
+    rgba(255, 255, 255, 0.95) calc(66.66% + 0.5px),
+    rgba(22, 101, 52, 0.45) calc(66.66% + 0.5px),
+    rgba(22, 101, 52, 0.45) 100%
   );
   z-index: 3;
 }
@@ -479,19 +498,23 @@
 
 .cert-classic-seal-pos {
   position: absolute;
-  bottom: 0.52in;
-  right: 0.42in;
+  bottom: 0.46in;
+  right: 0.38in;
 }
 
 .cert-style-classic-official .cert-inner {
-  padding-top: 0.38in;
+  padding-left: 0.46in;
+  padding-top: 0.32in;
 }
 
 /* ─── Style 3: Heritage Premium ─── */
 
 .cert-style-heritage-premium {
-  border: 1px solid rgba(184, 134, 11, 0.35);
+  border: 1px solid rgba(60, 60, 60, 0.45);
   background-color: #fff;
+  box-shadow:
+    inset 0 0 0 2px #fff,
+    inset 0 0 0 3px rgba(184, 134, 11, 0.25);
 }
 
 .cert-heritage-pattern {
@@ -573,7 +596,7 @@
 }
 
 .cert-style-heritage-premium .cert-inner {
-  padding-top: 0.36in;
+  padding-top: 0.32in;
 }
 
 .cert-style-heritage-premium .cert-title {
@@ -582,8 +605,8 @@
 
 .cert-heritage-seal-pos {
   position: absolute;
-  bottom: 0.5in;
-  right: 0.4in;
+  bottom: 0.46in;
+  right: 0.38in;
 }
 
 /* ─── Print / export portal ─── */

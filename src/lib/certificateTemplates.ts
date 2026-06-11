@@ -20,6 +20,29 @@ export type CertificateDesignStyle = {
 export const CERTIFICATE_FOOTER_TEXT =
   'Official Certificate of Recognition | kenyansingreaterhouston.org'
 
+export const BIG_FIVE_CERTIFICATE_BG_PATH = '/kigh-media/kigh-big-five-certificate-bg.png'
+
+export const BIG_FIVE_CERTIFICATE_BG_OPTIONS = {
+  default: '/kigh-media/kigh-big-five-certificate-bg.png',
+  option1: '/kigh-media/certificates/kigh-big-five-certificate-bg-option-1.png',
+  option2: '/kigh-media/certificates/kigh-big-five-certificate-bg-option-2.png',
+  option3: '/kigh-media/certificates/kigh-big-five-certificate-bg-option-3.png',
+  option4: '/kigh-media/certificates/kigh-big-five-certificate-bg-option-4.png',
+} as const
+
+export function getBigFiveCertificateBgPath(designStyleId: CertificateDesignStyleId): string {
+  switch (designStyleId) {
+    case 'modern-community':
+      return BIG_FIVE_CERTIFICATE_BG_OPTIONS.default
+    case 'classic-official':
+      return BIG_FIVE_CERTIFICATE_BG_OPTIONS.option3
+    case 'heritage-premium':
+      return BIG_FIVE_CERTIFICATE_BG_OPTIONS.option4
+    default:
+      return BIG_FIVE_CERTIFICATE_BG_PATH
+  }
+}
+
 export const DEFAULT_SIGNATURE_1_TITLE = 'KIGH President / Chairperson'
 export const DEFAULT_SIGNATURE_2_TITLE = 'KIGH Secretary / Community Representative'
 
