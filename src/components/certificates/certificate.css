@@ -667,6 +667,21 @@
 
 /* ─── Print / export portal ─── */
 
+/* Full-size export source — always scale 1, capture-safe (not display:none / opacity:0) */
+.certificate-export-source {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 11in;
+  height: 8.5in;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+  background: #fff;
+}
+
 #certificate-print-portal {
   position: fixed;
   top: 0;

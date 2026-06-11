@@ -11,6 +11,14 @@ import { toast } from 'sonner'
 import { SEOHead } from '@/components/SEOHead'
 import { CertificateDocument } from '@/components/certificates/CertificateDocument'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -36,6 +44,7 @@ import {
   CERTIFICATE_DESIGN_STYLES,
   CERTIFICATE_TEMPLATES,
   createDefaultCertificateForm,
+  getCertificateDesignStyle,
   getCertificateTemplate,
   type CertificateFormData,
   type CertificateDesignStyleId,
@@ -44,6 +53,7 @@ import { formatDateShort } from '@/lib/utils'
 import type { CertificateRecord } from '@/lib/types'
 
 const CERTIFICATE_PRINT_ID = 'kigh-certificate-print-target'
+const CERTIFICATE_EXPORT_ID = 'kigh-certificate-export-target'
 
 function recordToForm(record: CertificateRecord): CertificateFormData {
   return {
@@ -59,16 +69,24 @@ function recordToForm(record: CertificateRecord): CertificateFormData {
   }
 }
 
-async function waitForCertificateSheet(): Promise<HTMLElement | null> {
+function normalizeCertificateForm(form: CertificateFormData): CertificateFormData {
+  return {
+    ...form,
+    issueDate: form.issueDate || new Date().toISOString().slice(0, 10),
+  }
+}
+
+async function waitForExportSheet(): Promise<HTMLElement | null> {
   await new Promise<void>((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
   })
-  return getCertificateSheetElement(CERTIFICATE_PRINT_ID)
+  return getCertificateSheetElement(CERTIFICATE_EXPORT_ID)
 }
 
 export function AdminCertificatesPage() {
   const { user, profile } = useAuth()
   const [form, setForm] = useState<CertificateFormData>(createDefaultCertificateForm)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
   const [isPrinting, setIsPrinting] = useState(false)
@@ -77,11 +95,18 @@ export function AdminCertificatesPage() {
   const [historySearch, setHistorySearch] = useState('')
   const [historyCategory, setHistoryCategory] = useState('all')
   const previewContainerRef = useRef<HTMLDivElement>(null)
+  const modalPreviewContainerRef = useRef<HTMLDivElement>(null)
   const [previewScale, setPreviewScale] = useState(0.55)
+  const [modalPreviewScale, setModalPreviewScale] = useState(0.75)
 
-  const template = useMemo(() => getCertificateTemplate(form.templateId), [form.templateId])
+  const displayForm = useMemo(() => normalizeCertificateForm(form), [form])
+  const template = useMemo(() => getCertificateTemplate(displayForm.templateId), [displayForm.templateId])
+  const designStyle = useMemo(
+    () => getCertificateDesignStyle(displayForm.designStyleId),
+    [displayForm.designStyleId]
+  )
 
-  const getCurrentCertificateData = useCallback((): CertificateFormData => form, [form])
+  const getCurrentCertificateData = useCallback((): CertificateFormData => displayForm, [displayForm])
 
   const loadRecords = useCallback(async () => {
     setRecordsLoading(true)
@@ -118,6 +143,26 @@ export function AdminCertificatesPage() {
     return () => window.removeEventListener('resize', updateScale)
   }, [])
 
+  useEffect(() => {
+    if (!isPreviewOpen) return
+
+    function updateModalScale() {
+      const el = modalPreviewContainerRef.current
+      const availableWidth = el ? el.clientWidth - 24 : window.innerWidth * 0.88
+      const availableHeight = window.innerHeight * 0.58
+      const sheetWidthInPx = 11 * 96
+      const sheetHeightInPx = 8.5 * 96
+      const scaleByWidth = availableWidth / sheetWidthInPx
+      const scaleByHeight = availableHeight / sheetHeightInPx
+      const next = Math.min(1, Math.max(0.45, Math.min(scaleByWidth, scaleByHeight)))
+      setModalPreviewScale(next)
+    }
+
+    updateModalScale()
+    window.addEventListener('resize', updateModalScale)
+    return () => window.removeEventListener('resize', updateModalScale)
+  }, [isPreviewOpen])
+
   function updateForm(patch: Partial<CertificateFormData>) {
     setForm((prev) => ({ ...prev, ...patch }))
   }
@@ -135,6 +180,7 @@ export function AdminCertificatesPage() {
 
   function handleReset() {
     setForm(createDefaultCertificateForm())
+    setIsPreviewOpen(false)
   }
 
   function validateRecipientOnly(): boolean {
@@ -156,16 +202,16 @@ export function AdminCertificatesPage() {
 
   function handlePreview() {
     if (!validateRecipientOnly()) return
-    toast.success('Certificate preview updated.')
+    setIsPreviewOpen(true)
   }
 
   async function handlePrint() {
     if (!validateRecipientOnly()) return
     setIsPrinting(true)
     try {
-      const sheet = await waitForCertificateSheet()
+      const sheet = await waitForExportSheet()
       if (!sheet) {
-        throw new Error('Certificate preview not ready')
+        throw new Error('Certificate export sheet not ready')
       }
       await printCertificate(sheet)
     } catch (e) {
@@ -182,19 +228,24 @@ export function AdminCertificatesPage() {
     const tmpl = getCertificateTemplate(data.templateId)
     setIsDownloading(true)
     try {
-      const sheet = await waitForCertificateSheet()
+      const sheet = await waitForExportSheet()
       if (!sheet) {
-        throw new Error('Certificate preview not ready')
+        throw new Error('Certificate export sheet not ready')
       }
       await downloadCertificatePdf(
         sheet,
         data.recipientName.trim(),
-        tmpl?.category ?? 'Certificate'
+        tmpl?.category ?? 'Certificate',
+        {
+          templateId: data.templateId,
+          designStyleId: data.designStyleId,
+          recipientNamePresent: data.recipientName.trim().length > 0,
+        }
       )
       toast.success('PDF downloaded.')
     } catch (e) {
       console.error('Certificate PDF download failed:', e)
-      toast.error('PDF download failed. Please try Print instead.')
+      toast.error('PDF download failed. Please use Print or try again.')
     } finally {
       setIsDownloading(false)
     }
@@ -242,9 +293,9 @@ export function AdminCertificatesPage() {
     toast.success('Certificate loaded for reprint.')
     setIsPrinting(true)
     try {
-      const sheet = await waitForCertificateSheet()
+      const sheet = await waitForExportSheet()
       if (!sheet) {
-        throw new Error('Certificate preview not ready')
+        throw new Error('Certificate export sheet not ready')
       }
       await printCertificate(sheet)
     } catch (e) {
@@ -260,19 +311,24 @@ export function AdminCertificatesPage() {
     const tmpl = getCertificateTemplate(record.template_id)
     setIsDownloading(true)
     try {
-      const sheet = await waitForCertificateSheet()
+      const sheet = await waitForExportSheet()
       if (!sheet) {
-        throw new Error('Certificate preview not ready')
+        throw new Error('Certificate export sheet not ready')
       }
       await downloadCertificatePdf(
         sheet,
         record.recipient_name,
-        tmpl?.category ?? record.certificate_type
+        tmpl?.category ?? record.certificate_type,
+        {
+          templateId: record.template_id,
+          designStyleId: record.design_style as CertificateDesignStyleId,
+          recipientNamePresent: record.recipient_name.trim().length > 0,
+        }
       )
       toast.success('PDF downloaded.')
     } catch (e) {
       console.error('Certificate PDF download failed:', e)
-      toast.error('PDF download failed. Please try Print instead.')
+      toast.error('PDF download failed. Please use Print or try again.')
     } finally {
       setIsDownloading(false)
     }
@@ -298,6 +354,44 @@ export function AdminCertificatesPage() {
   return (
     <>
       <SEOHead title="Certificates & Acknowledgements" noIndex />
+
+      {/* Full-size export source for reliable PDF/print capture (scale 1, off-screen-safe) */}
+      <div className="certificate-export-source no-print" aria-hidden="true">
+        <CertificateDocument id={CERTIFICATE_EXPORT_ID} data={displayForm} scale={1} />
+      </div>
+
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="no-print max-w-[96vw] w-[96vw] max-h-[96vh] overflow-hidden flex flex-col gap-4 p-4 sm:p-6">
+          <DialogHeader className="shrink-0">
+            <DialogTitle>Certificate Preview</DialogTitle>
+            <DialogDescription>
+              {template?.category ?? 'Certificate'}
+              {designStyle ? ` · ${designStyle.label}` : ''}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div
+            ref={modalPreviewContainerRef}
+            className="flex-1 min-h-0 overflow-auto flex justify-center items-start rounded-md border bg-muted/30 p-4"
+          >
+            <CertificateDocument data={displayForm} scale={modalPreviewScale} />
+          </div>
+
+          <DialogFooter className="shrink-0 gap-2 sm:gap-2">
+            <Button type="button" variant="outline" onClick={() => setIsPreviewOpen(false)}>
+              Close
+            </Button>
+            <Button type="button" onClick={() => void handlePrint()} disabled={isPrinting}>
+              <Printer className="h-4 w-4 mr-1.5" />
+              {isPrinting ? 'Opening…' : 'Print'}
+            </Button>
+            <Button type="button" onClick={() => void handleDownloadPdf()} disabled={isDownloading}>
+              <Download className="h-4 w-4 mr-1.5" />
+              {isDownloading ? 'Generating…' : 'Download PDF'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="space-y-8">
         <div>
@@ -462,7 +556,7 @@ export function AdminCertificatesPage() {
               ref={previewContainerRef}
               className="overflow-x-auto rounded-lg border bg-muted/30 p-4 flex justify-center min-h-[280px]"
             >
-              <CertificateDocument id={CERTIFICATE_PRINT_ID} data={form} scale={previewScale} />
+              <CertificateDocument id={CERTIFICATE_PRINT_ID} data={displayForm} scale={previewScale} />
             </div>
           </div>
         </div>

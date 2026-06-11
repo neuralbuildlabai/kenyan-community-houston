@@ -25,6 +25,25 @@ const PDF_OPTIONS = {
   pagebreak: { mode: ['avoid-all'] as const },
 }
 
+export type CertificatePdfDebugMeta = {
+  templateId?: string
+  designStyleId?: string
+  recipientNamePresent?: boolean
+}
+
+function isPdfDebugEnabled(): boolean {
+  return import.meta.env.DEV
+}
+
+function logPdfDebug(message: string, data?: Record<string, unknown>): void {
+  if (!isPdfDebugEnabled()) return
+  if (data) {
+    console.info(`[certificate-pdf] ${message}`, data)
+  } else {
+    console.info(`[certificate-pdf] ${message}`)
+  }
+}
+
 /** Resolve the printable certificate sheet — never the scaled preview wrapper. */
 export function getCertificateSheetElement(elementOrId: HTMLElement | string): HTMLElement | null {
   const root =
@@ -66,8 +85,38 @@ function sanitizeCloneForCapture(clone: HTMLElement): void {
   })
 }
 
+/** Force images to reload inside the mounted clone so html2canvas sees non-zero dimensions. */
+function reloadCloneImages(root: HTMLElement): void {
+  root.querySelectorAll('img').forEach((img) => {
+    img.crossOrigin = 'anonymous'
+    const src = img.getAttribute('src') || img.src
+    if (src) {
+      img.src = src
+    }
+  })
+}
+
+function getImageLoadSummary(root: HTMLElement): {
+  count: number
+  loaded: number
+  details: Array<{ src: string; complete: boolean; naturalWidth: number; naturalHeight: number }>
+} {
+  const images = Array.from(root.querySelectorAll('img'))
+  const details = images.map((img) => ({
+    src: img.src.split('/').pop() ?? img.src,
+    complete: img.complete,
+    naturalWidth: img.naturalWidth,
+    naturalHeight: img.naturalHeight,
+  }))
+  return {
+    count: images.length,
+    loaded: details.filter((d) => d.complete && d.naturalWidth > 0).length,
+    details,
+  }
+}
+
 /** Wait for images inside the export clone so html2canvas never receives 0×0 canvases. */
-async function waitForCloneImages(root: HTMLElement): Promise<void> {
+async function waitForCloneImages(root: HTMLElement, timeoutMs = 8000): Promise<void> {
   const images = Array.from(root.querySelectorAll('img'))
   await Promise.all(
     images.map(
@@ -77,7 +126,11 @@ async function waitForCloneImages(root: HTMLElement): Promise<void> {
             resolve()
             return
           }
-          const done = () => resolve()
+          const timer = window.setTimeout(() => resolve(), timeoutMs)
+          const done = () => {
+            window.clearTimeout(timer)
+            resolve()
+          }
           img.addEventListener('load', done, { once: true })
           img.addEventListener('error', done, { once: true })
         })
@@ -96,7 +149,6 @@ function createExportHost(): HTMLDivElement {
   const host = document.createElement('div')
   host.setAttribute('aria-hidden', 'true')
   host.className = 'certificate-export-host'
-  // Keep full dimensions and opacity — html2canvas fails on opacity:0 / zero-size hosts.
   host.style.cssText = [
     'position:fixed',
     'left:0',
@@ -107,37 +159,86 @@ function createExportHost(): HTMLDivElement {
     'padding:0',
     'overflow:hidden',
     'pointer-events:none',
-    'z-index:99999',
+    'z-index:-1',
     'background:#fff',
-    'transform:translateX(-200vw)',
   ].join(';')
   return host
 }
 
-async function buildCaptureClone(elementOrId: HTMLElement | string): Promise<HTMLElement> {
+function assertSheetDimensions(sheet: HTMLElement): { width: number; height: number } {
+  const rect = sheet.getBoundingClientRect()
+  const width = rect.width || sheet.offsetWidth
+  const height = rect.height || sheet.offsetHeight
+  if (width <= 0 || height <= 0) {
+    throw new Error(`Certificate sheet has zero dimensions (${width}×${height})`)
+  }
+  return { width, height }
+}
+
+async function buildCaptureClone(elementOrId: HTMLElement | string): Promise<{
+  clone: HTMLElement
+  host: HTMLDivElement
+}> {
   const sheet = getCertificateSheetElement(elementOrId)
   if (!sheet) {
     throw new Error('Certificate sheet not found')
   }
+  if (!sheet.isConnected) {
+    throw new Error('Certificate sheet is not attached to the DOM')
+  }
 
   await waitForLayout()
+
+  const sourceDimensions = assertSheetDimensions(sheet)
+  logPdfDebug('source sheet dimensions', sourceDimensions)
+
   const clone = prepareSheetClone(sheet)
   sanitizeCloneForCapture(clone)
+
+  const host = createExportHost()
+  host.appendChild(clone)
+  document.body.appendChild(host)
+
+  await waitForLayout()
+  reloadCloneImages(clone)
   await waitForCloneImages(clone)
-  return clone
+
+  const cloneDimensions = assertSheetDimensions(clone)
+  logPdfDebug('clone sheet dimensions', cloneDimensions)
+
+  return { clone, host }
 }
 
 export async function downloadCertificatePdf(
   elementOrId: HTMLElement | string,
   recipientName: string,
-  category: string
+  category: string,
+  debugMeta?: CertificatePdfDebugMeta
 ): Promise<void> {
-  const clone = await buildCaptureClone(elementOrId)
-  const host = createExportHost()
-  host.appendChild(clone)
-  document.body.appendChild(host)
+  const sheetFound = !!getCertificateSheetElement(elementOrId)
+  const sourceSheet = getCertificateSheetElement(elementOrId)
+  const sourceRect = sourceSheet?.getBoundingClientRect()
+
+  logPdfDebug('PDF generation start', {
+    templateId: debugMeta?.templateId,
+    designStyleId: debugMeta?.designStyleId,
+    recipientNamePresent: debugMeta?.recipientNamePresent ?? recipientName.trim().length > 0,
+    sheetFound,
+    sheetWidth: sourceRect?.width ?? 0,
+    sheetHeight: sourceRect?.height ?? 0,
+    sheetConnected: sourceSheet?.isConnected ?? false,
+  })
+
+  let host: HTMLDivElement | null = null
 
   try {
+    const capture = await buildCaptureClone(elementOrId)
+    host = capture.host
+    const { clone } = capture
+
+    const imageSummary = getImageLoadSummary(clone)
+    logPdfDebug('image load summary before capture', imageSummary)
+
     await html2pdf()
       .set({
         ...PDF_OPTIONS,
@@ -145,8 +246,18 @@ export async function downloadCertificatePdf(
       })
       .from(clone)
       .save()
+
+    logPdfDebug('PDF generation end', { success: true })
+  } catch (error) {
+    logPdfDebug('PDF generation end', {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    })
+    throw error
   } finally {
-    document.body.removeChild(host)
+    if (host?.parentNode) {
+      host.parentNode.removeChild(host)
+    }
   }
 }
 
@@ -164,7 +275,15 @@ export async function printCertificate(elementOrId: HTMLElement | string): Promi
   await waitForLayout()
   const clone = prepareSheetClone(sheet)
   sanitizeCloneForCapture(clone)
+
+  const tempHost = createExportHost()
+  tempHost.appendChild(clone)
+  document.body.appendChild(tempHost)
+  await waitForLayout()
+  reloadCloneImages(clone)
   await waitForCloneImages(clone)
+  assertSheetDimensions(clone)
+  document.body.removeChild(tempHost)
 
   printRoot.innerHTML = ''
   printRoot.appendChild(clone)
