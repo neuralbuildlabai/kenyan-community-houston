@@ -40,7 +40,13 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { downloadCertificatePdf, getCertificateSheetElement, printCertificate, CERTIFICATE_PRINT_ROOT_ID } from '@/lib/certificatePdf'
+import {
+  cleanupCertificateExportState,
+  downloadCertificatePdf,
+  getCertificateSheetElement,
+  printCertificate,
+  CERTIFICATE_PRINT_ROOT_ID,
+} from '@/lib/certificatePdf'
 import {
   CERTIFICATE_DESIGN_STYLES,
   CERTIFICATE_TEMPLATES,
@@ -133,6 +139,12 @@ export function AdminCertificatesPage() {
   }, [loadRecords])
 
   useEffect(() => {
+    return () => {
+      cleanupCertificateExportState()
+    }
+  }, [])
+
+  useEffect(() => {
     function updateScale() {
       const el = previewContainerRef.current
       if (!el) return
@@ -214,11 +226,12 @@ export function AdminCertificatesPage() {
     try {
       await printCertificate(CERTIFICATE_EXPORT_ID)
     } catch (e) {
-      console.error('Certificate print failed:', e)
+      console.error('[certificate-print] failed', e)
       const message = e instanceof Error ? e.message : 'Print preview failed. Please try again.'
       toast.error(message)
     } finally {
       setIsPrinting(false)
+      cleanupCertificateExportState()
     }
   }
 
@@ -244,10 +257,11 @@ export function AdminCertificatesPage() {
       )
       toast.success('PDF downloaded.')
     } catch (e) {
-      console.error('Certificate PDF download failed:', e)
+      console.error('[certificate-pdf] failed', e)
       toast.error('PDF download failed. Please use Print or try again.')
     } finally {
       setIsDownloading(false)
+      cleanupCertificateExportState()
     }
   }
 
@@ -297,11 +311,12 @@ export function AdminCertificatesPage() {
     try {
       await printCertificate(CERTIFICATE_EXPORT_ID)
     } catch (e) {
-      console.error('Certificate reprint failed:', e)
+      console.error('[certificate-print] failed', e)
       const message = e instanceof Error ? e.message : 'Print preview failed. Please try again.'
       toast.error(message)
     } finally {
       setIsPrinting(false)
+      cleanupCertificateExportState()
     }
   }
 
@@ -326,10 +341,11 @@ export function AdminCertificatesPage() {
       )
       toast.success('PDF downloaded.')
     } catch (e) {
-      console.error('Certificate PDF download failed:', e)
+      console.error('[certificate-pdf] failed', e)
       toast.error('PDF download failed. Please use Print or try again.')
     } finally {
       setIsDownloading(false)
+      cleanupCertificateExportState()
     }
   }
 
@@ -387,7 +403,11 @@ export function AdminCertificatesPage() {
               <Printer className="h-4 w-4 mr-1.5" />
               {isPrinting ? 'Opening…' : 'Print'}
             </Button>
-            <Button type="button" onClick={() => void handleDownloadPdf()} disabled={isDownloading}>
+            <Button
+              type="button"
+              onClick={() => void handleDownloadPdf()}
+              disabled={isDownloading}
+            >
               <Download className="h-4 w-4 mr-1.5" />
               {isDownloading ? 'Generating…' : 'Download PDF'}
             </Button>

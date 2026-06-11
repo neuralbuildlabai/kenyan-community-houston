@@ -667,6 +667,13 @@
 
 /* ─── Print root (full-size, scale 1, capture-safe — not display:none / opacity:0) ─── */
 
+#kigh-certificate-print-root,
+.certificate-print-root,
+.certificate-export-host,
+.certificate-export-source {
+  pointer-events: none !important;
+}
+
 .certificate-print-root {
   position: fixed;
   left: 0;
@@ -685,6 +692,8 @@
 .certificate-export-host {
   break-inside: avoid;
   page-break-inside: avoid;
+  pointer-events: none !important;
+  z-index: -1;
 }
 
 .certificate-export-clone .cert-heritage-pattern {
@@ -693,6 +702,30 @@
 
 .certificate-export-clone [style*='background-image'] {
   background-image: none !important;
+}
+
+/* PDF capture: disable pseudo-element patterns and simplify gradients html2canvas cannot rasterize */
+.certificate-export-clone::before,
+.certificate-export-clone::after,
+.certificate-export-clone *::before,
+.certificate-export-clone *::after {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+  background-image: none !important;
+}
+
+.certificate-export-clone .cert-gold-seal {
+  background: #f0d060 !important;
+  box-shadow: none !important;
+}
+
+.certificate-export-clone .cert-gold-seal-inner {
+  background: #fef3c7 !important;
+}
+
+.certificate-export-clone .cert-meta-zone {
+  background: rgba(255, 255, 255, 0.92) !important;
 }
 
 @media print {

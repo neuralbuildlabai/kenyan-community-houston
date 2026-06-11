@@ -1,4 +1,5 @@
-import html2pdf from 'html2pdf.js'
+import html2canvas from 'html2canvas'
+import { jsPDF } from 'jspdf'
 import { certificatePdfFilename } from '@/lib/certificateTemplates'
 
 export const CERTIFICATE_PRINT_ROOT_ID = 'kigh-certificate-print-root'
@@ -6,26 +7,6 @@ export const CERTIFICATE_PRINT_ROOT_ID = 'kigh-certificate-print-root'
 /** US Letter landscape at 96 CSS px per inch */
 const PAGE_WIDTH_PX = 11 * 96
 const PAGE_HEIGHT_PX = 8.5 * 96
-
-const PDF_OPTIONS = {
-  margin: 0,
-  image: { type: 'jpeg' as const, quality: 0.98 },
-  html2canvas: {
-    scale: 2,
-    useCORS: true,
-    logging: false,
-    letterRendering: true,
-    backgroundColor: '#ffffff',
-    scrollX: 0,
-    scrollY: 0,
-    width: PAGE_WIDTH_PX,
-    height: PAGE_HEIGHT_PX,
-    windowWidth: PAGE_WIDTH_PX,
-    windowHeight: PAGE_HEIGHT_PX,
-  },
-  jsPDF: { unit: 'in' as const, format: 'letter' as const, orientation: 'landscape' as const },
-  pagebreak: { mode: ['avoid-all'] as const },
-}
 
 export type CertificatePdfDebugMeta = {
   templateId?: string
@@ -48,6 +29,25 @@ function logPdfDebug(message: string, data?: Record<string, unknown>): void {
   } else {
     console.info(`[certificate-pdf] ${message}`)
   }
+}
+
+/** Reset print/export artifacts so the admin page never stays locked. */
+export function cleanupCertificateExportState(): void {
+  document.documentElement.classList.remove('certificate-printing')
+  document.body.classList.remove('certificate-printing')
+
+  const printRoot = document.getElementById(CERTIFICATE_PRINT_ROOT_ID)
+  if (printRoot) {
+    printRoot.setAttribute('aria-hidden', 'true')
+  }
+
+  document.querySelectorAll('.certificate-export-host').forEach((el) => {
+    el.parentNode?.removeChild(el)
+  })
+
+  document.querySelectorAll('.html2canvas-container').forEach((el) => {
+    el.parentNode?.removeChild(el)
+  })
 }
 
 /** Resolve the printable certificate sheet — never the scaled preview wrapper. */
@@ -83,10 +83,20 @@ function prepareSheetClone(sheet: HTMLElement): HTMLElement {
 function sanitizeCloneForCapture(clone: HTMLElement): void {
   clone.querySelectorAll('.cert-heritage-pattern').forEach((el) => el.remove())
 
+  clone.querySelectorAll<HTMLElement>('img').forEach((img) => {
+    if (!img.complete || img.naturalWidth <= 0 || img.naturalHeight <= 0) {
+      img.remove()
+    }
+  })
+
   clone.querySelectorAll<HTMLElement>('*').forEach((el) => {
-    const bgImage = window.getComputedStyle(el).backgroundImage
-    if (bgImage && bgImage !== 'none' && bgImage.includes('url(')) {
+    const style = window.getComputedStyle(el)
+    const bgImage = style.backgroundImage
+    if (bgImage && bgImage !== 'none') {
       el.style.backgroundImage = 'none'
+    }
+    if (style.boxShadow && style.boxShadow !== 'none') {
+      el.style.boxShadow = 'none'
     }
   })
 }
@@ -142,6 +152,12 @@ async function waitForCloneImages(root: HTMLElement, timeoutMs = 8000): Promise<
         })
     )
   )
+
+  root.querySelectorAll<HTMLImageElement>('img').forEach((img) => {
+    if (!img.complete || img.naturalWidth <= 0 || img.naturalHeight <= 0) {
+      img.remove()
+    }
+  })
 }
 
 /** Allow React to commit DOM updates before capture. */
@@ -167,6 +183,7 @@ function createExportHost(): HTMLDivElement {
     'pointer-events:none',
     'z-index:-1',
     'background:#fff',
+    'opacity:1',
   ].join(';')
   return host
 }
@@ -208,11 +225,46 @@ async function buildCaptureClone(elementOrId: HTMLElement | string): Promise<{
   await waitForLayout()
   reloadCloneImages(clone)
   await waitForCloneImages(clone)
+  sanitizeCloneForCapture(clone)
 
   const cloneDimensions = assertSheetDimensions(clone)
   logPdfDebug('clone sheet dimensions', cloneDimensions)
 
   return { clone, host }
+}
+
+async function captureSheetToCanvas(clone: HTMLElement): Promise<HTMLCanvasElement> {
+  const canvas = await html2canvas(clone, {
+    scale: 2,
+    useCORS: true,
+    logging: false,
+    backgroundColor: '#ffffff',
+    scrollX: 0,
+    scrollY: 0,
+    width: PAGE_WIDTH_PX,
+    height: PAGE_HEIGHT_PX,
+    windowWidth: PAGE_WIDTH_PX,
+    windowHeight: PAGE_HEIGHT_PX,
+    onclone: (clonedDoc, element) => {
+      element.classList.add('certificate-export-clone')
+      clonedDoc.querySelectorAll('.cert-heritage-pattern').forEach((el) => el.remove())
+      clonedDoc.querySelectorAll<HTMLImageElement>('img').forEach((img) => {
+        if (!img.complete || img.naturalWidth <= 0 || img.naturalHeight <= 0) {
+          img.remove()
+        }
+      })
+      clonedDoc.querySelectorAll<HTMLElement>('.certificate-export-clone, .certificate-export-clone *').forEach((el) => {
+        el.style.backgroundImage = 'none'
+        el.style.boxShadow = 'none'
+      })
+    },
+  })
+
+  if (canvas.width <= 0 || canvas.height <= 0) {
+    throw new Error(`Canvas capture produced zero dimensions (${canvas.width}×${canvas.height})`)
+  }
+
+  return canvas
 }
 
 export async function downloadCertificatePdf(
@@ -245,13 +297,16 @@ export async function downloadCertificatePdf(
     const imageSummary = getImageLoadSummary(clone)
     logPdfDebug('image load summary before capture', imageSummary)
 
-    await html2pdf()
-      .set({
-        ...PDF_OPTIONS,
-        filename: certificatePdfFilename(recipientName, category),
-      })
-      .from(clone)
-      .save()
+    const canvas = await captureSheetToCanvas(clone)
+    const imgData = canvas.toDataURL('image/jpeg', 0.98)
+
+    const pdf = new jsPDF({
+      orientation: 'landscape',
+      unit: 'in',
+      format: 'letter',
+    })
+    pdf.addImage(imgData, 'JPEG', 0, 0, 11, 8.5)
+    pdf.save(certificatePdfFilename(recipientName, category))
 
     logPdfDebug('PDF generation end', { success: true })
   } catch (error) {
@@ -264,6 +319,7 @@ export async function downloadCertificatePdf(
     if (host?.parentNode) {
       host.parentNode.removeChild(host)
     }
+    cleanupCertificateExportState()
   }
 }
 
@@ -322,17 +378,24 @@ export async function printCertificate(elementOrId?: HTMLElement | string): Prom
     })
   }
 
+  cleanupCertificateExportState()
+
   document.documentElement.classList.add('certificate-printing')
+  document.body.classList.add('certificate-printing')
   printRoot.removeAttribute('aria-hidden')
 
-  await waitForLayout()
+  try {
+    await waitForLayout()
 
-  const cleanup = () => {
-    document.documentElement.classList.remove('certificate-printing')
-    printRoot.setAttribute('aria-hidden', 'true')
-    window.removeEventListener('afterprint', cleanup)
+    const cleanup = () => {
+      cleanupCertificateExportState()
+    }
+
+    window.addEventListener('afterprint', cleanup, { once: true })
+    window.print()
+    window.setTimeout(cleanup, 1500)
+  } catch (error) {
+    cleanupCertificateExportState()
+    throw error
   }
-
-  window.addEventListener('afterprint', cleanup)
-  window.print()
 }
