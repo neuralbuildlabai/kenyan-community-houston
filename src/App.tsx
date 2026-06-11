@@ -44,9 +44,10 @@ import { SubmitFundraiserPage } from '@/pages/public/SubmitFundraiserPage'
 import { PrivacyPage } from '@/pages/public/PrivacyPage'
 import { TermsPage } from '@/pages/public/TermsPage'
 import { DisclaimerPage } from '@/pages/public/DisclaimerPage'
-import { NotFoundPage } from '@/pages/public/NotFoundPage'
+import { CertificatesAndAcknowledgementsPage } from '@/pages/public/CertificatesAndAcknowledgementsPage'
 import { ChatPage } from '@/pages/public/ChatPage'
 import { CommunityFeedPage } from '@/pages/public/CommunityFeedPage'
+import { NotFoundPage } from '@/pages/public/NotFoundPage'
 
 import { AdminDashboardPage } from '@/pages/admin/DashboardPage'
 import { AdminCalendarPage } from '@/pages/admin/CalendarPage'
@@ -75,7 +76,9 @@ import { AdminFeedPage } from '@/pages/admin/AdminFeedPage'
 import { AdminVolunteersPage } from '@/pages/admin/AdminVolunteersPage'
 import { AdminVendorsPage } from '@/pages/admin/AdminVendorsPage'
 import { AdminVendorDirectoryPage } from '@/pages/admin/AdminVendorDirectoryPage'
+import { AdminCertificatesPage } from '@/pages/admin/AdminCertificatesPage'
 import { SYSTEM_HEALTH_ADMIN_ROLES } from '@/lib/platformAdmin'
+import { CertificatePrintPortal } from '@/components/certificates/CertificateDocument'
 
 import { RequireAuth } from '@/components/RequireAuth'
 import { RequiresFreshPassword } from '@/components/RequiresFreshPassword'
@@ -134,6 +137,7 @@ export default function App() {
               <Route path="membership/success" element={<MembershipSuccessPage />} />
               <Route path="support" element={<SupportPage />} />
               <Route path="resources" element={<ResourcesPage />} />
+              <Route path="certificates-and-acknowledgements" element={<CertificatesAndAcknowledgementsPage />} />
               <Route path="login" element={<LoginPage />} />
               <Route path="admin/login" element={<LoginPage />} />
               <Route path="forgot-password" element={<ForgotPasswordPage />} />
@@ -218,11 +222,13 @@ export default function App() {
               <Route path="feed" element={<AdminFeedPage />} />
               <Route path="service-interests" element={<AdminServiceInterestsPage />} />
               <Route path="media-submissions" element={<AdminMediaSubmissionsPage />} />
+              <Route path="certificates" element={<AdminCertificatesPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="users" element={<AdminUsersPage />} />
             </Route>
           </Routes>
           <Toaster richColors position="top-right" />
+          <CertificatePrintPortal />
         </BrowserRouter>
       </AuthProvider>
     </HelmetProvider>

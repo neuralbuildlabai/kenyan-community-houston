@@ -15,6 +15,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/admin/dashboard': 'Dashboard',
   '/admin/calendar': 'Calendar',
   '/admin/resources': 'Resources',
+  '/admin/certificates': 'Certificates & Acknowledgements',
   '/admin/members': 'Members',
   '/admin/community-groups': 'Community groups',
   '/admin/announcements': 'Announcements',

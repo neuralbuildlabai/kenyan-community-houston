@@ -33,7 +33,7 @@ export function buildEventIcs(opts: {
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
-    `UID:${uid}@kenyancommunityhouston`,
+    `UID:${uid}@kenyansingreaterhouston.org`,
     `DTSTAMP:${format(new Date(), "yyyyMMdd'T'HHmmss")}`,
     `DTSTART:${dtStart}`,
     `DTEND:${dtEnd}`,

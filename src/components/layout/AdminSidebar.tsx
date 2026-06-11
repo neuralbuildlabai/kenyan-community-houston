@@ -30,6 +30,7 @@ import {
   Newspaper,
   Users2,
   Vote,
+  Award,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -59,6 +60,7 @@ function buildNavGroups(profileRole: string | null | undefined): NavGroup[] {
       items: [
         { to: '/admin/calendar', label: 'Calendar', Icon: CalendarDays },
         { to: '/admin/resources', label: 'Resources', Icon: FolderOpen },
+        { to: '/admin/certificates', label: 'Certificates', Icon: Award },
         { to: '/admin/members', label: 'Members', Icon: UserPlus },
       ],
     },

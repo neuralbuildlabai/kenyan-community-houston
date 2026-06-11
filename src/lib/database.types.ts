@@ -313,6 +313,39 @@ export interface Database {
         Insert: Partial<Database['public']['Tables']['gallery_images']['Row']>
         Update: Partial<Database['public']['Tables']['gallery_images']['Row']>
       }
+      certificate_records: {
+        Row: {
+          id: string
+          template_id: string
+          design_style: string
+          recipient_name: string
+          certificate_type: string
+          event_name: string | null
+          issue_date: string
+          signature_1_name: string | null
+          signature_1_title: string | null
+          signature_2_name: string | null
+          signature_2_title: string | null
+          created_by: string | null
+          created_at: string
+          notes: string | null
+        }
+        Insert: {
+          template_id: string
+          design_style: string
+          recipient_name: string
+          certificate_type: string
+          event_name?: string | null
+          issue_date: string
+          signature_1_name?: string | null
+          signature_1_title?: string | null
+          signature_2_name?: string | null
+          signature_2_title?: string | null
+          created_by?: string | null
+          notes?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['certificate_records']['Row']>
+      }
       chat_threads: {
         Row: {
           id: string

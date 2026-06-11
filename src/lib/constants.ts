@@ -16,10 +16,14 @@ export const APP_TAGLINE = 'Your trusted home away from home in Houston, Texas.'
 export const APP_DESCRIPTION =
   'The trusted digital hub for Kenyans in Houston and surrounding areas. Discover events, businesses, community news, and more.'
 
-/** Primary public inbox; set `VITE_CONTACT_EMAIL` per deployment. */
+/** Primary public inbox; set `VITE_CONTACT_EMAIL` per deployment.
+ *  The fallback is the Gmail inbox the team actively monitors. Once
+ *  MX/forwarding is configured for kenyansingreaterhouston.org, the
+ *  deployment env var should be set to `info@kenyansingreaterhouston.org`
+ *  and forwarding will land mail in the same Gmail inbox. */
 export const PUBLIC_CONTACT_EMAIL =
   (import.meta.env.VITE_CONTACT_EMAIL as string | undefined)?.trim() ||
-  'info@kenyancommunityhouston.org'
+  'kenyansinhouston@gmail.com'
 
 /** @deprecated prefer COMMUNITY_SUBMISSION_CATEGORIES — same reference */
 export const EVENT_CATEGORIES = COMMUNITY_SUBMISSION_CATEGORIES

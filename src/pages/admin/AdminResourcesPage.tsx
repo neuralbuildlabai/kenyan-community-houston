@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, Pencil, Search, Download, Upload, Trash2, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -40,6 +41,8 @@ const emptyForm = () => ({
 })
 
 export function AdminResourcesPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const presetEventId = searchParams.get('event_id') ?? ''
   const [rows, setRows] = useState<ResourceRow[]>([])
   const [events, setEvents] = useState<{ id: string; title: string }[]>([])
   const [loading, setLoading] = useState(true)
@@ -85,11 +88,37 @@ export function AdminResourcesPage() {
     return true
   })
 
-  function openCreate() {
-    setForm(emptyForm())
+  function openCreate(prefill?: Partial<ReturnType<typeof emptyForm>>) {
+    setForm({ ...emptyForm(), ...prefill })
     setPendingFile(null)
     setStoredPrivate(null)
     setOpen(true)
+  }
+
+  // If we landed here from an event page with ?event_id=…, auto-open
+  // the create dialog with the event pre-selected so the admin can
+  // drop files immediately.
+  const eventTitleById = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const e of events) m.set(e.id, e.title)
+    return m
+  }, [events])
+  const presetEventTitle = presetEventId ? eventTitleById.get(presetEventId) : undefined
+  useEffect(() => {
+    if (presetEventId && events.length > 0 && !open) {
+      // Only fire once on initial load when events finished loading.
+      openCreate({ related_event_id: presetEventId })
+    }
+    // We intentionally only depend on presetEventId + events.length so
+    // reopening after closing the dialog doesn't re-trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presetEventId, events.length])
+
+  function clearPresetEvent() {
+    if (presetEventId) {
+      searchParams.delete('event_id')
+      setSearchParams(searchParams, { replace: true })
+    }
   }
 
   function openEdit(x: ResourceRow) {
@@ -289,10 +318,33 @@ export function AdminResourcesPage() {
             Manage documents, links, and access levels. Private files are stored securely and downloaded through short-lived signed links.
           </p>
         </div>
-        <Button className="gap-2 shrink-0" onClick={openCreate}>
+        <Button className="gap-2 shrink-0" onClick={() => openCreate()}>
           <Plus className="h-4 w-4" /> Add resource
         </Button>
       </div>
+
+      {presetEventId && presetEventTitle ? (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+          <div>
+            <span className="font-semibold text-foreground">
+              Adding materials for event:
+            </span>{' '}
+            <span className="text-foreground">{presetEventTitle}</span>
+            <div className="text-xs text-muted-foreground">
+              The new-resource form auto-pre-selects this event. Set access
+              level and status, drop the file, save.
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="shrink-0"
+            onClick={clearPresetEvent}
+          >
+            Clear event filter
+          </Button>
+        </div>
+      ) : null}
 
       <div className="flex flex-col lg:flex-row gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">

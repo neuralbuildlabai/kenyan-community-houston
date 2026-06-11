@@ -1,4 +1,4 @@
-# Kenyan Community Houston
+# Kenyans in Greater Houston
 
 A modern community platform connecting Kenyans across the greater Houston area. Built with React, TypeScript, Vite, Tailwind CSS, shadcn/ui, and Supabase.
 

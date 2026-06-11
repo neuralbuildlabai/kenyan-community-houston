@@ -1,7 +1,7 @@
 /** Public site URL for invite links; never log secrets here. */
 export const PUBLIC_SITE_URL =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PUBLIC_SITE_URL?.trim()) ||
-  'https://kenyancommunityhouston.org'
+  'https://www.kenyansingreaterhouston.org'
 
 export const GENERAL_LOCATION_AREA_VALUES = [
   'houston',

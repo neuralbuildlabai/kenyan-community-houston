@@ -17,7 +17,7 @@ export function SEOHead({
   noIndex = false,
 }: SEOHeadProps) {
   const fullTitle = title ? `${title} — ${APP_NAME}` : APP_NAME
-  const siteUrl = import.meta.env.VITE_APP_URL || 'https://kenyancommunityhouston.com'
+  const siteUrl = import.meta.env.VITE_APP_URL || 'https://www.kenyansingreaterhouston.org'
   const defaultImage = `${siteUrl}/og-image.png`
 
   return (

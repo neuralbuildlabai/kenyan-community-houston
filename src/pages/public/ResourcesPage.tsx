@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { FileText, ExternalLink, Search } from 'lucide-react'
+import { FileText, ExternalLink, Search, CalendarDays } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { SEOHead } from '@/components/SEOHead'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/lib/supabase'
 import type { Resource } from '@/lib/types'
 import { RESOURCE_LIBRARY_CATEGORIES } from '@/lib/constants'
@@ -19,11 +21,15 @@ function typeBadge(fileType: string | null): string {
   return fileType.toUpperCase()
 }
 
+type EventInfo = { id: string; title: string; slug: string }
+
 export function ResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([])
+  const [eventsById, setEventsById] = useState<Map<string, EventInfo>>(new Map())
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
+  const [eventFilter, setEventFilter] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -39,21 +45,49 @@ export function ResourcesPage() {
         .order('title', { ascending: true })
       if (category) q = q.eq('category', category)
       const { data } = await q
-      setResources((data as Resource[]) ?? [])
+      const list = (data as Resource[]) ?? []
+      setResources(list)
+
+      // Fetch event metadata for resources that have related_event_id,
+      // in one batched query. Only published events so we don't link
+      // to drafts.
+      const eventIds = [
+        ...new Set(list.map((r) => r.related_event_id).filter(Boolean) as string[]),
+      ]
+      if (eventIds.length > 0) {
+        const { data: ev } = await supabase
+          .from('events')
+          .select('id, title, slug')
+          .in('id', eventIds)
+          .eq('status', 'published')
+        const map = new Map<string, EventInfo>()
+        for (const row of (ev as EventInfo[]) ?? []) {
+          map.set(row.id, row)
+        }
+        setEventsById(map)
+      } else {
+        setEventsById(new Map())
+      }
       setLoading(false)
     }
     load()
   }, [category])
 
+  const eventOptions = useMemo(() => {
+    return [...eventsById.values()].sort((a, b) => a.title.localeCompare(b.title))
+  }, [eventsById])
+
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase()
-    if (!s) return resources
-    return resources.filter(
-      (r) =>
-        r.title.toLowerCase().includes(s) ||
-        (r.description?.toLowerCase().includes(s) ?? false)
-    )
-  }, [resources, search])
+    return resources.filter((r) => {
+      if (eventFilter && r.related_event_id !== eventFilter) return false
+      if (s) {
+        const hay = `${r.title} ${r.description ?? ''}`.toLowerCase()
+        if (!hay.includes(s)) return false
+      }
+      return true
+    })
+  }, [resources, search, eventFilter])
 
   return (
     <>
@@ -97,6 +131,37 @@ export function ResourcesPage() {
               </Button>
             ))}
           </div>
+          {eventOptions.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <CalendarDays className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">
+                From event:
+              </span>
+              <Select value={eventFilter || 'all'} onValueChange={(v) => setEventFilter(v === 'all' ? '' : v)}>
+                <SelectTrigger className="h-9 w-[260px]">
+                  <SelectValue placeholder="All events" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All events</SelectItem>
+                  {eventOptions.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {eventFilter ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEventFilter('')}
+                  className="h-9"
+                >
+                  Clear
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         {loading ? (
@@ -117,6 +182,7 @@ export function ResourcesPage() {
             {filtered.map((r) => {
               const href = r.external_url || r.file_url
               const external = !!r.external_url
+              const linkedEvent = r.related_event_id ? eventsById.get(r.related_event_id) : null
               return (
                 <Card key={r.id} className="flex flex-col border-border/90 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
                   <CardHeader className="pb-3 space-y-2">
@@ -132,6 +198,15 @@ export function ResourcesPage() {
                   </CardHeader>
                   <CardContent className="flex-1 flex flex-col justify-end space-y-3 pt-0">
                     {r.description && <p className="text-sm text-muted-foreground line-clamp-3">{r.description}</p>}
+                    {linkedEvent ? (
+                      <Link
+                        to={`/events/${linkedEvent.slug}`}
+                        className="inline-flex w-fit items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs text-primary hover:bg-primary/10"
+                      >
+                        <CalendarDays className="h-3 w-3" />
+                        From: {linkedEvent.title}
+                      </Link>
+                    ) : null}
                     <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1">
                       {r.resource_date && <span>Updated: {r.resource_date}</span>}
                     </div>

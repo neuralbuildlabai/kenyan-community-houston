@@ -755,3 +755,20 @@ export interface ServiceInterest {
   created_at: string
   updated_at: string
 }
+
+export type CertificateRecord = {
+  id: string
+  template_id: string
+  design_style: string
+  recipient_name: string
+  certificate_type: string
+  event_name: string | null
+  issue_date: string
+  signature_1_name: string | null
+  signature_1_title: string | null
+  signature_2_name: string | null
+  signature_2_title: string | null
+  created_by: string | null
+  created_at: string
+  notes: string | null
+}
