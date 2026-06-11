@@ -54,6 +54,18 @@ function prepareSheetClone(sheet: HTMLElement): HTMLElement {
   return clone
 }
 
+/** Strip CSS patterns/decor that html2canvas cannot rasterize (createPattern 0×0 crash). */
+function sanitizeCloneForCapture(clone: HTMLElement): void {
+  clone.querySelectorAll('.cert-heritage-pattern').forEach((el) => el.remove())
+
+  clone.querySelectorAll<HTMLElement>('*').forEach((el) => {
+    const bgImage = window.getComputedStyle(el).backgroundImage
+    if (bgImage && bgImage !== 'none' && bgImage.includes('url(')) {
+      el.style.backgroundImage = 'none'
+    }
+  })
+}
+
 /** Wait for images inside the export clone so html2canvas never receives 0×0 canvases. */
 async function waitForCloneImages(root: HTMLElement): Promise<void> {
   const images = Array.from(root.querySelectorAll('img'))
@@ -73,25 +85,46 @@ async function waitForCloneImages(root: HTMLElement): Promise<void> {
   )
 }
 
+/** Allow React to commit DOM updates before capture. */
+async function waitForLayout(): Promise<void> {
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  })
+}
+
 function createExportHost(): HTMLDivElement {
   const host = document.createElement('div')
   host.setAttribute('aria-hidden', 'true')
   host.className = 'certificate-export-host'
+  // Keep full dimensions and opacity — html2canvas fails on opacity:0 / zero-size hosts.
   host.style.cssText = [
     'position:fixed',
-    'top:0',
     'left:0',
+    'top:0',
     'width:11in',
     'height:8.5in',
     'margin:0',
     'padding:0',
     'overflow:hidden',
-    'opacity:0',
     'pointer-events:none',
-    'z-index:-1',
+    'z-index:99999',
     'background:#fff',
+    'transform:translateX(-200vw)',
   ].join(';')
   return host
+}
+
+async function buildCaptureClone(elementOrId: HTMLElement | string): Promise<HTMLElement> {
+  const sheet = getCertificateSheetElement(elementOrId)
+  if (!sheet) {
+    throw new Error('Certificate sheet not found')
+  }
+
+  await waitForLayout()
+  const clone = prepareSheetClone(sheet)
+  sanitizeCloneForCapture(clone)
+  await waitForCloneImages(clone)
+  return clone
 }
 
 export async function downloadCertificatePdf(
@@ -99,18 +132,12 @@ export async function downloadCertificatePdf(
   recipientName: string,
   category: string
 ): Promise<void> {
-  const sheet = getCertificateSheetElement(elementOrId)
-  if (!sheet) {
-    throw new Error('Certificate sheet not found')
-  }
-
-  const clone = prepareSheetClone(sheet)
+  const clone = await buildCaptureClone(elementOrId)
   const host = createExportHost()
   host.appendChild(clone)
   document.body.appendChild(host)
 
   try {
-    await waitForCloneImages(clone)
     await html2pdf()
       .set({
         ...PDF_OPTIONS,
@@ -123,15 +150,23 @@ export async function downloadCertificatePdf(
   }
 }
 
-export function printCertificate(elementOrId: HTMLElement | string): void {
+export async function printCertificate(elementOrId: HTMLElement | string): Promise<void> {
   const sheet = getCertificateSheetElement(elementOrId)
-  if (!sheet) return
+  if (!sheet) {
+    throw new Error('Certificate sheet not found')
+  }
 
   const printRoot = document.getElementById('certificate-print-portal')
-  if (!printRoot) return
+  if (!printRoot) {
+    throw new Error('Print portal not found')
+  }
+
+  await waitForLayout()
+  const clone = prepareSheetClone(sheet)
+  sanitizeCloneForCapture(clone)
+  await waitForCloneImages(clone)
 
   printRoot.innerHTML = ''
-  const clone = prepareSheetClone(sheet)
   printRoot.appendChild(clone)
 
   document.documentElement.classList.add('certificate-printing')

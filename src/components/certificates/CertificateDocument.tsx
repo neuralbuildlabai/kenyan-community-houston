@@ -139,7 +139,6 @@ function ModernCommunityDecor() {
 function HeritagePremiumDecor() {
   return (
     <>
-      <div className="cert-heritage-pattern" aria-hidden />
       <div className="cert-heritage-frame" aria-hidden />
       <div className="cert-heritage-frame-inner" aria-hidden />
       <div className="cert-heritage-accent-bar" aria-hidden />

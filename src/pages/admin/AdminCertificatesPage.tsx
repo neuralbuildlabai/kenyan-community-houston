@@ -31,7 +31,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { downloadCertificatePdf, printCertificate } from '@/lib/certificatePdf'
+import { downloadCertificatePdf, getCertificateSheetElement, printCertificate } from '@/lib/certificatePdf'
 import {
   CERTIFICATE_DESIGN_STYLES,
   CERTIFICATE_TEMPLATES,
@@ -59,23 +59,29 @@ function recordToForm(record: CertificateRecord): CertificateFormData {
   }
 }
 
+async function waitForCertificateSheet(): Promise<HTMLElement | null> {
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  })
+  return getCertificateSheetElement(CERTIFICATE_PRINT_ID)
+}
+
 export function AdminCertificatesPage() {
   const { user, profile } = useAuth()
   const [form, setForm] = useState<CertificateFormData>(createDefaultCertificateForm)
-  const pendingPrintRef = useRef(false)
-  const pendingPdfRecordRef = useRef<CertificateRecord | null>(null)
-  const [previewReady, setPreviewReady] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [pdfLoading, setPdfLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
+  const [isPrinting, setIsPrinting] = useState(false)
   const [records, setRecords] = useState<CertificateRecord[]>([])
   const [recordsLoading, setRecordsLoading] = useState(true)
   const [historySearch, setHistorySearch] = useState('')
   const [historyCategory, setHistoryCategory] = useState('all')
-  const previewRef = useRef<HTMLDivElement>(null)
   const previewContainerRef = useRef<HTMLDivElement>(null)
   const [previewScale, setPreviewScale] = useState(0.55)
 
   const template = useMemo(() => getCertificateTemplate(form.templateId), [form.templateId])
+
+  const getCurrentCertificateData = useCallback((): CertificateFormData => form, [form])
 
   const loadRecords = useCallback(async () => {
     setRecordsLoading(true)
@@ -112,28 +118,6 @@ export function AdminCertificatesPage() {
     return () => window.removeEventListener('resize', updateScale)
   }, [])
 
-  useEffect(() => {
-    if (pendingPrintRef.current) {
-      pendingPrintRef.current = false
-      printCertificate(CERTIFICATE_PRINT_ID)
-    }
-    const pdfRecord = pendingPdfRecordRef.current
-    if (pdfRecord) {
-      pendingPdfRecordRef.current = null
-      const el = document.getElementById(CERTIFICATE_PRINT_ID)
-      if (el) {
-        setPdfLoading(true)
-        void downloadCertificatePdf(el, pdfRecord.recipient_name, pdfRecord.certificate_type)
-          .then(() => toast.success('PDF downloaded.'))
-          .catch((e) => {
-            console.error(e)
-            toast.error('PDF download failed.')
-          })
-          .finally(() => setPdfLoading(false))
-      }
-    }
-  }, [form])
-
   function updateForm(patch: Partial<CertificateFormData>) {
     setForm((prev) => ({ ...prev, ...patch }))
   }
@@ -151,14 +135,18 @@ export function AdminCertificatesPage() {
 
   function handleReset() {
     setForm(createDefaultCertificateForm())
-    setPreviewReady(true)
   }
 
-  function validateForm(): boolean {
+  function validateRecipientOnly(): boolean {
     if (!form.recipientName.trim()) {
       toast.error('Please enter the recipient name.')
       return false
     }
+    return true
+  }
+
+  function validateForSave(): boolean {
+    if (!validateRecipientOnly()) return false
     if (!form.issueDate) {
       toast.error('Please select the certificate date.')
       return false
@@ -167,48 +155,58 @@ export function AdminCertificatesPage() {
   }
 
   function handlePreview() {
-    if (!validateForm()) return
-    setPreviewReady(true)
+    if (!validateRecipientOnly()) return
     toast.success('Certificate preview updated.')
   }
 
-  function handlePrint() {
-    if (!validateForm()) return
-    setPreviewReady(true)
-    window.requestAnimationFrame(() => printCertificate(CERTIFICATE_PRINT_ID))
+  async function handlePrint() {
+    if (!validateRecipientOnly()) return
+    setIsPrinting(true)
+    try {
+      const sheet = await waitForCertificateSheet()
+      if (!sheet) {
+        throw new Error('Certificate preview not ready')
+      }
+      await printCertificate(sheet)
+    } catch (e) {
+      console.error('Certificate print failed:', e)
+      toast.error('Print preview failed. Please try again.')
+    } finally {
+      setIsPrinting(false)
+    }
   }
 
   async function handleDownloadPdf() {
-    if (!validateForm()) return
-    setPreviewReady(true)
-    const el = document.getElementById(CERTIFICATE_PRINT_ID)
-    if (!el) {
-      toast.error('Certificate preview not ready.')
-      return
-    }
-    setPdfLoading(true)
+    if (!validateRecipientOnly()) return
+    const data = getCurrentCertificateData()
+    const tmpl = getCertificateTemplate(data.templateId)
+    setIsDownloading(true)
     try {
+      const sheet = await waitForCertificateSheet()
+      if (!sheet) {
+        throw new Error('Certificate preview not ready')
+      }
       await downloadCertificatePdf(
-        el,
-        form.recipientName,
-        template?.category ?? 'Certificate'
+        sheet,
+        data.recipientName.trim(),
+        tmpl?.category ?? 'Certificate'
       )
       toast.success('PDF downloaded.')
     } catch (e) {
-      console.error(e)
-      toast.error('PDF download failed. Try Print and save as PDF instead.')
+      console.error('Certificate PDF download failed:', e)
+      toast.error('PDF download failed. Please try Print instead.')
     } finally {
-      setPdfLoading(false)
+      setIsDownloading(false)
     }
   }
 
   async function handleSaveRecord() {
-    if (!validateForm()) return
+    if (!validateForSave()) return
     if (!user) {
       toast.error('You must be signed in to save records.')
       return
     }
-    setSaving(true)
+    setIsSaving(true)
     const payload = {
       template_id: form.templateId,
       design_style: form.designStyleId,
@@ -223,9 +221,10 @@ export function AdminCertificatesPage() {
       created_by: user.id,
     }
     const { error } = await supabase.from('certificate_records').insert(payload)
-    setSaving(false)
+    setIsSaving(false)
     if (error) {
-      toast.error(error.message)
+      console.error('Certificate save failed:', error)
+      toast.error('Certificate record could not be saved. You can still print or download the certificate.')
       return
     }
     toast.success('Certificate record saved.')
@@ -234,22 +233,49 @@ export function AdminCertificatesPage() {
 
   function loadRecordIntoForm(record: CertificateRecord) {
     setForm(recordToForm(record))
-    setPreviewReady(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
     toast.success('Certificate loaded for reprint.')
   }
 
-  function loadRecordAndPrint(record: CertificateRecord) {
-    pendingPrintRef.current = true
+  async function loadRecordAndPrint(record: CertificateRecord) {
     setForm(recordToForm(record))
-    setPreviewReady(true)
     toast.success('Certificate loaded for reprint.')
+    setIsPrinting(true)
+    try {
+      const sheet = await waitForCertificateSheet()
+      if (!sheet) {
+        throw new Error('Certificate preview not ready')
+      }
+      await printCertificate(sheet)
+    } catch (e) {
+      console.error('Certificate reprint failed:', e)
+      toast.error('Print preview failed. Please try again.')
+    } finally {
+      setIsPrinting(false)
+    }
   }
 
-  function loadRecordAndPdf(record: CertificateRecord) {
-    pendingPdfRecordRef.current = record
+  async function loadRecordAndPdf(record: CertificateRecord) {
     setForm(recordToForm(record))
-    setPreviewReady(true)
+    const tmpl = getCertificateTemplate(record.template_id)
+    setIsDownloading(true)
+    try {
+      const sheet = await waitForCertificateSheet()
+      if (!sheet) {
+        throw new Error('Certificate preview not ready')
+      }
+      await downloadCertificatePdf(
+        sheet,
+        record.recipient_name,
+        tmpl?.category ?? record.certificate_type
+      )
+      toast.success('PDF downloaded.')
+    } catch (e) {
+      console.error('Certificate PDF download failed:', e)
+      toast.error('PDF download failed. Please try Print instead.')
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
   const filteredRecords = records.filter((r) => {
@@ -401,17 +427,22 @@ export function AdminCertificatesPage() {
                   <Eye className="h-4 w-4 mr-1.5" />
                   Preview
                 </Button>
-                <Button type="button" onClick={handlePrint}>
+                <Button type="button" onClick={() => void handlePrint()} disabled={isPrinting}>
                   <Printer className="h-4 w-4 mr-1.5" />
-                  Print
+                  {isPrinting ? 'Opening…' : 'Print'}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => void handleDownloadPdf()} disabled={pdfLoading}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void handleDownloadPdf()}
+                  disabled={isDownloading}
+                >
                   <Download className="h-4 w-4 mr-1.5" />
-                  {pdfLoading ? 'Generating…' : 'Download PDF'}
+                  {isDownloading ? 'Generating…' : 'Download PDF'}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => void handleSaveRecord()} disabled={saving}>
+                <Button type="button" variant="outline" onClick={() => void handleSaveRecord()} disabled={isSaving}>
                   <Save className="h-4 w-4 mr-1.5" />
-                  {saving ? 'Saving…' : 'Save record'}
+                  {isSaving ? 'Saving…' : 'Save record'}
                 </Button>
                 <Button type="button" variant="ghost" onClick={handleReset}>
                   <RotateCcw className="h-4 w-4 mr-1.5" />
@@ -421,7 +452,7 @@ export function AdminCertificatesPage() {
             </CardContent>
           </Card>
 
-          {/* Preview */}
+          {/* Preview — always live from current form state */}
           <div className="min-w-0">
             <div className="mb-3 flex items-center justify-between no-print">
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Live preview</h2>
@@ -431,15 +462,7 @@ export function AdminCertificatesPage() {
               ref={previewContainerRef}
               className="overflow-x-auto rounded-lg border bg-muted/30 p-4 flex justify-center min-h-[280px]"
             >
-              <div ref={previewRef}>
-                {previewReady && (
-                  <CertificateDocument
-                    id={CERTIFICATE_PRINT_ID}
-                    data={form}
-                    scale={previewScale}
-                  />
-                )}
-              </div>
+              <CertificateDocument id={CERTIFICATE_PRINT_ID} data={form} scale={previewScale} />
             </div>
           </div>
         </div>
@@ -523,7 +546,8 @@ export function AdminCertificatesPage() {
                               type="button"
                               size="sm"
                               variant="ghost"
-                              onClick={() => loadRecordAndPrint(record)}
+                              onClick={() => void loadRecordAndPrint(record)}
+                              disabled={isPrinting}
                             >
                               Reprint
                             </Button>
@@ -531,7 +555,8 @@ export function AdminCertificatesPage() {
                               type="button"
                               size="sm"
                               variant="ghost"
-                              onClick={() => loadRecordAndPdf(record)}
+                              onClick={() => void loadRecordAndPdf(record)}
+                              disabled={isDownloading}
                             >
                               PDF
                             </Button>
