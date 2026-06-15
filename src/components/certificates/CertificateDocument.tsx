@@ -191,21 +191,21 @@ function BorderOrnamentFrame() {
           <path
             d="M0 3 C1.5 0.8 3 0.8 4.5 3 S6 5.2 6 3"
             fill="none"
-            stroke="rgba(168,150,100,0.22)"
-            strokeWidth="0.35"
+            stroke="rgba(168,150,100,0.18)"
+            strokeWidth="0.28"
           />
           <path
             d="M3 0 C4.8 1.5 4.8 3 3 4.5 S1.2 3 3 0"
             fill="none"
-            stroke="rgba(168,150,100,0.14)"
-            strokeWidth="0.28"
+            stroke="rgba(168,150,100,0.11)"
+            strokeWidth="0.22"
           />
-          <circle cx="3" cy="3" r="0.5" fill="rgba(168,150,100,0.12)" />
+          <circle cx="3" cy="3" r="0.35" fill="rgba(168,150,100,0.09)" />
         </pattern>
         <linearGradient id="certBandWash" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="rgba(168,150,100,0.14)" />
-          <stop offset="50%" stopColor="rgba(180,160,110,0.08)" />
-          <stop offset="100%" stopColor="rgba(168,150,100,0.12)" />
+          <stop offset="0%" stopColor="rgba(168,150,100,0.1)" />
+          <stop offset="50%" stopColor="rgba(180,160,110,0.05)" />
+          <stop offset="100%" stopColor="rgba(168,150,100,0.08)" />
         </linearGradient>
         <linearGradient id="certBandShine" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="rgba(255,252,245,0.12)" />
@@ -213,7 +213,7 @@ function BorderOrnamentFrame() {
         </linearGradient>
         <mask id="certOrnamentBandMask">
           <rect width="100" height="100" fill="white" />
-          <rect x="1.8" y="2.2" width="96.4" height="95.6" fill="black" />
+          <rect x="2.6" y="2.8" width="94.8" height="94.4" fill="black" />
         </mask>
       </defs>
       <rect width="100" height="100" fill="url(#certBandWash)" mask="url(#certOrnamentBandMask)" />
@@ -222,12 +222,12 @@ function BorderOrnamentFrame() {
         height="100"
         fill="url(#certOrnamentScroll)"
         mask="url(#certOrnamentBandMask)"
-        opacity="0.55"
+        opacity="0.45"
       />
-      <circle cx="2.2" cy="2.2" r="1.1" fill="rgba(168,150,100,0.28)" mask="url(#certOrnamentBandMask)" />
-      <circle cx="97.8" cy="2.2" r="1.1" fill="rgba(168,150,100,0.28)" mask="url(#certOrnamentBandMask)" />
-      <circle cx="2.2" cy="97.8" r="1.1" fill="rgba(168,150,100,0.28)" mask="url(#certOrnamentBandMask)" />
-      <circle cx="97.8" cy="97.8" r="1.1" fill="rgba(168,150,100,0.28)" mask="url(#certOrnamentBandMask)" />
+      <circle cx="2.4" cy="2.4" r="0.8" fill="rgba(168,150,100,0.2)" mask="url(#certOrnamentBandMask)" />
+      <circle cx="97.6" cy="2.4" r="0.8" fill="rgba(168,150,100,0.2)" mask="url(#certOrnamentBandMask)" />
+      <circle cx="2.4" cy="97.6" r="0.8" fill="rgba(168,150,100,0.2)" mask="url(#certOrnamentBandMask)" />
+      <circle cx="97.6" cy="97.6" r="0.8" fill="rgba(168,150,100,0.2)" mask="url(#certOrnamentBandMask)" />
     </svg>
   )
 }
