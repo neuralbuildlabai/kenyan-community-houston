@@ -19,21 +19,23 @@ export function BigFiveWildlifeBackground({ templateId }: BigFiveWildlifeBackgro
   if (failed) return null
 
   return (
-    <div className="cert-wildlife-bg" aria-hidden>
-      <img
-        src={src}
-        alt=""
-        className="cert-wildlife-img"
-        crossOrigin="anonymous"
-        loading="eager"
-        decoding="sync"
-        onError={() => {
-          if (import.meta.env.DEV) {
-            console.warn(`Big Five certificate background asset missing: ${src || BIG_FIVE_CERTIFICATE_BG_PATH}`)
-          }
-          setFailed(true)
-        }}
-      />
+    <div className="cert-wildlife-zone" aria-hidden>
+      <div className="cert-wildlife-bg">
+        <img
+          src={src}
+          alt=""
+          className="cert-wildlife-img"
+          crossOrigin="anonymous"
+          loading="eager"
+          decoding="sync"
+          onError={() => {
+            if (import.meta.env.DEV) {
+              console.warn(`Big Five certificate background asset missing: ${src || BIG_FIVE_CERTIFICATE_BG_PATH}`)
+            }
+            setFailed(true)
+          }}
+        />
+      </div>
     </div>
   )
 }
