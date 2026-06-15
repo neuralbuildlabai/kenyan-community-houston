@@ -100,7 +100,6 @@ export function SubmitAnnouncementPage() {
       image_url: announcementImageUploadUrl?.trim() || form.image_url.trim() || null,
       summary: form.summary || '',
       status: 'pending',
-      tags: [],
       include_in_calendar: includeInCalendar,
       calendar_start_date: includeInCalendar ? calendar.calendar_start_date || null : null,
       calendar_end_date: includeInCalendar ? calendar.calendar_end_date || null : null,

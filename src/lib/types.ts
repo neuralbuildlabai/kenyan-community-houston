@@ -435,7 +435,6 @@ export interface Announcement {
   summary: string
   body: string
   category: string
-  tags: string[]
   image_url: string | null
   external_url?: string | null
   author_name: string

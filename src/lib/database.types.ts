@@ -116,7 +116,6 @@ export interface Database {
           summary: string
           body: string
           category: string
-          tags: string[]
           image_url: string | null
           author_name: string
           author_id: string | null
