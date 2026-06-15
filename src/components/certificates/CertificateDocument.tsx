@@ -499,6 +499,8 @@ function CertificateContent({
           <SignatureBlock data={data} resolvedSignature={resolvedSignature} />
         </div>
       </div>
+
+      <footer className="cert-footer">{CERTIFICATE_FOOTER_TEXT}</footer>
     </div>
   )
 }
@@ -530,8 +532,6 @@ export function CertificateDocument({
       <OrnamentalBorder />
 
       <CertificateContent data={data} resolvedSignature={resolvedSignature} />
-
-      <footer className="cert-footer">{CERTIFICATE_FOOTER_TEXT}</footer>
     </article>
   )
 

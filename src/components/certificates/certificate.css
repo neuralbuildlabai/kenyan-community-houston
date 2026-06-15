@@ -128,7 +128,7 @@
   left: 0;
   right: 0;
   top: 54%;
-  bottom: 0.56in;
+  bottom: 0.34in;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
@@ -301,14 +301,18 @@
 /* ─── Layout ─── */
 
 .cert-inner {
-  position: relative;
+  position: absolute;
   z-index: 2;
+  top: 0.3in;
+  right: 0.3in;
+  bottom: 0.3in;
+  left: 0.34in;
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: calc(100% - 0.56in);
-  padding: 0.42in 0.8in 0.12in 0.86in;
+  padding: 0.06in 0.36in 0.04in 0.4in;
   text-align: center;
+  overflow: hidden;
 }
 
 .cert-org-name {
@@ -679,10 +683,11 @@
 .cert-meta-zone {
   width: 100%;
   margin-top: auto;
-  padding: 0.08in 0.12in 0.12in;
+  padding: 0.06in 0.04in 0.04in;
   background: none;
   position: relative;
-  z-index: 3;
+  z-index: 2;
+  flex-shrink: 0;
 }
 
 .cert-meta-row {
@@ -781,25 +786,24 @@
 .cert-footer::before {
   content: '';
   display: block;
-  width: 2in;
-  margin: 0 auto 0.05in;
-  border-top: 0.5px solid rgba(168, 150, 100, 0.22);
+  width: 1.8in;
+  margin: 0 auto 0.04in;
+  border-top: 0.5px solid rgba(168, 150, 100, 0.2);
 }
 
 .cert-footer {
-  position: absolute;
-  bottom: 0.48in;
-  left: 0.34in;
-  right: 0.34in;
+  position: relative;
+  width: 100%;
+  margin-top: 0.04in;
+  flex-shrink: 0;
   text-align: center;
   font-size: 7.5pt;
   font-weight: 500;
   letter-spacing: 0.1em;
   color: #5f5a52;
-  z-index: 6;
-  padding: 0;
+  z-index: 2;
+  padding: 0 0 0.02in;
   line-height: 1.35;
-  border-top: none;
   text-shadow: 0 0 6px rgba(255, 254, 249, 0.85);
 }
 
