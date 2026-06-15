@@ -34,6 +34,7 @@ const ADMIN_PROTECTED = [
   '/admin/feed',
   '/admin/volunteers',
   '/admin/system-health',
+  '/admin/certificates',
 ] as const
 
 for (const route of ADMIN_PROTECTED) {

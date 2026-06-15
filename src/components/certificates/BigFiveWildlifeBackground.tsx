@@ -2,20 +2,19 @@ import { useState } from 'react'
 import {
   BIG_FIVE_CERTIFICATE_BG_PATH,
   getBigFiveCertificateBgPath,
-  type CertificateDesignStyleId,
 } from '@/lib/certificateTemplates'
 
 type BigFiveWildlifeBackgroundProps = {
-  designStyleId: CertificateDesignStyleId
+  templateId: string
 }
 
 /**
  * Big 5 safari scene for KIGH certificate lower-half background.
  * Uses real image assets — no SVG blobs or placeholder silhouettes.
  */
-export function BigFiveWildlifeBackground({ designStyleId }: BigFiveWildlifeBackgroundProps) {
+export function BigFiveWildlifeBackground({ templateId }: BigFiveWildlifeBackgroundProps) {
   const [failed, setFailed] = useState(false)
-  const src = getBigFiveCertificateBgPath(designStyleId)
+  const src = getBigFiveCertificateBgPath(templateId)
 
   if (failed) return null
 

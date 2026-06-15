@@ -756,6 +756,20 @@ export interface ServiceInterest {
   updated_at: string
 }
 
+export type CertificateSignatureMode = 'none' | 'default' | 'selected'
+
+export type CertificateSignature = {
+  id: string
+  signer_name: string
+  signer_title: string
+  image_url: string
+  is_default: boolean
+  is_active: boolean
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
 export type CertificateRecord = {
   id: string
   template_id: string
@@ -768,6 +782,9 @@ export type CertificateRecord = {
   signature_1_title: string | null
   signature_2_name: string | null
   signature_2_title: string | null
+  signature_id: string | null
+  signature_mode: CertificateSignatureMode
+  signature_image_url: string | null
   created_by: string | null
   created_at: string
   notes: string | null

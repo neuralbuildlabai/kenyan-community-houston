@@ -83,7 +83,7 @@ function prepareSheetClone(sheet: HTMLElement): HTMLElement {
 function sanitizeCloneForCapture(clone: HTMLElement): void {
   clone.querySelectorAll('.cert-heritage-pattern').forEach((el) => el.remove())
 
-  clone.querySelectorAll<HTMLElement>('img').forEach((img) => {
+  clone.querySelectorAll<HTMLImageElement>('img').forEach((img) => {
     if (!img.complete || img.naturalWidth <= 0 || img.naturalHeight <= 0) {
       img.remove()
     }
@@ -103,7 +103,7 @@ function sanitizeCloneForCapture(clone: HTMLElement): void {
 
 /** Force images to reload inside the mounted clone so html2canvas sees non-zero dimensions. */
 function reloadCloneImages(root: HTMLElement): void {
-  root.querySelectorAll('img').forEach((img) => {
+  root.querySelectorAll<HTMLImageElement>('img').forEach((img) => {
     img.crossOrigin = 'anonymous'
     const src = img.getAttribute('src') || img.src
     if (src) {
@@ -117,7 +117,7 @@ function getImageLoadSummary(root: HTMLElement): {
   loaded: number
   details: Array<{ src: string; complete: boolean; naturalWidth: number; naturalHeight: number }>
 } {
-  const images = Array.from(root.querySelectorAll('img'))
+  const images = Array.from(root.querySelectorAll<HTMLImageElement>('img'))
   const details = images.map((img) => ({
     src: img.src.split('/').pop() ?? img.src,
     complete: img.complete,
@@ -133,7 +133,7 @@ function getImageLoadSummary(root: HTMLElement): {
 
 /** Wait for images inside the export clone so html2canvas never receives 0×0 canvases. */
 async function waitForCloneImages(root: HTMLElement, timeoutMs = 8000): Promise<void> {
-  const images = Array.from(root.querySelectorAll('img'))
+  const images = Array.from(root.querySelectorAll<HTMLImageElement>('img'))
   await Promise.all(
     images.map(
       (img) =>

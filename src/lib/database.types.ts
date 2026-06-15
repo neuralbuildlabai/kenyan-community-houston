@@ -326,6 +326,9 @@ export interface Database {
           signature_1_title: string | null
           signature_2_name: string | null
           signature_2_title: string | null
+          signature_id: string | null
+          signature_mode: string
+          signature_image_url: string | null
           created_by: string | null
           created_at: string
           notes: string | null
@@ -341,10 +344,36 @@ export interface Database {
           signature_1_title?: string | null
           signature_2_name?: string | null
           signature_2_title?: string | null
+          signature_id?: string | null
+          signature_mode?: string
+          signature_image_url?: string | null
           created_by?: string | null
           notes?: string | null
         }
         Update: Partial<Database['public']['Tables']['certificate_records']['Row']>
+      }
+      certificate_signatures: {
+        Row: {
+          id: string
+          signer_name: string
+          signer_title: string
+          image_url: string
+          is_default: boolean
+          is_active: boolean
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          signer_name: string
+          signer_title: string
+          image_url: string
+          is_default?: boolean
+          is_active?: boolean
+          created_by?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['certificate_signatures']['Row']>
       }
       chat_threads: {
         Row: {

@@ -11,6 +11,7 @@ import {
 import { toast } from 'sonner'
 import { SEOHead } from '@/components/SEOHead'
 import { CertificateDocument } from '@/components/certificates/CertificateDocument'
+import { CertificateSignatureLibrary } from '@/components/certificates/CertificateSignatureLibrary'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -48,16 +49,19 @@ import {
   CERTIFICATE_PRINT_ROOT_ID,
 } from '@/lib/certificatePdf'
 import {
-  CERTIFICATE_DESIGN_STYLES,
+  fetchAllCertificateSignatures,
+  resolveCertificateSignature,
+} from '@/lib/certificateSignatures'
+import {
   CERTIFICATE_TEMPLATES,
   createDefaultCertificateForm,
-  getCertificateDesignStyle,
   getCertificateTemplate,
+  getLegacyDesignStyleForTemplate,
   type CertificateFormData,
-  type CertificateDesignStyleId,
+  type CertificateSignatureMode,
 } from '@/lib/certificateTemplates'
 import { formatDateShort } from '@/lib/utils'
-import type { CertificateRecord } from '@/lib/types'
+import type { CertificateRecord, CertificateSignature } from '@/lib/types'
 
 const CERTIFICATE_PRINT_ID = 'kigh-certificate-print-target'
 const CERTIFICATE_EXPORT_ID = 'kigh-certificate-export-target'
@@ -65,10 +69,13 @@ const CERTIFICATE_EXPORT_ID = 'kigh-certificate-export-target'
 function recordToForm(record: CertificateRecord): CertificateFormData {
   return {
     templateId: record.template_id,
-    designStyleId: record.design_style as CertificateDesignStyleId,
+    designStyleId: getLegacyDesignStyleForTemplate(record.template_id),
     recipientName: record.recipient_name,
     issueDate: record.issue_date,
     eventName: record.event_name ?? '',
+    signatureMode: record.signature_mode ?? 'none',
+    signatureId: record.signature_id ?? null,
+    signatureImageUrl: record.signature_image_url ?? null,
     signature1Name: record.signature_1_name ?? '',
     signature1Title: record.signature_1_title ?? '',
     signature2Name: record.signature_2_name ?? '',
@@ -79,6 +86,7 @@ function recordToForm(record: CertificateRecord): CertificateFormData {
 function normalizeCertificateForm(form: CertificateFormData): CertificateFormData {
   return {
     ...form,
+    designStyleId: getLegacyDesignStyleForTemplate(form.templateId),
     issueDate: form.issueDate || new Date().toISOString().slice(0, 10),
   }
 }
@@ -95,6 +103,8 @@ async function waitForExportSheet(): Promise<HTMLElement | null> {
 export function AdminCertificatesPage() {
   const { user, profile } = useAuth()
   const [form, setForm] = useState<CertificateFormData>(createDefaultCertificateForm)
+  const [signatures, setSignatures] = useState<CertificateSignature[]>([])
+  const [signaturesLoading, setSignaturesLoading] = useState(true)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
@@ -110,12 +120,49 @@ export function AdminCertificatesPage() {
 
   const displayForm = useMemo(() => normalizeCertificateForm(form), [form])
   const template = useMemo(() => getCertificateTemplate(displayForm.templateId), [displayForm.templateId])
-  const designStyle = useMemo(
-    () => getCertificateDesignStyle(displayForm.designStyleId),
-    [displayForm.designStyleId]
+
+  const resolvedSignature = useMemo(
+    () =>
+      resolveCertificateSignature(
+        displayForm.signatureMode,
+        displayForm.signatureId,
+        signatures,
+        displayForm.signatureImageUrl
+          ? {
+              signerName: displayForm.signature1Name,
+              signerTitle: displayForm.signature1Title,
+              imageUrl: displayForm.signatureImageUrl,
+            }
+          : null
+      ),
+    [
+      displayForm.signatureMode,
+      displayForm.signatureId,
+      displayForm.signatureImageUrl,
+      displayForm.signature1Name,
+      displayForm.signature1Title,
+      signatures,
+    ]
+  )
+
+  const activeSignatures = useMemo(
+    () => signatures.filter((s) => s.is_active),
+    [signatures]
   )
 
   const getCurrentCertificateData = useCallback((): CertificateFormData => displayForm, [displayForm])
+
+  const loadSignatures = useCallback(async () => {
+    setSignaturesLoading(true)
+    try {
+      setSignatures(await fetchAllCertificateSignatures())
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load signatures.')
+      setSignatures([])
+    } finally {
+      setSignaturesLoading(false)
+    }
+  }, [])
 
   const loadRecords = useCallback(async () => {
     setRecordsLoading(true)
@@ -136,7 +183,8 @@ export function AdminCertificatesPage() {
 
   useEffect(() => {
     void loadRecords()
-  }, [loadRecords])
+    void loadSignatures()
+  }, [loadRecords, loadSignatures])
 
   useEffect(() => {
     return () => {
@@ -188,9 +236,23 @@ export function AdminCertificatesPage() {
     setForm((prev) => ({
       ...prev,
       templateId,
+      designStyleId: getLegacyDesignStyleForTemplate(templateId),
       signature1Title: next.defaultSignature1Title,
       signature2Title: next.defaultSignature2Title,
     }))
+  }
+
+  function handleSignatureModeChange(mode: CertificateSignatureMode) {
+    if (mode === 'selected' && !form.signatureId && activeSignatures.length > 0) {
+      const defaultSig = activeSignatures.find((s) => s.is_default) ?? activeSignatures[0]
+      updateForm({
+        signatureMode: mode,
+        signatureId: defaultSig.id,
+        signatureImageUrl: null,
+      })
+      return
+    }
+    updateForm({ signatureMode: mode, signatureImageUrl: null })
   }
 
   function handleReset() {
@@ -210,6 +272,14 @@ export function AdminCertificatesPage() {
     if (!validateRecipientOnly()) return false
     if (!form.issueDate) {
       toast.error('Please select the certificate date.')
+      return false
+    }
+    if (form.signatureMode === 'selected' && !form.signatureId) {
+      toast.error('Please select a saved signature.')
+      return false
+    }
+    if (form.signatureMode === 'default' && !activeSignatures.some((s) => s.is_default)) {
+      toast.error('No default signature is set. Choose a saved signature or use a blank line.')
       return false
     }
     return true
@@ -272,15 +342,24 @@ export function AdminCertificatesPage() {
       return
     }
     setIsSaving(true)
+
+    const sig = resolvedSignature
+    const signatureImageUrl =
+      sig?.image_url ??
+      (form.signatureMode !== 'none' && form.signatureImageUrl ? form.signatureImageUrl : null)
+
     const payload = {
       template_id: form.templateId,
-      design_style: form.designStyleId,
+      design_style: getLegacyDesignStyleForTemplate(form.templateId),
       recipient_name: form.recipientName.trim(),
       certificate_type: template?.category ?? form.templateId,
       event_name: form.eventName.trim() || null,
       issue_date: form.issueDate,
-      signature_1_name: form.signature1Name.trim() || null,
-      signature_1_title: form.signature1Title.trim() || null,
+      signature_mode: form.signatureMode,
+      signature_id: form.signatureMode === 'selected' ? form.signatureId : (sig?.id !== 'snapshot' ? sig?.id ?? null : form.signatureId),
+      signature_image_url: signatureImageUrl,
+      signature_1_name: (sig?.signer_name ?? form.signature1Name.trim()) || null,
+      signature_1_title: (sig?.signer_title ?? form.signature1Title.trim()) || null,
       signature_2_name: form.signature2Name.trim() || null,
       signature_2_title: form.signature2Title.trim() || null,
       created_by: user.id,
@@ -335,7 +414,7 @@ export function AdminCertificatesPage() {
         tmpl?.category ?? record.certificate_type,
         {
           templateId: record.template_id,
-          designStyleId: record.design_style as CertificateDesignStyleId,
+          designStyleId: getLegacyDesignStyleForTemplate(record.template_id),
           recipientNamePresent: record.recipient_name.trim().length > 0,
         }
       )
@@ -366,14 +445,18 @@ export function AdminCertificatesPage() {
     return record.created_by ? `${record.created_by.slice(0, 8)}…` : '—'
   }
 
+  const certificateDocProps = {
+    data: displayForm,
+    resolvedSignature,
+  }
+
   return (
     <>
       <SEOHead title="Certificates & Acknowledgements" noIndex />
 
-      {/* Full-size print/PDF source — portaled to body so print CSS can target it directly */}
       {createPortal(
         <div id={CERTIFICATE_PRINT_ROOT_ID} className="certificate-print-root" aria-hidden="true">
-          <CertificateDocument id={CERTIFICATE_EXPORT_ID} data={displayForm} scale={1} />
+          <CertificateDocument id={CERTIFICATE_EXPORT_ID} {...certificateDocProps} scale={1} />
         </div>,
         document.body
       )}
@@ -382,17 +465,14 @@ export function AdminCertificatesPage() {
         <DialogContent className="no-print max-w-[96vw] w-[96vw] max-h-[96vh] overflow-hidden flex flex-col gap-4 p-4 sm:p-6">
           <DialogHeader className="shrink-0">
             <DialogTitle>Certificate Preview</DialogTitle>
-            <DialogDescription>
-              {template?.category ?? 'Certificate'}
-              {designStyle ? ` · ${designStyle.label}` : ''}
-            </DialogDescription>
+            <DialogDescription>{template?.category ?? 'Certificate'}</DialogDescription>
           </DialogHeader>
 
           <div
             ref={modalPreviewContainerRef}
             className="flex-1 min-h-0 overflow-auto flex justify-center items-start rounded-md border bg-muted/30 p-4"
           >
-            <CertificateDocument data={displayForm} scale={modalPreviewScale} />
+            <CertificateDocument {...certificateDocProps} scale={modalPreviewScale} />
           </div>
 
           <DialogFooter className="shrink-0 gap-2 sm:gap-2">
@@ -403,11 +483,7 @@ export function AdminCertificatesPage() {
               <Printer className="h-4 w-4 mr-1.5" />
               {isPrinting ? 'Opening…' : 'Print'}
             </Button>
-            <Button
-              type="button"
-              onClick={() => void handleDownloadPdf()}
-              disabled={isDownloading}
-            >
+            <Button type="button" onClick={() => void handleDownloadPdf()} disabled={isDownloading}>
               <Download className="h-4 w-4 mr-1.5" />
               {isDownloading ? 'Generating…' : 'Download PDF'}
             </Button>
@@ -420,16 +496,17 @@ export function AdminCertificatesPage() {
           <h1 className="text-2xl font-bold tracking-tight">Certificates & Acknowledgements</h1>
           <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
             Generate official KIGH certificates for volunteers, speakers, donors, youth leaders, vendors, and
-            community partners. Select a template, enter recipient details, preview, then print or download.
+            community partners. Each category has its own premium template design.
           </p>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[minmax(280px,360px)_1fr] lg:items-start">
-          {/* Form */}
           <Card className="no-print">
             <CardHeader>
               <CardTitle className="text-lg">Certificate details</CardTitle>
-              <CardDescription>Wording is pre-filled — only edit recipient, date, and signatures.</CardDescription>
+              <CardDescription>
+                Select a certificate type, enter recipient details, and choose a signature option.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -446,28 +523,11 @@ export function AdminCertificatesPage() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="cert-style">Design style</Label>
-                <Select
-                  value={form.designStyleId}
-                  onValueChange={(v) => updateForm({ designStyleId: v as CertificateDesignStyleId })}
-                >
-                  <SelectTrigger id="cert-style">
-                    <SelectValue placeholder="Select style" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CERTIFICATE_DESIGN_STYLES.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  {CERTIFICATE_DESIGN_STYLES.find((s) => s.id === form.designStyleId)?.description}
-                </p>
+                {template ? (
+                  <p className="text-xs text-muted-foreground">
+                    {template.title} {template.subtitle}
+                  </p>
+                ) : null}
               </div>
 
               <div className="space-y-2">
@@ -501,42 +561,66 @@ export function AdminCertificatesPage() {
                 />
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="sig1-name">Signature 1 name</Label>
-                  <Input
-                    id="sig1-name"
-                    value={form.signature1Name}
-                    onChange={(e) => updateForm({ signature1Name: e.target.value })}
-                    placeholder="Name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sig1-title">Signature 1 title</Label>
-                  <Input
-                    id="sig1-title"
-                    value={form.signature1Title}
-                    onChange={(e) => updateForm({ signature1Title: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sig2-name">Signature 2 name</Label>
-                  <Input
-                    id="sig2-name"
-                    value={form.signature2Name}
-                    onChange={(e) => updateForm({ signature2Name: e.target.value })}
-                    placeholder="Name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sig2-title">Signature 2 title</Label>
-                  <Input
-                    id="sig2-title"
-                    value={form.signature2Title}
-                    onChange={(e) => updateForm({ signature2Title: e.target.value })}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="cert-signature-mode">Signature</Label>
+                <Select
+                  value={form.signatureMode}
+                  onValueChange={(v) => handleSignatureModeChange(v as CertificateSignatureMode)}
+                >
+                  <SelectTrigger id="cert-signature-mode">
+                    <SelectValue placeholder="Signature option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No signature (blank line)</SelectItem>
+                    <SelectItem value="default">Use default signature</SelectItem>
+                    <SelectItem value="selected">Select saved signature</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+
+              {form.signatureMode === 'selected' ? (
+                <div className="space-y-2">
+                  <Label htmlFor="cert-signature-id">Saved signature</Label>
+                  <Select
+                    value={form.signatureId ?? ''}
+                    onValueChange={(v) => updateForm({ signatureId: v || null, signatureImageUrl: null })}
+                  >
+                    <SelectTrigger id="cert-signature-id">
+                      <SelectValue placeholder="Choose signature" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activeSignatures.map((sig) => (
+                        <SelectItem key={sig.id} value={sig.id}>
+                          {sig.signer_name}
+                          {sig.is_default ? ' (default)' : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : null}
+
+              {form.signatureMode === 'none' ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="sig1-name">Signer name (optional)</Label>
+                    <Input
+                      id="sig1-name"
+                      value={form.signature1Name}
+                      onChange={(e) => updateForm({ signature1Name: e.target.value })}
+                      placeholder="Leave blank for empty line"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sig1-title">Signer title</Label>
+                    <Input
+                      id="sig1-title"
+                      value={form.signature1Title}
+                      onChange={(e) => updateForm({ signature1Title: e.target.value })}
+                    />
+                  </div>
+                </div>
+              ) : null}
 
               <div className="flex flex-wrap gap-2 pt-2">
                 <Button type="button" variant="secondary" onClick={handlePreview}>
@@ -547,12 +631,7 @@ export function AdminCertificatesPage() {
                   <Printer className="h-4 w-4 mr-1.5" />
                   {isPrinting ? 'Opening…' : 'Print'}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => void handleDownloadPdf()}
-                  disabled={isDownloading}
-                >
+                <Button type="button" variant="outline" onClick={() => void handleDownloadPdf()} disabled={isDownloading}>
                   <Download className="h-4 w-4 mr-1.5" />
                   {isDownloading ? 'Generating…' : 'Download PDF'}
                 </Button>
@@ -568,7 +647,6 @@ export function AdminCertificatesPage() {
             </CardContent>
           </Card>
 
-          {/* Preview — always live from current form state */}
           <div className="min-w-0">
             <div className="mb-3 flex items-center justify-between no-print">
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Live preview</h2>
@@ -578,12 +656,31 @@ export function AdminCertificatesPage() {
               ref={previewContainerRef}
               className="overflow-x-auto rounded-lg border bg-muted/30 p-4 flex justify-center min-h-[280px]"
             >
-              <CertificateDocument id={CERTIFICATE_PRINT_ID} data={displayForm} scale={previewScale} />
+              <CertificateDocument id={CERTIFICATE_PRINT_ID} {...certificateDocProps} scale={previewScale} />
             </div>
           </div>
         </div>
 
-        {/* History */}
+        <Card className="no-print">
+          <CardHeader>
+            <CardTitle className="text-lg">Signature library</CardTitle>
+            <CardDescription>
+              Upload and manage authorized signatory images. Only admins can access this library.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {signaturesLoading ? (
+              <p className="text-sm text-muted-foreground">Loading signatures…</p>
+            ) : (
+              <CertificateSignatureLibrary
+                signatures={signatures}
+                onChanged={() => void loadSignatures()}
+                createdBy={user?.id ?? null}
+              />
+            )}
+          </CardContent>
+        </Card>
+
         <Card className="no-print">
           <CardHeader>
             <CardTitle className="text-lg">Issued certificate history</CardTitle>
@@ -650,12 +747,7 @@ export function AdminCertificatesPage() {
                         <TableCell>{createdByLabel(record)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => loadRecordIntoForm(record)}
-                            >
+                            <Button type="button" size="sm" variant="ghost" onClick={() => loadRecordIntoForm(record)}>
                               View
                             </Button>
                             <Button

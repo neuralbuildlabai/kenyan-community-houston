@@ -1,12 +1,35 @@
+export type CertificateTemplateId =
+  | 'volunteer-appreciation'
+  | 'community-speaker'
+  | 'community-service-leadership'
+  | 'donor-sponsor'
+  | 'youth-achievement'
+  | 'vendor-partner'
+
+/** @deprecated Legacy design style — auto-derived from template for DB compatibility. */
 export type CertificateDesignStyleId = 'classic-official' | 'modern-community' | 'heritage-premium'
 
+export type CertificateTemplateAccent =
+  | 'warm'
+  | 'formal'
+  | 'prestigious'
+  | 'premium'
+  | 'celebratory'
+  | 'partnership'
+
+export type CertificateSignatureMode = 'none' | 'default' | 'selected'
+
 export type CertificateTemplate = {
-  id: string
+  id: CertificateTemplateId
   title: string
+  subtitle: string
   category: string
   presentedToLabel: string
   bodyText: string
   closingLine: string
+  sealLabel: string
+  accentVariant: CertificateTemplateAccent
+  bigFiveBgKey: keyof typeof BIG_FIVE_CERTIFICATE_BG_OPTIONS
   defaultSignature1Title: string
   defaultSignature2Title: string
 }
@@ -16,6 +39,8 @@ export type CertificateDesignStyle = {
   label: string
   description: string
 }
+
+export const KIGH_ORG_NAME = 'Kenyans in Greater Houston Community'
 
 export const CERTIFICATE_FOOTER_TEXT =
   'Official Certificate of Recognition | kenyansingreaterhouston.org'
@@ -30,16 +55,28 @@ export const BIG_FIVE_CERTIFICATE_BG_OPTIONS = {
   option4: '/kigh-media/certificates/kigh-big-five-certificate-bg-option-4.png',
 } as const
 
-export function getBigFiveCertificateBgPath(designStyleId: CertificateDesignStyleId): string {
-  switch (designStyleId) {
-    case 'modern-community':
-      return BIG_FIVE_CERTIFICATE_BG_OPTIONS.default
-    case 'classic-official':
-      return BIG_FIVE_CERTIFICATE_BG_OPTIONS.option3
-    case 'heritage-premium':
-      return BIG_FIVE_CERTIFICATE_BG_OPTIONS.option4
+export function getBigFiveCertificateBgPath(templateId: string): string {
+  const template = getCertificateTemplate(templateId)
+  if (template) {
+    return BIG_FIVE_CERTIFICATE_BG_OPTIONS[template.bigFiveBgKey]
+  }
+  return BIG_FIVE_CERTIFICATE_BG_PATH
+}
+
+/** Legacy mapping kept for certificate_records.design_style column compatibility. */
+export function getLegacyDesignStyleForTemplate(templateId: string): CertificateDesignStyleId {
+  switch (templateId) {
+    case 'volunteer-appreciation':
+    case 'youth-achievement':
+      return 'modern-community'
+    case 'community-speaker':
+    case 'vendor-partner':
+      return 'classic-official'
+    case 'community-service-leadership':
+    case 'donor-sponsor':
+      return 'heritage-premium'
     default:
-      return BIG_FIVE_CERTIFICATE_BG_PATH
+      return 'modern-community'
   }
 }
 
@@ -67,67 +104,91 @@ export const CERTIFICATE_DESIGN_STYLES: CertificateDesignStyle[] = [
 export const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
   {
     id: 'volunteer-appreciation',
-    title: 'Certificate of Appreciation',
+    title: 'Certificate',
+    subtitle: 'of Appreciation',
     category: 'Volunteer Appreciation',
-    presentedToLabel: 'Presented to:',
+    presentedToLabel: 'This is awarded to',
     bodyText:
       'In sincere recognition of your generous volunteer service, dedication, and meaningful contribution to the Kenyans in Greater Houston Community.\n\nThrough your time, effort, and willingness to serve, you have helped strengthen our programs, uplift our events, and create a welcoming space for families and the wider community.',
     closingLine: 'Presented with heartfelt gratitude by Kenyans in Greater Houston Community',
+    sealLabel: 'Community Service',
+    accentVariant: 'warm',
+    bigFiveBgKey: 'default',
     defaultSignature1Title: DEFAULT_SIGNATURE_1_TITLE,
     defaultSignature2Title: DEFAULT_SIGNATURE_2_TITLE,
   },
   {
     id: 'community-speaker',
-    title: 'Certificate of Recognition',
+    title: 'Certificate',
+    subtitle: 'of Recognition',
     category: 'Community Speaker Recognition',
-    presentedToLabel: 'Presented to:',
+    presentedToLabel: 'This is awarded to',
     bodyText:
       'In honor of your valuable contribution as a speaker and community forum leader for the Kenyans in Greater Houston Community.\n\nYour insight, leadership, and willingness to share knowledge have helped inform, inspire, and empower our community through meaningful dialogue and shared learning.',
     closingLine: 'Presented with sincere appreciation by Kenyans in Greater Houston Community',
+    sealLabel: 'Forum Leadership',
+    accentVariant: 'formal',
+    bigFiveBgKey: 'option3',
     defaultSignature1Title: DEFAULT_SIGNATURE_1_TITLE,
     defaultSignature2Title: DEFAULT_SIGNATURE_2_TITLE,
   },
   {
     id: 'community-service-leadership',
-    title: 'Certificate of Community Service',
+    title: 'Certificate',
+    subtitle: 'of Community Service',
     category: 'Community Service & Leadership',
-    presentedToLabel: 'Presented to:',
+    presentedToLabel: 'This is awarded to',
     bodyText:
       'In recognition of your outstanding service, leadership, and commitment to the growth and unity of the Kenyans in Greater Houston Community.\n\nYour dedication reflects the spirit of service, responsibility, and togetherness that continues to strengthen and uplift our community.',
     closingLine: 'Presented with deep appreciation by Kenyans in Greater Houston Community',
+    sealLabel: 'Civic Leadership',
+    accentVariant: 'prestigious',
+    bigFiveBgKey: 'option1',
     defaultSignature1Title: DEFAULT_SIGNATURE_1_TITLE,
     defaultSignature2Title: DEFAULT_SIGNATURE_2_TITLE,
   },
   {
     id: 'donor-sponsor',
-    title: 'Certificate of Appreciation',
+    title: 'Certificate',
+    subtitle: 'of Appreciation',
     category: 'Donor & Sponsor Appreciation',
-    presentedToLabel: 'Presented to:',
+    presentedToLabel: 'This is awarded to',
     bodyText:
       'In grateful recognition of your generous support and valued partnership with the Kenyans in Greater Houston Community.\n\nYour contribution helps make our community programs, events, outreach, and shared initiatives possible, leaving a meaningful impact on the people we serve.',
     closingLine: 'Presented with sincere gratitude by Kenyans in Greater Houston Community',
+    sealLabel: 'Generous Support',
+    accentVariant: 'premium',
+    bigFiveBgKey: 'option4',
     defaultSignature1Title: DEFAULT_SIGNATURE_1_TITLE,
     defaultSignature2Title: DEFAULT_SIGNATURE_2_TITLE,
   },
   {
     id: 'youth-achievement',
-    title: 'Certificate of Achievement',
+    title: 'Certificate',
+    subtitle: 'of Achievement',
     category: 'Youth Achievement',
-    presentedToLabel: 'Presented to:',
+    presentedToLabel: 'This is awarded to',
     bodyText:
       'In recognition of your achievement, participation, and positive representation within the Kenyans in Greater Houston Community.\n\nYour dedication, growth, and example bring pride to our community and inspire others to pursue excellence with confidence and purpose.',
     closingLine: 'Presented with pride and encouragement by Kenyans in Greater Houston Community',
+    sealLabel: 'Youth Excellence',
+    accentVariant: 'celebratory',
+    bigFiveBgKey: 'option2',
     defaultSignature1Title: DEFAULT_SIGNATURE_1_TITLE,
     defaultSignature2Title: DEFAULT_SIGNATURE_2_TITLE,
   },
   {
     id: 'vendor-partner',
-    title: 'Certificate of Appreciation',
+    title: 'Certificate',
+    subtitle: 'of Appreciation',
     category: 'Vendor & Community Partner',
-    presentedToLabel: 'Presented to:',
+    presentedToLabel: 'This is awarded to',
     bodyText:
       'In appreciation of your valued partnership, participation, and support of Kenyans in Greater Houston Community events and initiatives.\n\nYour presence and contribution help create meaningful community experiences, strengthen local connections, and support the spirit of collaboration across Greater Houston.',
     closingLine: 'Presented with sincere appreciation by Kenyans in Greater Houston Community',
+    sealLabel: 'Community Partner',
+    accentVariant: 'partnership',
+    bigFiveBgKey: 'option3',
     defaultSignature1Title: DEFAULT_SIGNATURE_1_TITLE,
     defaultSignature2Title: DEFAULT_SIGNATURE_2_TITLE,
   },
@@ -143,10 +204,15 @@ export function getCertificateDesignStyle(id: string): CertificateDesignStyle | 
 
 export type CertificateFormData = {
   templateId: string
+  /** @deprecated Auto-derived from templateId — kept for DB backward compatibility. */
   designStyleId: CertificateDesignStyleId
   recipientName: string
   issueDate: string
   eventName: string
+  signatureMode: CertificateSignatureMode
+  signatureId: string | null
+  /** Snapshot of signature image at issuance (preserved on saved records). */
+  signatureImageUrl: string | null
   signature1Name: string
   signature1Title: string
   signature2Name: string
@@ -157,10 +223,13 @@ export function createDefaultCertificateForm(): CertificateFormData {
   const template = CERTIFICATE_TEMPLATES[0]
   return {
     templateId: template.id,
-    designStyleId: 'modern-community',
+    designStyleId: getLegacyDesignStyleForTemplate(template.id),
     recipientName: '',
     issueDate: new Date().toISOString().slice(0, 10),
     eventName: '',
+    signatureMode: 'none',
+    signatureId: null,
+    signatureImageUrl: null,
     signature1Name: '',
     signature1Title: template.defaultSignature1Title,
     signature2Name: '',
