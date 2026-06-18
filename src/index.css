@@ -86,29 +86,37 @@
     @apply space-y-2.5;
   }
 
-  /** Community directory submit — faded full-page background */
+  /** Community directory submit — full-page background with readable cards */
   .community-submit-page {
     position: relative;
     min-height: 100vh;
     background-image:
-      linear-gradient(rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.93)),
+      linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.55)),
       url('/images/community/commsignup.png');
     background-size: cover;
-    background-position: center;
+    background-position: center center;
+    background-repeat: no-repeat;
     background-attachment: fixed;
   }
 
   @media (max-width: 768px) {
     .community-submit-page {
       background-attachment: scroll;
+      background-position: center top;
     }
   }
 
   .community-submit-card {
-    background: rgba(255, 255, 255, 0.94);
+    background: rgba(255, 255, 255, 0.96);
     border: 1px solid rgba(15, 23, 42, 0.08);
-    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
-    backdrop-filter: blur(6px);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+    backdrop-filter: blur(8px);
+  }
+
+  .community-submit-sidebar-card {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
   }
 }
 

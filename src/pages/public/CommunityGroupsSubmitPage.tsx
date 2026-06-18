@@ -809,7 +809,7 @@ export function CommunityGroupsSubmitPage() {
 
           {/* Guidance sidebar */}
           <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
-            <div className="community-submit-card rounded-2xl p-6">
+            <div className="community-submit-sidebar-card rounded-2xl p-6">
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
                 Before you submit
               </p>
@@ -853,7 +853,7 @@ export function CommunityGroupsSubmitPage() {
               </ul>
             </div>
 
-            <div className="community-submit-card rounded-2xl p-5 text-sm leading-relaxed text-muted-foreground">
+            <div className="community-submit-sidebar-card rounded-2xl p-5 text-sm leading-relaxed text-muted-foreground">
               <p className="mb-1 font-semibold text-foreground">Need to update an existing listing?</p>
               <p>
                 Choose &ldquo;Update an existing organization listing&rdquo; in the form and provide
