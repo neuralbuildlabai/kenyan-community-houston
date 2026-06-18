@@ -47,6 +47,8 @@ import { DisclaimerPage } from '@/pages/public/DisclaimerPage'
 import { CertificatesAndAcknowledgementsPage } from '@/pages/public/CertificatesAndAcknowledgementsPage'
 import { ChatPage } from '@/pages/public/ChatPage'
 import { CommunityFeedPage } from '@/pages/public/CommunityFeedPage'
+import { PollDetailPage } from '@/pages/public/PollDetailPage'
+import { PollsIndexPage } from '@/pages/public/PollsIndexPage'
 import { NotFoundPage } from '@/pages/public/NotFoundPage'
 
 import { AdminDashboardPage } from '@/pages/admin/DashboardPage'
@@ -175,6 +177,9 @@ export default function App() {
               />
               <Route path="community-groups" element={<CommunityGroupsPage />} />
               <Route path="community-groups/submit" element={<CommunityGroupsSubmitPage />} />
+
+              <Route path="polls" element={<PollsIndexPage />} />
+              <Route path="polls/:slug" element={<PollDetailPage />} />
 
               <Route path="privacy" element={<PrivacyPage />} />
               <Route path="terms" element={<TermsPage />} />

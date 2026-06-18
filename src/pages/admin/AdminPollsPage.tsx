@@ -395,7 +395,7 @@ function PollCard({
             <p className="mt-1 text-sm text-muted-foreground">{poll.description}</p>
           ) : null}
           <p className="mt-1 text-xs text-muted-foreground">
-            /{poll.slug} · {totalVotes} vote{totalVotes === 1 ? '' : 's'}
+            /polls/{poll.slug} · {totalVotes} vote{totalVotes === 1 ? '' : 's'}
             {closedAt ? ` · closes ${closedAt.toLocaleString()}` : ''}
           </p>
         </div>

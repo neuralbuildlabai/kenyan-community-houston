@@ -52,6 +52,60 @@ export type PollResultRow = {
  * polls match, we pick the most recently created — admins can flip the
  * flag on a different poll to switch what shows on the landing page.
  */
+/** Fetch a single poll by slug. Respects RLS (active only for public; admins see all). */
+export async function fetchPollBySlug(slug: string): Promise<PollWithOptions | null> {
+  const { data: poll, error } = await supabase
+    .from('polls')
+    .select('*')
+    .eq('slug', slug)
+    .maybeSingle()
+
+  if (error || !poll) return null
+
+  const { data: options, error: optErr } = await supabase
+    .from('poll_options')
+    .select('*')
+    .eq('poll_id', poll.id)
+    .order('display_order')
+    .order('created_at')
+
+  if (optErr) return null
+  return { ...(poll as DbPoll), options: (options ?? []) as DbPollOption[] }
+}
+
+/** All active polls for the public index page. */
+export async function fetchActivePolls(): Promise<PollWithOptions[]> {
+  const { data: polls, error } = await supabase
+    .from('polls')
+    .select('*')
+    .eq('is_active', true)
+    .order('is_featured', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  if (error || !polls || polls.length === 0) return []
+
+  const { data: options, error: optErr } = await supabase
+    .from('poll_options')
+    .select('*')
+    .in(
+      'poll_id',
+      polls.map((p) => p.id),
+    )
+    .order('display_order')
+    .order('created_at')
+
+  if (optErr) return []
+
+  const byPoll = new Map<string, DbPollOption[]>()
+  for (const o of (options ?? []) as DbPollOption[]) {
+    const arr = byPoll.get(o.poll_id) ?? []
+    arr.push(o)
+    byPoll.set(o.poll_id, arr)
+  }
+
+  return (polls as DbPoll[]).map((p) => ({ ...p, options: byPoll.get(p.id) ?? [] }))
+}
+
 export async function fetchFeaturedPoll(): Promise<PollWithOptions | null> {
   const { data: poll, error } = await supabase
     .from('polls')

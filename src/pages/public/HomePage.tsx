@@ -214,6 +214,9 @@ export function HomePage() {
 
       </section>
 
+      {/* Featured community poll — prominent CTA right after hero */}
+      <FeaturedPoll />
+
       {/* What's happening — elevated editorial panel that breathes below the hero */}
       <section
         className="relative z-20 -mt-12 px-4 pb-16 sm:-mt-14 sm:px-6 sm:pb-20 lg:-mt-16 lg:px-8 lg:pb-24"
@@ -430,9 +433,6 @@ export function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Featured community poll — renders nothing unless an admin has featured one */}
-      <FeaturedPoll />
 
       {/* Community moments */}
       {moments.length > 0 && (
