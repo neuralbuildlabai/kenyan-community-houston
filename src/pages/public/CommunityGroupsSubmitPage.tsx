@@ -1,13 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  ArrowLeft,
-  CheckCircle,
-  HeartHandshake,
-  ShieldCheck,
-  Sparkles,
-  Users,
-} from 'lucide-react'
+import { ArrowLeft, CheckCircle, ShieldCheck, Sparkles, Users } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,27 +13,13 @@ import type { CommunityGroupCategory } from '@/lib/types'
 import { generateSlug } from '@/lib/utils'
 import { normalizeExternalUrl } from '@/lib/externalUrl'
 import { sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
-import {
-  BEST_CONTACT_METHOD_OPTIONS,
-  JULY_INTRO_OPTIONS,
-  JULY_INTEREST_OPTIONS,
-  SUBMISSION_PURPOSE_OPTIONS,
-  submissionPurposeIncludesJuly,
-  type BestContactMethod,
-  type CommunityGroupSubmissionPurpose,
-  type JulyInterest,
-  type JulyIntroInterest,
-} from '@/lib/communityGroupSubmission'
+import { BEST_CONTACT_METHOD_OPTIONS, type BestContactMethod } from '@/lib/communityGroupSubmission'
 import { toast } from 'sonner'
 
 const CATEGORY_NONE = '__none__'
-const PURPOSE_NONE = '__none__'
 const CONTACT_METHOD_NONE = '__none__'
-const JULY_INTEREST_NONE = '__none__'
-const JULY_INTRO_NONE = '__none__'
 
 type FormState = {
-  submission_purpose: CommunityGroupSubmissionPurpose | typeof PURPOSE_NONE
   organization_name: string
   category: typeof CATEGORY_NONE | CommunityGroupCategory
   description: string
@@ -61,18 +40,11 @@ type FormState = {
   submitter_email: string
   notes: string
   authorized_submission: boolean
-  july_interest: JulyInterest | typeof JULY_INTEREST_NONE
-  july_representative_name: string
-  july_representative_contact: string
-  july_estimated_attendees: string
-  july_intro_interest: JulyIntroInterest | typeof JULY_INTRO_NONE
-  july_topics: string
-  july_notes: string
+  community_social_interest: boolean
 }
 
 function emptyForm(): FormState {
   return {
-    submission_purpose: PURPOSE_NONE,
     organization_name: '',
     category: CATEGORY_NONE,
     description: '',
@@ -93,13 +65,7 @@ function emptyForm(): FormState {
     submitter_email: '',
     notes: '',
     authorized_submission: false,
-    july_interest: JULY_INTEREST_NONE,
-    july_representative_name: '',
-    july_representative_contact: '',
-    july_estimated_attendees: '',
-    july_intro_interest: JULY_INTRO_NONE,
-    july_topics: '',
-    july_notes: '',
+    community_social_interest: false,
   }
 }
 
@@ -126,17 +92,9 @@ export function CommunityGroupsSubmitPage() {
   const [submitted, setSubmitted] = useState(false)
   const [form, setForm] = useState<FormState>(emptyForm)
 
-  const includesJuly =
-    form.submission_purpose !== PURPOSE_NONE &&
-    submissionPurposeIncludesJuly(form.submission_purpose)
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
-    if (form.submission_purpose === PURPOSE_NONE) {
-      toast.error('Please choose how your organization would like to be included.')
-      return
-    }
     if (!form.organization_name.trim() || form.category === CATEGORY_NONE || !form.description.trim()) {
       toast.error('Please complete organization name, category, and description.')
       return
@@ -162,17 +120,6 @@ export function CommunityGroupsSubmitPage() {
     if (!form.authorized_submission) {
       toast.error('Please confirm you are authorized to submit this organization\'s information.')
       return
-    }
-
-    if (includesJuly) {
-      if (form.july_interest === JULY_INTEREST_NONE) {
-        toast.error('Please indicate your interest in the July community social.')
-        return
-      }
-      if (!form.july_representative_name.trim() || !form.july_representative_contact.trim()) {
-        toast.error('Please provide a July representative name and contact.')
-        return
-      }
     }
 
     const contactPhoneRes = validatePhoneNumber(form.contact_person_phone, { allowEmpty: false })
@@ -201,9 +148,6 @@ export function CommunityGroupsSubmitPage() {
     }
 
     const slug = `${generateSlug(form.organization_name)}-${Date.now().toString(36)}`
-    const julyAttendees = form.july_estimated_attendees.trim()
-      ? parseInt(form.july_estimated_attendees, 10)
-      : null
 
     setLoading(true)
     const { error } = await supabase.from('community_groups').insert([
@@ -223,7 +167,7 @@ export function CommunityGroupsSubmitPage() {
         submitter_email: form.submitter_email.trim(),
         notes: form.notes.trim() || null,
         status: 'pending',
-        submission_purpose: form.submission_purpose,
+        submission_purpose: 'directory_listing',
         contact_person_name: form.contact_person_name.trim(),
         contact_person_role: form.contact_person_role.trim(),
         contact_person_email: form.contact_person_email.trim(),
@@ -231,19 +175,7 @@ export function CommunityGroupsSubmitPage() {
         best_contact_method: form.best_contact_method,
         authorized_submission: true,
         public_contact_ok: form.public_contact_ok,
-        july_interest: includesJuly ? form.july_interest : null,
-        july_representative_name: includesJuly ? form.july_representative_name.trim() : null,
-        july_representative_contact: includesJuly ? form.july_representative_contact.trim() : null,
-        july_estimated_attendees:
-          includesJuly && julyAttendees !== null && !Number.isNaN(julyAttendees)
-            ? julyAttendees
-            : null,
-        july_intro_interest:
-          includesJuly && form.july_intro_interest !== JULY_INTRO_NONE
-            ? form.july_intro_interest
-            : null,
-        july_topics: includesJuly ? form.july_topics.trim() || null : null,
-        july_notes: includesJuly ? form.july_notes.trim() || null : null,
+        community_social_interest: form.community_social_interest,
       },
     ])
     setLoading(false)
@@ -283,8 +215,7 @@ export function CommunityGroupsSubmitPage() {
         description="Register Kenyan-led churches, associations, welfare groups, youth groups, cultural organizations, nonprofits, alumni groups, and community institutions across Greater Houston."
       />
 
-      {/* Header */}
-      <header className="border-b border-border/30 bg-white/70 backdrop-blur-sm">
+      <header className="border-b border-border/20">
         <div className="public-container py-8 sm:py-10">
           <Button asChild variant="ghost" size="sm" className="mb-4 gap-1 -ml-3">
             <Link to="/community-groups">
@@ -298,16 +229,16 @@ export function CommunityGroupsSubmitPage() {
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             Register a Community Group or Institution
           </h1>
-          <p className="mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground">
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
             Help us build a trusted directory of Kenyan-led churches, associations, welfare groups,
-            youth groups, cultural organizations, nonprofits, alumni groups, and community
-            institutions across Greater Houston. You do not have to be a KIGH member to register an
-            organization, though membership is highly encouraged as it helps strengthen and support
-            the wider community.
+            youth groups, nonprofits, alumni groups, and community institutions across Greater
+            Houston.
           </p>
-          <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
-            Once your organization is registered or updated, you may also indicate whether your group
-            would like to participate in the July community social session.
+          <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
+            KIGH membership is encouraged, but not required to register an organization.{' '}
+            <Link to="/membership" className="font-medium text-primary underline underline-offset-2">
+              Learn about membership
+            </Link>
           </p>
         </div>
       </header>
@@ -319,68 +250,7 @@ export function CommunityGroupsSubmitPage() {
               onSubmit={(e) => void handleSubmit(e)}
               className="community-submit-card space-y-8 rounded-2xl p-6 sm:p-8"
             >
-              {/* July notice */}
-              <div
-                className="rounded-xl border border-amber-200/80 bg-amber-50/70 px-5 py-4"
-                role="note"
-              >
-                <p className="text-sm font-semibold text-amber-950">July Community Social</p>
-                <p className="mt-1.5 text-sm leading-relaxed text-amber-900/85">
-                  We are inviting registered community organizations to connect, share updates, and
-                  strengthen collaboration. Please register or update your organization details
-                  first, then let us know if your group would like to participate in the July
-                  community social session.
-                </p>
-              </div>
-
-              {/* Membership note */}
-              <p className="rounded-lg border border-border/40 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-                KIGH membership is not required to register an organization. However, we highly
-                encourage members and organization leaders to{' '}
-                <Link to="/membership" className="font-medium text-primary underline underline-offset-2">
-                  join and support KIGH
-                </Link>{' '}
-                so we can continue building strong community programs, events, and services.
-              </p>
-
-              {/* Organization participation */}
-              <FormSection
-                title="Organization participation"
-                description="Choose how your organization would like to be included."
-              >
-                <div className="form-field-stack">
-                  <Label htmlFor="submission_purpose">Organization participation *</Label>
-                  <Select
-                    value={form.submission_purpose}
-                    onValueChange={(v) =>
-                      setForm((f) => ({
-                        ...f,
-                        submission_purpose: v as CommunityGroupSubmissionPurpose,
-                      }))
-                    }
-                  >
-                    <SelectTrigger id="submission_purpose">
-                      <SelectValue placeholder="Select an option" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={PURPOSE_NONE} disabled>
-                        Select an option
-                      </SelectItem>
-                      {SUBMISSION_PURPOSE_OPTIONS.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </FormSection>
-
-              {/* Organization basics */}
-              <FormSection
-                title="Organization basics"
-                description="These details form your organization's directory record."
-              >
+              <FormSection title="Organization details">
                 <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
                   <div className="sm:col-span-2 form-field-stack">
                     <Label htmlFor="organization_name">Organization name *</Label>
@@ -426,17 +296,15 @@ export function CommunityGroupsSubmitPage() {
                       required
                     />
                     <p className="text-[11px] text-muted-foreground">
-                      Tell the community who you serve, what you do, and how people can connect with
-                      your organization.
+                      Who you serve, what you do, and how people can connect with your organization.
                     </p>
                   </div>
                 </div>
               </FormSection>
 
-              {/* Public contact */}
               <FormSection
                 title="Public contact"
-                description="Only enter contact information you are comfortable having shown publicly after the listing is approved."
+                description="Only enter information you are comfortable showing publicly after approval."
               >
                 <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
                   <div className="form-field-stack">
@@ -445,7 +313,7 @@ export function CommunityGroupsSubmitPage() {
                       id="website_url"
                       type="text"
                       inputMode="url"
-                      placeholder="example.org or https://example.org"
+                      placeholder="example.org"
                       value={form.website_url}
                       onChange={(e) => setForm((f) => ({ ...f, website_url: e.target.value }))}
                     />
@@ -502,8 +370,7 @@ export function CommunityGroupsSubmitPage() {
                 </div>
               </FormSection>
 
-              {/* Where you meet */}
-              <FormSection title="Where you meet and who you serve">
+              <FormSection title="Location & service area">
                 <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
                   <div className="form-field-stack">
                     <Label htmlFor="meeting_location">Meeting location</Label>
@@ -519,21 +386,17 @@ export function CommunityGroupsSubmitPage() {
                     <Label htmlFor="service_area">Service area *</Label>
                     <Input
                       id="service_area"
-                      placeholder="Southwest Houston, Katy, Sugar Land…"
+                      placeholder="Southwest Houston, Katy, Greater Houston…"
                       value={form.service_area}
                       onChange={(e) => setForm((f) => ({ ...f, service_area: e.target.value }))}
                       required
                     />
-                    <p className="text-[11px] text-muted-foreground">
-                      Examples: Southwest Houston, Katy, Sugar Land, Cypress, Pearland, Fort Bend,
-                      Greater Houston, or online.
-                    </p>
                   </div>
                   <div className="sm:col-span-2 form-field-stack">
                     <Label htmlFor="contact_person">Contact person shown publicly</Label>
                     <Input
                       id="contact_person"
-                      placeholder="Optional — only if this person should appear on the listing"
+                      placeholder="Optional"
                       value={form.contact_person}
                       onChange={(e) => setForm((f) => ({ ...f, contact_person: e.target.value }))}
                     />
@@ -541,10 +404,9 @@ export function CommunityGroupsSubmitPage() {
                 </div>
               </FormSection>
 
-              {/* Internal contact */}
               <FormSection
-                title="Internal contact / outreach contact"
-                description="Internal contact details are used for review and outreach. They are not shown publicly unless also entered in the public contact fields."
+                title="Contact person"
+                description="For KIGH review and outreach. Not shown publicly unless also entered above."
               >
                 <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
                   <div className="form-field-stack">
@@ -641,140 +503,22 @@ export function CommunityGroupsSubmitPage() {
                       required
                     />
                   </div>
-                  <div className="sm:col-span-2 form-field-stack">
-                    <Label htmlFor="notes">Notes for reviewers</Label>
-                    <Textarea
-                      id="notes"
-                      rows={3}
-                      value={form.notes}
-                      onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                      placeholder="Optional context for reviewers — not shown publicly."
-                    />
-                  </div>
                 </div>
               </FormSection>
 
-              {/* July participation — conditional */}
-              {includesJuly ? (
-                <FormSection
-                  title="July Community Social Participation"
-                  description="Let us know how your organization would like to be represented at the July community social session."
-                >
-                  <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
-                    <div className="sm:col-span-2 form-field-stack">
-                      <Label htmlFor="july_interest">
-                        Is your organization interested in attending the July community social? *
-                      </Label>
-                      <Select
-                        value={form.july_interest}
-                        onValueChange={(v) =>
-                          setForm((f) => ({
-                            ...f,
-                            july_interest: v as FormState['july_interest'],
-                          }))
-                        }
-                      >
-                        <SelectTrigger id="july_interest">
-                          <SelectValue placeholder="Select one" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={JULY_INTEREST_NONE} disabled>
-                            Select one
-                          </SelectItem>
-                          {JULY_INTEREST_OPTIONS.map((o) => (
-                            <SelectItem key={o.value} value={o.value}>
-                              {o.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="form-field-stack">
-                      <Label htmlFor="july_representative_name">Representative name *</Label>
-                      <Input
-                        id="july_representative_name"
-                        value={form.july_representative_name}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, july_representative_name: e.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="form-field-stack">
-                      <Label htmlFor="july_representative_contact">
-                        Representative phone/email *
-                      </Label>
-                      <Input
-                        id="july_representative_contact"
-                        value={form.july_representative_contact}
-                        onChange={(e) =>
-                          setForm((f) => ({
-                            ...f,
-                            july_representative_contact: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div className="form-field-stack">
-                      <Label htmlFor="july_estimated_attendees">Estimated number of attendees</Label>
-                      <Input
-                        id="july_estimated_attendees"
-                        type="number"
-                        min={1}
-                        value={form.july_estimated_attendees}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, july_estimated_attendees: e.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="form-field-stack">
-                      <Label htmlFor="july_intro_interest">
-                        Would your organization like to briefly introduce itself?
-                      </Label>
-                      <Select
-                        value={form.july_intro_interest}
-                        onValueChange={(v) =>
-                          setForm((f) => ({
-                            ...f,
-                            july_intro_interest: v as FormState['july_intro_interest'],
-                          }))
-                        }
-                      >
-                        <SelectTrigger id="july_intro_interest">
-                          <SelectValue placeholder="Optional" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={JULY_INTRO_NONE}>Not specified</SelectItem>
-                          {JULY_INTRO_OPTIONS.map((o) => (
-                            <SelectItem key={o.value} value={o.value}>
-                              {o.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="sm:col-span-2 form-field-stack">
-                      <Label htmlFor="july_topics">Any topics you would like discussed?</Label>
-                      <Textarea
-                        id="july_topics"
-                        rows={2}
-                        value={form.july_topics}
-                        onChange={(e) => setForm((f) => ({ ...f, july_topics: e.target.value }))}
-                      />
-                    </div>
-                    <div className="sm:col-span-2 form-field-stack">
-                      <Label htmlFor="july_notes">Notes for July planning team</Label>
-                      <Textarea
-                        id="july_notes"
-                        rows={2}
-                        value={form.july_notes}
-                        onChange={(e) => setForm((f) => ({ ...f, july_notes: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                </FormSection>
-              ) : null}
+              <FormSection title="Reviewer notes">
+                <div className="form-field-stack">
+                  <Label htmlFor="notes">Notes for reviewers</Label>
+                  <Textarea
+                    id="notes"
+                    rows={3}
+                    value={form.notes}
+                    onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                    placeholder="Optional — include updates to an existing listing or other context."
+                  />
+                </div>
+              </FormSection>
 
-              {/* Authorization */}
               <div className="rounded-xl border border-border/50 bg-muted/15 px-5 py-4">
                 <label className="flex cursor-pointer items-start gap-3 text-sm">
                   <input
@@ -794,7 +538,33 @@ export function CommunityGroupsSubmitPage() {
                 </label>
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div
+                className="rounded-xl border border-primary/15 bg-primary/[0.04] px-5 py-4"
+                data-testid="community-social-interest"
+              >
+                <p className="text-sm font-semibold text-foreground">
+                  Interested in the Community Social?
+                </p>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  If your organization would like to be considered for the upcoming community
+                  social/session, let us know. Our team will follow up using the contact person
+                  details provided above.
+                </p>
+                <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={form.community_social_interest}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, community_social_interest: e.target.checked }))
+                    }
+                    className="mt-0.5 h-4 w-4 accent-primary"
+                    data-testid="community-social-interest-checkbox"
+                  />
+                  <span>Yes, our organization is interested in community social participation.</span>
+                </label>
+              </div>
+
+              <div>
                 <Button
                   type="submit"
                   size="lg"
@@ -807,13 +577,12 @@ export function CommunityGroupsSubmitPage() {
             </form>
           </div>
 
-          {/* Guidance sidebar */}
           <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
             <div className="community-submit-sidebar-card rounded-2xl p-6">
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
                 Before you submit
               </p>
-              <ul className="mt-4 space-y-4 text-sm text-muted-foreground">
+              <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
                 <li className="flex gap-3">
                   <Users className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" aria-hidden />
                   <span>
@@ -824,8 +593,7 @@ export function CommunityGroupsSubmitPage() {
                 <li className="flex gap-3">
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" aria-hidden />
                   <span>
-                    <span className="font-medium text-foreground">Commercial businesses</span>{' '}
-                    should use the{' '}
+                    Businesses should use the{' '}
                     <Link to="/businesses/submit" className="text-primary underline underline-offset-2">
                       Business Directory
                     </Link>
@@ -833,33 +601,19 @@ export function CommunityGroupsSubmitPage() {
                   </span>
                 </li>
                 <li className="flex gap-3">
-                  <HeartHandshake className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" aria-hidden />
-                  <span>
-                    You do not have to be a KIGH member to register, though membership is highly
-                    encouraged.
-                  </span>
+                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" aria-hidden />
+                  <span>Contact person details help us verify and follow up.</span>
                 </li>
                 <li className="flex gap-3">
                   <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" aria-hidden />
-                  <span>Directory listings are reviewed before publishing.</span>
-                </li>
-                <li className="flex gap-3">
-                  <Users className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" aria-hidden />
-                  <span>
-                    Organizations interested in the July community social should register or update
-                    their organization first, then select the July participation option.
-                  </span>
+                  <span>Listings are reviewed before publishing.</span>
                 </li>
               </ul>
             </div>
 
             <div className="community-submit-sidebar-card rounded-2xl p-5 text-sm leading-relaxed text-muted-foreground">
-              <p className="mb-1 font-semibold text-foreground">Need to update an existing listing?</p>
-              <p>
-                Choose &ldquo;Update an existing organization listing&rdquo; in the form and provide
-                the correct organization details. Our reviewers will verify the update before
-                publishing changes.
-              </p>
+              <p className="mb-1 font-semibold text-foreground">Need to update a listing?</p>
+              <p>Use this form and note what should be changed in the reviewer notes.</p>
             </div>
           </aside>
         </div>

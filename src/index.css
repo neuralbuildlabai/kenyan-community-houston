@@ -86,37 +86,78 @@
     @apply space-y-2.5;
   }
 
-  /** Community directory submit — full-page background with readable cards */
+  /** Community directory submit — warm page with right-side image accent */
   .community-submit-page {
     position: relative;
     min-height: 100vh;
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.55)),
-      url('/images/community/commsignup.png');
+    background: linear-gradient(135deg, #fffaf3 0%, #f8f3ea 45%, #eef4ef 100%);
+    overflow: hidden;
+  }
+
+  .community-submit-page::before {
+    content: '';
+    position: fixed;
+    inset: 0 0 0 auto;
+    width: 58vw;
+    background-image: url('/images/community/commsignup.png');
     background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
+    background-position: center;
+    opacity: 0.58;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .community-submit-page::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 250, 243, 0.98) 0%,
+      rgba(255, 250, 243, 0.92) 42%,
+      rgba(255, 250, 243, 0.58) 70%,
+      rgba(255, 250, 243, 0.32) 100%
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .community-submit-page > * {
+    position: relative;
+    z-index: 1;
   }
 
   @media (max-width: 768px) {
-    .community-submit-page {
-      background-attachment: scroll;
+    .community-submit-page::before {
+      position: absolute;
+      width: 100%;
+      height: 320px;
+      opacity: 0.35;
       background-position: center top;
+    }
+
+    .community-submit-page::after {
+      background: linear-gradient(
+        180deg,
+        rgba(255, 250, 243, 0.72) 0%,
+        rgba(255, 250, 243, 0.96) 280px,
+        rgba(255, 250, 243, 1) 100%
+      );
     }
   }
 
   .community-submit-card {
     background: rgba(255, 255, 255, 0.96);
     border: 1px solid rgba(15, 23, 42, 0.08);
-    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.1);
     backdrop-filter: blur(8px);
   }
 
   .community-submit-sidebar-card {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.94);
     border: 1px solid rgba(15, 23, 42, 0.08);
-    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+    backdrop-filter: blur(6px);
   }
 }
 

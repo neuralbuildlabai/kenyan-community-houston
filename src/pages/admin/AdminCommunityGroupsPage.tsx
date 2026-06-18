@@ -20,22 +20,21 @@ import type { CommunityGroup, CommunityGroupCategory, CommunityGroupStatus } fro
 import {
   bestContactMethodLabel,
   julyInterestLabel,
-  submissionPurposeBadge,
   submissionPurposeIncludesJuly,
 } from '@/lib/communityGroupSubmission'
 
 const STATUS_FILTER = ['all', 'pending', 'approved', 'published', 'rejected', 'archived'] as const
 const CATEGORY_FILTER = ['all', ...COMMUNITY_GROUP_CATEGORIES.map((c) => c.value)] as const
-const PURPOSE_FILTER = [
-  'all',
-  'directory_listing',
-  'directory_and_july_participation',
-  'update_existing',
-  'update_existing_and_july_participation',
-] as const
+const SOCIAL_INTEREST_FILTER = ['all', 'interest', 'no_interest'] as const
 
 function categoryLabel(v: string): string {
   return COMMUNITY_GROUP_CATEGORIES.find((c) => c.value === v)?.label ?? v
+}
+
+/** New flag or legacy July-participation submissions from migration 065. */
+function hasCommunitySocialInterest(r: CommunityGroup): boolean {
+  if (r.community_social_interest) return true
+  return submissionPurposeIncludesJuly(r.submission_purpose ?? '')
 }
 
 type GroupForm = {
@@ -84,7 +83,8 @@ export function AdminCommunityGroupsPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTER)[number]>('all')
   const [catFilter, setCatFilter] = useState<(typeof CATEGORY_FILTER)[number]>('all')
-  const [purposeFilter, setPurposeFilter] = useState<(typeof PURPOSE_FILTER)[number]>('all')
+  const [socialInterestFilter, setSocialInterestFilter] =
+    useState<(typeof SOCIAL_INTEREST_FILTER)[number]>('all')
   const [open, setOpen] = useState(false)
   const [editingRow, setEditingRow] = useState<CommunityGroup | null>(null)
   const [form, setForm] = useState<GroupForm>(emptyForm)
@@ -105,9 +105,8 @@ export function AdminCommunityGroupsPage() {
   const filtered = rows.filter((r) => {
     if (statusFilter !== 'all' && r.status !== statusFilter) return false
     if (catFilter !== 'all' && r.category !== catFilter) return false
-    if (purposeFilter !== 'all' && (r.submission_purpose ?? 'directory_listing') !== purposeFilter) {
-      return false
-    }
+    if (socialInterestFilter === 'interest' && !hasCommunitySocialInterest(r)) return false
+    if (socialInterestFilter === 'no_interest' && hasCommunitySocialInterest(r)) return false
     if (search.trim()) {
       const s = search.trim().toLowerCase()
       const hay = [
@@ -263,18 +262,18 @@ export function AdminCommunityGroupsPage() {
           </SelectContent>
         </Select>
         <Select
-          value={purposeFilter}
-          onValueChange={(v) => setPurposeFilter(v as (typeof PURPOSE_FILTER)[number])}
+          value={socialInterestFilter}
+          onValueChange={(v) =>
+            setSocialInterestFilter(v as (typeof SOCIAL_INTEREST_FILTER)[number])
+          }
         >
           <SelectTrigger className="w-full sm:w-52">
-            <SelectValue placeholder="Purpose" />
+            <SelectValue placeholder="Social interest" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All purposes</SelectItem>
-            <SelectItem value="directory_listing">Directory Listing</SelectItem>
-            <SelectItem value="directory_and_july_participation">Directory + July</SelectItem>
-            <SelectItem value="update_existing">Update Existing</SelectItem>
-            <SelectItem value="update_existing_and_july_participation">Update + July</SelectItem>
+            <SelectItem value="all">All submissions</SelectItem>
+            <SelectItem value="interest">Community Social Interest</SelectItem>
+            <SelectItem value="no_interest">No social interest</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -285,7 +284,7 @@ export function AdminCommunityGroupsPage() {
             <TableRow>
               <TableHead>Organization</TableHead>
               <TableHead className="hidden md:table-cell">Category</TableHead>
-              <TableHead className="hidden lg:table-cell">Purpose</TableHead>
+              <TableHead className="hidden lg:table-cell">Interest</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="hidden lg:table-cell">Verified</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -322,16 +321,13 @@ export function AdminCommunityGroupsPage() {
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-sm">{categoryLabel(r.category)}</TableCell>
                   <TableCell className="hidden lg:table-cell">
-                    <div className="flex flex-col gap-1">
-                      <Badge variant="outline" className="w-fit text-[10px]">
-                        {submissionPurposeBadge(r.submission_purpose)}
+                    {hasCommunitySocialInterest(r) ? (
+                      <Badge variant="gold" className="w-fit text-[10px]">
+                        Community Social Interest
                       </Badge>
-                      {submissionPurposeIncludesJuly(r.submission_purpose ?? '') && r.july_interest ? (
-                        <span className="text-[10px] text-muted-foreground">
-                          July: {julyInterestLabel(r.july_interest)}
-                        </span>
-                      ) : null}
-                    </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge variant={r.status === 'published' ? 'default' : 'secondary'}>{r.status}</Badge>
@@ -452,9 +448,9 @@ export function AdminCommunityGroupsPage() {
             </div>
             <div className="rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground space-y-2">
               <div className="flex flex-wrap gap-2">
-                <Badge variant="outline">
-                  {submissionPurposeBadge(editingRow?.submission_purpose)}
-                </Badge>
+                {editingRow && hasCommunitySocialInterest(editingRow) ? (
+                  <Badge variant="gold">Community Social Interest</Badge>
+                ) : null}
                 {editingRow?.authorized_submission ? (
                   <Badge variant="secondary">Authorized ✓</Badge>
                 ) : null}

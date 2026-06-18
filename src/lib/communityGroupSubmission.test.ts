@@ -22,6 +22,17 @@ describe('migration 065 community groups submission enhancements', () => {
   })
 })
 
+describe('migration 066 community social interest', () => {
+  it('adds community_social_interest boolean column', () => {
+    const p = resolve(
+      process.cwd(),
+      'supabase/migrations/066_community_social_interest.sql'
+    )
+    const sql = readFileSync(p, 'utf8')
+    expect(sql).toContain('community_social_interest boolean not null default false')
+  })
+})
+
 describe('communityGroupSubmission helpers', () => {
   it('detects July-inclusive purposes', () => {
     expect(submissionPurposeIncludesJuly('directory_listing')).toBe(false)

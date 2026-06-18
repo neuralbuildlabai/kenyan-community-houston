@@ -429,6 +429,7 @@ export interface CommunityGroup extends CommunityGroupPublic {
   july_intro_interest?: string | null
   july_topics?: string | null
   july_notes?: string | null
+  community_social_interest?: boolean
 }
 
 export interface Resource {

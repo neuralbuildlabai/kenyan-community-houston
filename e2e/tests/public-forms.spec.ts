@@ -40,9 +40,6 @@ test.describe('public form submissions', () => {
       page.getByRole('heading', { name: /Register a Community Group or Institution/i })
     ).toBeVisible()
 
-    await page.getByLabel('Organization participation').click()
-    await page.getByRole('option', { name: /Add our organization to the community directory/i }).click()
-
     await page.getByLabel('Organization name').fill(uniqueName('E2E Group'))
     await page.getByRole('combobox').filter({ hasText: /Select category|Category/i }).click()
     await page.getByRole('option', { name: 'Church / Faith Community' }).click()
