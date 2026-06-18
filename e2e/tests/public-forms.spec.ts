@@ -36,13 +36,32 @@ test.describe('public form submissions', () => {
 
   test('community group submit', async ({ page }) => {
     await page.goto('/community-groups/submit')
+    await expect(
+      page.getByRole('heading', { name: /Register a Community Group or Institution/i })
+    ).toBeVisible()
+
+    await page.getByLabel('Organization participation').click()
+    await page.getByRole('option', { name: /Add our organization to the community directory/i }).click()
+
     await page.getByLabel('Organization name').fill(uniqueName('E2E Group'))
-    await page.getByRole('combobox').click()
-    await page.getByRole('option', { name: 'Religious Institution' }).click()
+    await page.getByRole('combobox').filter({ hasText: /Select category|Category/i }).click()
+    await page.getByRole('option', { name: 'Church / Faith Community' }).click()
     await page.getByLabel('Description').fill('E2E test submission for community directory.')
-    await page.getByLabel('Your name').fill('E2E Submitter')
-    await page.getByLabel('Your email').fill(uniqueEmail('e2e-group'))
-    await page.getByRole('button', { name: /Submit for review/i }).click()
+    await page.getByLabel('Service area').fill('Greater Houston')
+
+    await page.getByLabel('Contact person name').fill('E2E Contact')
+    await page.getByLabel('Contact person role/title').fill('Coordinator')
+    await page.getByLabel('Contact person email').fill(uniqueEmail('e2e-contact'))
+    await page.getByLabel('Contact person phone').fill('7135550100')
+    await page.getByLabel('Best way to reach them').click()
+    await page.getByRole('option', { name: 'Email' }).click()
+
+    await page.getByLabel('Submitter name').fill('E2E Submitter')
+    await page.getByLabel('Submitter email').fill(uniqueEmail('e2e-group'))
+
+    await page.getByRole('checkbox', { name: /authorized to submit/i }).check()
+
+    await page.getByRole('button', { name: /Submit organization for review/i }).click()
     await expect(page.getByRole('heading', { name: /Thank you/i })).toBeVisible({ timeout: 30_000 })
   })
 

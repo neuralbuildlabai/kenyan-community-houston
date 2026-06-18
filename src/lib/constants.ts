@@ -49,21 +49,33 @@ export const MEMBERSHIP_INTEREST_OPTIONS = [
 /** DB `community_groups.category` values (non-commercial directory). */
 export const COMMUNITY_GROUP_CATEGORY_VALUES = [
   'religious_institution',
-  'benevolence_group',
   'welfare_group',
-  'youth_family_group',
   'cultural_organization',
+  'youth_family_group',
+  'women_group',
+  'mens_group',
   'professional_networking_group',
+  'alumni_group',
+  'nonprofit',
+  'community_institution',
+  'sports_recreation_group',
+  'benevolence_group',
   'other',
 ] as const
 
 export const COMMUNITY_GROUP_CATEGORIES: { value: (typeof COMMUNITY_GROUP_CATEGORY_VALUES)[number]; label: string }[] = [
-  { value: 'religious_institution', label: 'Religious Institution' },
-  { value: 'benevolence_group', label: 'Benevolence Group' },
-  { value: 'welfare_group', label: 'Welfare Group' },
-  { value: 'youth_family_group', label: 'Youth / Family Group' },
-  { value: 'cultural_organization', label: 'Cultural Organization' },
-  { value: 'professional_networking_group', label: 'Professional / Networking Group' },
+  { value: 'religious_institution', label: 'Church / Faith Community' },
+  { value: 'welfare_group', label: 'Welfare Association' },
+  { value: 'cultural_organization', label: 'Cultural Group' },
+  { value: 'youth_family_group', label: 'Youth Group' },
+  { value: 'women_group', label: "Women's Group" },
+  { value: 'mens_group', label: "Men's Group" },
+  { value: 'professional_networking_group', label: 'Professional Association' },
+  { value: 'alumni_group', label: 'Alumni Group' },
+  { value: 'nonprofit', label: 'Nonprofit' },
+  { value: 'community_institution', label: 'Community Institution' },
+  { value: 'sports_recreation_group', label: 'Sports / Recreation Group' },
+  { value: 'benevolence_group', label: 'Benevolence / Mutual Aid Group' },
   { value: 'other', label: 'Other' },
 ]
 

@@ -77,7 +77,7 @@ export function CommunityGroupsPage() {
         subtitle="Churches, associations, benevolence and welfare circles, youth and family groups, cultural organizations, and nonprofits serving Kenyans and friends of Kenya across Greater Houston. Non-commercial listings — reviewed before publication."
         primaryAction={
           <Button asChild size="sm">
-            <Link to="/community-groups/submit">Submit a group</Link>
+            <Link to="/community-groups/submit">Register a group</Link>
           </Button>
         }
         tone="sage"
@@ -174,7 +174,7 @@ export function CommunityGroupsPage() {
                 </Button>
               ) : (
                 <Button asChild>
-                  <Link to="/community-groups/submit">Submit a group / institution</Link>
+                  <Link to="/community-groups/submit">Register a group or institution</Link>
                 </Button>
               )
             }

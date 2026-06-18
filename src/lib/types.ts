@@ -373,7 +373,19 @@ export type CommunityGroupCategory =
   | 'youth_family_group'
   | 'cultural_organization'
   | 'professional_networking_group'
+  | 'women_group'
+  | 'mens_group'
+  | 'alumni_group'
+  | 'nonprofit'
+  | 'community_institution'
+  | 'sports_recreation_group'
   | 'other'
+
+export type CommunityGroupSubmissionPurpose =
+  | 'directory_listing'
+  | 'directory_and_july_participation'
+  | 'update_existing'
+  | 'update_existing_and_july_participation'
 
 export type CommunityGroupStatus = 'pending' | 'approved' | 'published' | 'rejected' | 'archived'
 
@@ -402,6 +414,21 @@ export interface CommunityGroup extends CommunityGroupPublic {
   submitter_name: string
   submitter_email: string
   notes: string | null
+  submission_purpose?: CommunityGroupSubmissionPurpose
+  contact_person_name?: string | null
+  contact_person_role?: string | null
+  contact_person_email?: string | null
+  contact_person_phone?: string | null
+  best_contact_method?: string | null
+  authorized_submission?: boolean
+  public_contact_ok?: boolean
+  july_interest?: string | null
+  july_representative_name?: string | null
+  july_representative_contact?: string | null
+  july_estimated_attendees?: number | null
+  july_intro_interest?: string | null
+  july_topics?: string | null
+  july_notes?: string | null
 }
 
 export interface Resource {

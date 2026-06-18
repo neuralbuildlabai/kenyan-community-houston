@@ -17,9 +17,22 @@ import { sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
 import { toast } from 'sonner'
 import { isoNow } from '@/lib/publishLifecycle'
 import type { CommunityGroup, CommunityGroupCategory, CommunityGroupStatus } from '@/lib/types'
+import {
+  bestContactMethodLabel,
+  julyInterestLabel,
+  submissionPurposeBadge,
+  submissionPurposeIncludesJuly,
+} from '@/lib/communityGroupSubmission'
 
 const STATUS_FILTER = ['all', 'pending', 'approved', 'published', 'rejected', 'archived'] as const
 const CATEGORY_FILTER = ['all', ...COMMUNITY_GROUP_CATEGORIES.map((c) => c.value)] as const
+const PURPOSE_FILTER = [
+  'all',
+  'directory_listing',
+  'directory_and_july_participation',
+  'update_existing',
+  'update_existing_and_july_participation',
+] as const
 
 function categoryLabel(v: string): string {
   return COMMUNITY_GROUP_CATEGORIES.find((c) => c.value === v)?.label ?? v
@@ -71,7 +84,9 @@ export function AdminCommunityGroupsPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTER)[number]>('all')
   const [catFilter, setCatFilter] = useState<(typeof CATEGORY_FILTER)[number]>('all')
+  const [purposeFilter, setPurposeFilter] = useState<(typeof PURPOSE_FILTER)[number]>('all')
   const [open, setOpen] = useState(false)
+  const [editingRow, setEditingRow] = useState<CommunityGroup | null>(null)
   const [form, setForm] = useState<GroupForm>(emptyForm)
   const [saving, setSaving] = useState(false)
 
@@ -90,9 +105,22 @@ export function AdminCommunityGroupsPage() {
   const filtered = rows.filter((r) => {
     if (statusFilter !== 'all' && r.status !== statusFilter) return false
     if (catFilter !== 'all' && r.category !== catFilter) return false
+    if (purposeFilter !== 'all' && (r.submission_purpose ?? 'directory_listing') !== purposeFilter) {
+      return false
+    }
     if (search.trim()) {
       const s = search.trim().toLowerCase()
-      const hay = [r.organization_name, r.submitter_name, r.submitter_email, r.public_email, r.public_phone, r.description]
+      const hay = [
+        r.organization_name,
+        r.submitter_name,
+        r.submitter_email,
+        r.public_email,
+        r.public_phone,
+        r.description,
+        r.contact_person_name,
+        r.contact_person_email,
+        r.contact_person_phone,
+      ]
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
@@ -102,6 +130,7 @@ export function AdminCommunityGroupsPage() {
   })
 
   function openEdit(r: CommunityGroup) {
+    setEditingRow(r)
     setForm({
       id: r.id,
       organization_name: r.organization_name,
@@ -233,6 +262,21 @@ export function AdminCommunityGroupsPage() {
             ))}
           </SelectContent>
         </Select>
+        <Select
+          value={purposeFilter}
+          onValueChange={(v) => setPurposeFilter(v as (typeof PURPOSE_FILTER)[number])}
+        >
+          <SelectTrigger className="w-full sm:w-52">
+            <SelectValue placeholder="Purpose" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All purposes</SelectItem>
+            <SelectItem value="directory_listing">Directory Listing</SelectItem>
+            <SelectItem value="directory_and_july_participation">Directory + July</SelectItem>
+            <SelectItem value="update_existing">Update Existing</SelectItem>
+            <SelectItem value="update_existing_and_july_participation">Update + July</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="rounded-xl border overflow-x-auto">
@@ -241,6 +285,7 @@ export function AdminCommunityGroupsPage() {
             <TableRow>
               <TableHead>Organization</TableHead>
               <TableHead className="hidden md:table-cell">Category</TableHead>
+              <TableHead className="hidden lg:table-cell">Purpose</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="hidden lg:table-cell">Verified</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -250,14 +295,14 @@ export function AdminCommunityGroupsPage() {
             {loading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell colSpan={5}>
+                  <TableCell colSpan={6}>
                     <div className="h-8 bg-muted animate-pulse rounded" />
                   </TableCell>
                 </TableRow>
               ))
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
                   No rows match filters
                 </TableCell>
               </TableRow>
@@ -266,9 +311,28 @@ export function AdminCommunityGroupsPage() {
                 <TableRow key={r.id}>
                   <TableCell className="font-medium max-w-[200px]">
                     <div className="truncate">{r.organization_name}</div>
-                    <div className="text-xs text-muted-foreground truncate md:hidden">{categoryLabel(r.category)}</div>
+                    <div className="text-xs text-muted-foreground truncate md:hidden">
+                      {categoryLabel(r.category)}
+                    </div>
+                    {r.contact_person_name ? (
+                      <div className="text-xs text-muted-foreground truncate lg:hidden">
+                        {r.contact_person_name}
+                      </div>
+                    ) : null}
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-sm">{categoryLabel(r.category)}</TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    <div className="flex flex-col gap-1">
+                      <Badge variant="outline" className="w-fit text-[10px]">
+                        {submissionPurposeBadge(r.submission_purpose)}
+                      </Badge>
+                      {submissionPurposeIncludesJuly(r.submission_purpose ?? '') && r.july_interest ? (
+                        <span className="text-[10px] text-muted-foreground">
+                          July: {julyInterestLabel(r.july_interest)}
+                        </span>
+                      ) : null}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <Badge variant={r.status === 'published' ? 'default' : 'secondary'}>{r.status}</Badge>
                   </TableCell>
@@ -302,7 +366,7 @@ export function AdminCommunityGroupsPage() {
         </Table>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditingRow(null) }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit community group</DialogTitle>
@@ -386,9 +450,55 @@ export function AdminCommunityGroupsPage() {
               <Label>Contact person</Label>
               <Input value={form.contact_person} onChange={(e) => setForm((f) => ({ ...f, contact_person: e.target.value }))} />
             </div>
-            <div className="rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground space-y-1">
+            <div className="rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground space-y-2">
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline">
+                  {submissionPurposeBadge(editingRow?.submission_purpose)}
+                </Badge>
+                {editingRow?.authorized_submission ? (
+                  <Badge variant="secondary">Authorized ✓</Badge>
+                ) : null}
+              </div>
+              {editingRow?.contact_person_name ? (
+                <div className="space-y-1 border-t border-border/40 pt-2">
+                  <div>
+                    <span className="font-medium text-foreground">Contact:</span>{' '}
+                    {editingRow.contact_person_name}
+                    {editingRow.contact_person_role ? ` · ${editingRow.contact_person_role}` : ''}
+                  </div>
+                  <div>
+                    {editingRow.contact_person_email}
+                    {editingRow.contact_person_phone ? ` · ${editingRow.contact_person_phone}` : ''}
+                    {editingRow.best_contact_method
+                      ? ` · ${bestContactMethodLabel(editingRow.best_contact_method)}`
+                      : ''}
+                  </div>
+                  {submissionPurposeIncludesJuly(editingRow.submission_purpose ?? '') ? (
+                    <div className="border-t border-border/40 pt-2">
+                      <span className="font-medium text-foreground">July:</span>{' '}
+                      {julyInterestLabel(editingRow.july_interest)}
+                      {editingRow.july_representative_name
+                        ? ` · Rep: ${editingRow.july_representative_name}`
+                        : ''}
+                      {editingRow.july_representative_contact
+                        ? ` (${editingRow.july_representative_contact})`
+                        : ''}
+                      {editingRow.july_estimated_attendees
+                        ? ` · ~${editingRow.july_estimated_attendees} attendees`
+                        : ''}
+                      {editingRow.july_topics ? (
+                        <div className="mt-1">Topics: {editingRow.july_topics}</div>
+                      ) : null}
+                      {editingRow.july_notes ? (
+                        <div className="mt-1">July notes: {editingRow.july_notes}</div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
               <div>
-                <span className="font-medium text-foreground">Submitter:</span> {form.submitter_name} · {form.submitter_email}
+                <span className="font-medium text-foreground">Submitter:</span> {form.submitter_name}{' '}
+                · {form.submitter_email}
               </div>
             </div>
             <div className="space-y-1.5">

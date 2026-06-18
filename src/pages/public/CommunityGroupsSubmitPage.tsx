@@ -1,8 +1,14 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CheckCircle, ArrowLeft, ShieldCheck, Eye, Sparkles } from 'lucide-react'
+import {
+  ArrowLeft,
+  CheckCircle,
+  HeartHandshake,
+  ShieldCheck,
+  Sparkles,
+  Users,
+} from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
-import { PublicPageHero } from '@/components/public/PublicPageHero'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,40 +20,166 @@ import type { CommunityGroupCategory } from '@/lib/types'
 import { generateSlug } from '@/lib/utils'
 import { normalizeExternalUrl } from '@/lib/externalUrl'
 import { sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
+import {
+  BEST_CONTACT_METHOD_OPTIONS,
+  JULY_INTRO_OPTIONS,
+  JULY_INTEREST_OPTIONS,
+  SUBMISSION_PURPOSE_OPTIONS,
+  submissionPurposeIncludesJuly,
+  type BestContactMethod,
+  type CommunityGroupSubmissionPurpose,
+  type JulyInterest,
+  type JulyIntroInterest,
+} from '@/lib/communityGroupSubmission'
 import { toast } from 'sonner'
 
 const CATEGORY_NONE = '__none__'
+const PURPOSE_NONE = '__none__'
+const CONTACT_METHOD_NONE = '__none__'
+const JULY_INTEREST_NONE = '__none__'
+const JULY_INTRO_NONE = '__none__'
 
-export function CommunityGroupsSubmitPage() {
-  const [loading, setLoading] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
-  const [form, setForm] = useState({
+type FormState = {
+  submission_purpose: CommunityGroupSubmissionPurpose | typeof PURPOSE_NONE
+  organization_name: string
+  category: typeof CATEGORY_NONE | CommunityGroupCategory
+  description: string
+  website_url: string
+  social_url: string
+  public_email: string
+  public_phone: string
+  public_contact_ok: boolean
+  meeting_location: string
+  service_area: string
+  contact_person: string
+  contact_person_name: string
+  contact_person_role: string
+  contact_person_email: string
+  contact_person_phone: string
+  best_contact_method: BestContactMethod | typeof CONTACT_METHOD_NONE
+  submitter_name: string
+  submitter_email: string
+  notes: string
+  authorized_submission: boolean
+  july_interest: JulyInterest | typeof JULY_INTEREST_NONE
+  july_representative_name: string
+  july_representative_contact: string
+  july_estimated_attendees: string
+  july_intro_interest: JulyIntroInterest | typeof JULY_INTRO_NONE
+  july_topics: string
+  july_notes: string
+}
+
+function emptyForm(): FormState {
+  return {
+    submission_purpose: PURPOSE_NONE,
     organization_name: '',
     category: CATEGORY_NONE,
     description: '',
     website_url: '',
+    social_url: '',
     public_email: '',
     public_phone: '',
+    public_contact_ok: false,
     meeting_location: '',
     service_area: '',
-    social_url: '',
     contact_person: '',
+    contact_person_name: '',
+    contact_person_role: '',
+    contact_person_email: '',
+    contact_person_phone: '',
+    best_contact_method: CONTACT_METHOD_NONE,
     submitter_name: '',
     submitter_email: '',
     notes: '',
-  })
+    authorized_submission: false,
+    july_interest: JULY_INTEREST_NONE,
+    july_representative_name: '',
+    july_representative_contact: '',
+    july_estimated_attendees: '',
+    july_intro_interest: JULY_INTRO_NONE,
+    july_topics: '',
+    july_notes: '',
+  }
+}
+
+function FormSection({
+  title,
+  description,
+  children,
+}: {
+  title: string
+  description?: string
+  children: React.ReactNode
+}) {
+  return (
+    <fieldset className="space-y-5 rounded-xl border border-border/40 bg-background/50 p-5 sm:p-6">
+      <legend className="px-1 text-base font-semibold text-foreground">{title}</legend>
+      {description ? <p className="-mt-1 text-sm text-muted-foreground">{description}</p> : null}
+      {children}
+    </fieldset>
+  )
+}
+
+export function CommunityGroupsSubmitPage() {
+  const [loading, setLoading] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [form, setForm] = useState<FormState>(emptyForm)
+
+  const includesJuly =
+    form.submission_purpose !== PURPOSE_NONE &&
+    submissionPurposeIncludesJuly(form.submission_purpose)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+
+    if (form.submission_purpose === PURPOSE_NONE) {
+      toast.error('Please choose how your organization would like to be included.')
+      return
+    }
     if (!form.organization_name.trim() || form.category === CATEGORY_NONE || !form.description.trim()) {
       toast.error('Please complete organization name, category, and description.')
       return
     }
-    if (!form.submitter_name.trim() || !form.submitter_email.trim()) {
-      toast.error('Please add your name and email so we can follow up if needed.')
+    if (!form.service_area.trim()) {
+      toast.error('Please enter the area your organization serves.')
       return
     }
-    const slug = `${generateSlug(form.organization_name)}-${Date.now().toString(36)}`
+    if (
+      !form.contact_person_name.trim() ||
+      !form.contact_person_role.trim() ||
+      !form.contact_person_email.trim() ||
+      !form.contact_person_phone.trim() ||
+      form.best_contact_method === CONTACT_METHOD_NONE
+    ) {
+      toast.error('Please complete all required contact person details.')
+      return
+    }
+    if (!form.submitter_name.trim() || !form.submitter_email.trim()) {
+      toast.error('Please add your name and email as the submitter.')
+      return
+    }
+    if (!form.authorized_submission) {
+      toast.error('Please confirm you are authorized to submit this organization\'s information.')
+      return
+    }
+
+    if (includesJuly) {
+      if (form.july_interest === JULY_INTEREST_NONE) {
+        toast.error('Please indicate your interest in the July community social.')
+        return
+      }
+      if (!form.july_representative_name.trim() || !form.july_representative_contact.trim()) {
+        toast.error('Please provide a July representative name and contact.')
+        return
+      }
+    }
+
+    const contactPhoneRes = validatePhoneNumber(form.contact_person_phone, { allowEmpty: false })
+    if (!contactPhoneRes.ok) {
+      toast.error(`Contact person phone: ${contactPhoneRes.reason}`)
+      return
+    }
 
     const normalizedWebsite =
       form.website_url.trim() === '' ? null : normalizeExternalUrl(form.website_url)
@@ -58,7 +190,7 @@ export function CommunityGroupsSubmitPage() {
       return
     }
     if (form.social_url.trim() !== '' && normalizedSocial === null) {
-      toast.error('Please enter a valid social media URL (e.g. https://facebook.com/your-group).')
+      toast.error('Please enter a valid social media URL.')
       return
     }
 
@@ -68,24 +200,50 @@ export function CommunityGroupsSubmitPage() {
       return
     }
 
+    const slug = `${generateSlug(form.organization_name)}-${Date.now().toString(36)}`
+    const julyAttendees = form.july_estimated_attendees.trim()
+      ? parseInt(form.july_estimated_attendees, 10)
+      : null
+
     setLoading(true)
     const { error } = await supabase.from('community_groups').insert([
       {
         organization_name: form.organization_name.trim(),
         slug,
         category: form.category as CommunityGroupCategory,
-        description: form.description.trim() || null,
+        description: form.description.trim(),
         website_url: normalizedWebsite,
         public_email: form.public_email.trim() || null,
         public_phone: publicPhoneRes.value,
         meeting_location: form.meeting_location.trim() || null,
-        service_area: form.service_area.trim() || null,
+        service_area: form.service_area.trim(),
         social_url: normalizedSocial,
         contact_person: form.contact_person.trim() || null,
         submitter_name: form.submitter_name.trim(),
         submitter_email: form.submitter_email.trim(),
         notes: form.notes.trim() || null,
         status: 'pending',
+        submission_purpose: form.submission_purpose,
+        contact_person_name: form.contact_person_name.trim(),
+        contact_person_role: form.contact_person_role.trim(),
+        contact_person_email: form.contact_person_email.trim(),
+        contact_person_phone: contactPhoneRes.value,
+        best_contact_method: form.best_contact_method,
+        authorized_submission: true,
+        public_contact_ok: form.public_contact_ok,
+        july_interest: includesJuly ? form.july_interest : null,
+        july_representative_name: includesJuly ? form.july_representative_name.trim() : null,
+        july_representative_contact: includesJuly ? form.july_representative_contact.trim() : null,
+        july_estimated_attendees:
+          includesJuly && julyAttendees !== null && !Number.isNaN(julyAttendees)
+            ? julyAttendees
+            : null,
+        july_intro_interest:
+          includesJuly && form.july_intro_interest !== JULY_INTRO_NONE
+            ? form.july_intro_interest
+            : null,
+        july_topics: includesJuly ? form.july_topics.trim() || null : null,
+        july_notes: includesJuly ? form.july_notes.trim() || null : null,
       },
     ])
     setLoading(false)
@@ -98,66 +256,140 @@ export function CommunityGroupsSubmitPage() {
 
   if (submitted) {
     return (
-      <>
-        <SEOHead title="Submission received" description="Your community group listing was submitted for review." />
-        <PublicPageHero
-          eyebrow="Submission received"
-          title="Thank you"
-          subtitle="Your organization was submitted for review. KIGH volunteers will verify details before it appears on the public directory."
-          primaryAction={
-            <Button asChild>
-              <Link to="/community-groups">Back to Community Groups</Link>
-            </Button>
-          }
-          tone="tint"
+      <div className="community-submit-page">
+        <SEOHead
+          title="Submission received"
+          description="Your community organization was submitted for review."
         />
-        <div className="public-container py-12 text-center">
+        <div className="public-container py-16 sm:py-24 text-center">
           <CheckCircle className="mx-auto h-14 w-14 text-primary/80" />
+          <h1 className="mt-6 text-3xl font-semibold tracking-tight">Thank you</h1>
+          <p className="mx-auto mt-3 max-w-lg text-muted-foreground">
+            Your organization was submitted for review. KIGH volunteers will verify details before
+            anything appears on the public directory.
+          </p>
+          <Button asChild className="mt-8">
+            <Link to="/community-groups">Back to Community Directory</Link>
+          </Button>
         </div>
-      </>
+      </div>
     )
   }
 
   return (
-    <>
+    <div className="community-submit-page">
       <SEOHead
-        title="Submit a Community Group"
-        description="Submit a religious institution, benevolence group, welfare group, or community organization for the Greater Houston directory."
+        title="Register a Community Group or Institution"
+        description="Register Kenyan-led churches, associations, welfare groups, youth groups, cultural organizations, nonprofits, alumni groups, and community institutions across Greater Houston."
       />
 
-      <PublicPageHero
-        eyebrow="Community directory"
-        title="Submit a group / institution"
-        subtitle="Add a church, association, nonprofit, welfare circle, youth or cultural group so members can find you. Public-safe contact information only — submissions are reviewed before publication, and commercial businesses belong in the Business directory."
-        primaryAction={
-          <Button asChild variant="ghost" size="sm" className="gap-1 -ml-3">
+      {/* Header */}
+      <header className="border-b border-border/30 bg-white/70 backdrop-blur-sm">
+        <div className="public-container py-8 sm:py-10">
+          <Button asChild variant="ghost" size="sm" className="mb-4 gap-1 -ml-3">
             <Link to="/community-groups">
-              <ArrowLeft className="h-4 w-4" /> Back to directory
+              <ArrowLeft className="h-4 w-4" aria-hidden />
+              Back to directory
             </Link>
           </Button>
-        }
-        tone="sage"
-      />
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80">
+            Community Directory
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+            Register a Community Group or Institution
+          </h1>
+          <p className="mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground">
+            Help us build a trusted directory of Kenyan-led churches, associations, welfare groups,
+            youth groups, cultural organizations, nonprofits, alumni groups, and community
+            institutions across Greater Houston. You do not have to be a KIGH member to register an
+            organization, though membership is highly encouraged as it helps strengthen and support
+            the wider community.
+          </p>
+          <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
+            Once your organization is registered or updated, you may also indicate whether your group
+            would like to participate in the July community social session.
+          </p>
+        </div>
+      </header>
 
       <section className="py-10 sm:py-14 lg:py-16">
-        <div className="public-container grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
-          {/* Form */}
+        <div className="public-container grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-10">
           <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="form-page-card space-y-10">
-              <fieldset className="space-y-6">
-                <legend className="text-base font-semibold text-foreground">
-                  Organization basics
-                </legend>
-                <p className="-mt-2 text-sm text-muted-foreground">
-                  These appear on the public listing once verified.
+            <form
+              onSubmit={(e) => void handleSubmit(e)}
+              className="community-submit-card space-y-8 rounded-2xl p-6 sm:p-8"
+            >
+              {/* July notice */}
+              <div
+                className="rounded-xl border border-amber-200/80 bg-amber-50/70 px-5 py-4"
+                role="note"
+              >
+                <p className="text-sm font-semibold text-amber-950">July Community Social</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-amber-900/85">
+                  We are inviting registered community organizations to connect, share updates, and
+                  strengthen collaboration. Please register or update your organization details
+                  first, then let us know if your group would like to participate in the July
+                  community social session.
                 </p>
+              </div>
+
+              {/* Membership note */}
+              <p className="rounded-lg border border-border/40 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+                KIGH membership is not required to register an organization. However, we highly
+                encourage members and organization leaders to{' '}
+                <Link to="/membership" className="font-medium text-primary underline underline-offset-2">
+                  join and support KIGH
+                </Link>{' '}
+                so we can continue building strong community programs, events, and services.
+              </p>
+
+              {/* Organization participation */}
+              <FormSection
+                title="Organization participation"
+                description="Choose how your organization would like to be included."
+              >
+                <div className="form-field-stack">
+                  <Label htmlFor="submission_purpose">Organization participation *</Label>
+                  <Select
+                    value={form.submission_purpose}
+                    onValueChange={(v) =>
+                      setForm((f) => ({
+                        ...f,
+                        submission_purpose: v as CommunityGroupSubmissionPurpose,
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="submission_purpose">
+                      <SelectValue placeholder="Select an option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={PURPOSE_NONE} disabled>
+                        Select an option
+                      </SelectItem>
+                      {SUBMISSION_PURPOSE_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </FormSection>
+
+              {/* Organization basics */}
+              <FormSection
+                title="Organization basics"
+                description="These details form your organization's directory record."
+              >
                 <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
                   <div className="sm:col-span-2 form-field-stack">
                     <Label htmlFor="organization_name">Organization name *</Label>
                     <Input
                       id="organization_name"
                       value={form.organization_name}
-                      onChange={(e) => setForm((f) => ({ ...f, organization_name: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, organization_name: e.target.value }))
+                      }
                       required
                     />
                   </div>
@@ -165,13 +397,17 @@ export function CommunityGroupsSubmitPage() {
                     <Label>Category *</Label>
                     <Select
                       value={form.category}
-                      onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}
+                      onValueChange={(v) =>
+                        setForm((f) => ({ ...f, category: v as FormState['category'] }))
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={CATEGORY_NONE}>Select category</SelectItem>
+                        <SelectItem value={CATEGORY_NONE} disabled>
+                          Select category
+                        </SelectItem>
                         {COMMUNITY_GROUP_CATEGORIES.map((c) => (
                           <SelectItem key={c.value} value={c.value}>
                             {c.label}
@@ -190,17 +426,18 @@ export function CommunityGroupsSubmitPage() {
                       required
                     />
                     <p className="text-[11px] text-muted-foreground">
-                      A few sentences about who you serve and what you do.
+                      Tell the community who you serve, what you do, and how people can connect with
+                      your organization.
                     </p>
                   </div>
                 </div>
-              </fieldset>
+              </FormSection>
 
-              <fieldset className="space-y-6">
-                <legend className="text-base font-semibold text-foreground">Public contact</legend>
-                <p className="-mt-2 text-sm text-muted-foreground">
-                  Channels community members can use to reach you.
-                </p>
+              {/* Public contact */}
+              <FormSection
+                title="Public contact"
+                description="Only enter contact information you are comfortable having shown publicly after the listing is approved."
+              >
                 <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
                   <div className="form-field-stack">
                     <Label htmlFor="website_url">Website URL</Label>
@@ -208,14 +445,10 @@ export function CommunityGroupsSubmitPage() {
                       id="website_url"
                       type="text"
                       inputMode="url"
-                      autoComplete="url"
-                      placeholder="kighsacc.org or https://example.org"
+                      placeholder="example.org or https://example.org"
                       value={form.website_url}
                       onChange={(e) => setForm((f) => ({ ...f, website_url: e.target.value }))}
                     />
-                    <p className="text-[11px] text-muted-foreground">
-                      We&apos;ll add <code>https://</code> automatically if you leave it off.
-                    </p>
                   </div>
                   <div className="form-field-stack">
                     <Label htmlFor="social_url">Social media URL</Label>
@@ -223,7 +456,6 @@ export function CommunityGroupsSubmitPage() {
                       id="social_url"
                       type="text"
                       inputMode="url"
-                      autoComplete="url"
                       placeholder="facebook.com/your-group"
                       value={form.social_url}
                       onChange={(e) => setForm((f) => ({ ...f, social_url: e.target.value }))}
@@ -245,56 +477,153 @@ export function CommunityGroupsSubmitPage() {
                       type="tel"
                       value={form.public_phone}
                       onChange={(e) =>
-                        setForm((f) => ({ ...f, public_phone: sanitizePhoneInput(e.target.value) }))
+                        setForm((f) => ({
+                          ...f,
+                          public_phone: sanitizePhoneInput(e.target.value),
+                        }))
                       }
                     />
                   </div>
+                  <div className="sm:col-span-2">
+                    <label className="flex cursor-pointer items-start gap-3 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={form.public_contact_ok}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, public_contact_ok: e.target.checked }))
+                        }
+                        className="mt-0.5 h-4 w-4 accent-primary"
+                      />
+                      <span>
+                        This contact information may be shown publicly on the directory listing.
+                      </span>
+                    </label>
+                  </div>
                 </div>
-              </fieldset>
+              </FormSection>
 
-              <fieldset className="space-y-6">
-                <legend className="text-base font-semibold text-foreground">
-                  Where you meet &amp; who you serve
-                </legend>
+              {/* Where you meet */}
+              <FormSection title="Where you meet and who you serve">
                 <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
                   <div className="form-field-stack">
                     <Label htmlFor="meeting_location">Meeting location</Label>
                     <Input
                       id="meeting_location"
                       value={form.meeting_location}
-                      onChange={(e) => setForm((f) => ({ ...f, meeting_location: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, meeting_location: e.target.value }))
+                      }
                     />
                   </div>
                   <div className="form-field-stack">
-                    <Label htmlFor="service_area">Service area</Label>
+                    <Label htmlFor="service_area">Service area *</Label>
                     <Input
                       id="service_area"
-                      placeholder="e.g. Southwest Houston, Katy, Fort Bend"
+                      placeholder="Southwest Houston, Katy, Sugar Land…"
                       value={form.service_area}
                       onChange={(e) => setForm((f) => ({ ...f, service_area: e.target.value }))}
+                      required
                     />
+                    <p className="text-[11px] text-muted-foreground">
+                      Examples: Southwest Houston, Katy, Sugar Land, Cypress, Pearland, Fort Bend,
+                      Greater Houston, or online.
+                    </p>
                   </div>
                   <div className="sm:col-span-2 form-field-stack">
-                    <Label htmlFor="contact_person">Contact person (optional)</Label>
+                    <Label htmlFor="contact_person">Contact person shown publicly</Label>
                     <Input
                       id="contact_person"
+                      placeholder="Optional — only if this person should appear on the listing"
                       value={form.contact_person}
                       onChange={(e) => setForm((f) => ({ ...f, contact_person: e.target.value }))}
                     />
                   </div>
                 </div>
-              </fieldset>
+              </FormSection>
 
-              <fieldset className="space-y-6">
-                <legend className="text-base font-semibold text-foreground">
-                  Submitter (not shown publicly)
-                </legend>
-                <p className="-mt-2 text-sm text-muted-foreground">
-                  So we can follow up if reviewers have questions.
-                </p>
+              {/* Internal contact */}
+              <FormSection
+                title="Internal contact / outreach contact"
+                description="Internal contact details are used for review and outreach. They are not shown publicly unless also entered in the public contact fields."
+              >
                 <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
                   <div className="form-field-stack">
-                    <Label htmlFor="submitter_name">Your name *</Label>
+                    <Label htmlFor="contact_person_name">Contact person name *</Label>
+                    <Input
+                      id="contact_person_name"
+                      value={form.contact_person_name}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, contact_person_name: e.target.value }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="form-field-stack">
+                    <Label htmlFor="contact_person_role">Contact person role/title *</Label>
+                    <Input
+                      id="contact_person_role"
+                      value={form.contact_person_role}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, contact_person_role: e.target.value }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="form-field-stack">
+                    <Label htmlFor="contact_person_email">Contact person email *</Label>
+                    <Input
+                      id="contact_person_email"
+                      type="email"
+                      value={form.contact_person_email}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, contact_person_email: e.target.value }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="form-field-stack">
+                    <Label htmlFor="contact_person_phone">Contact person phone *</Label>
+                    <Input
+                      id="contact_person_phone"
+                      type="tel"
+                      value={form.contact_person_phone}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          contact_person_phone: sanitizePhoneInput(e.target.value),
+                        }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="sm:col-span-2 form-field-stack">
+                    <Label htmlFor="best_contact_method">Best way to reach them *</Label>
+                    <Select
+                      value={form.best_contact_method}
+                      onValueChange={(v) =>
+                        setForm((f) => ({
+                          ...f,
+                          best_contact_method: v as FormState['best_contact_method'],
+                        }))
+                      }
+                    >
+                      <SelectTrigger id="best_contact_method">
+                        <SelectValue placeholder="Select preferred method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={CONTACT_METHOD_NONE} disabled>
+                          Select preferred method
+                        </SelectItem>
+                        {BEST_CONTACT_METHOD_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="form-field-stack">
+                    <Label htmlFor="submitter_name">Submitter name *</Label>
                     <Input
                       id="submitter_name"
                       value={form.submitter_name}
@@ -303,7 +632,7 @@ export function CommunityGroupsSubmitPage() {
                     />
                   </div>
                   <div className="form-field-stack">
-                    <Label htmlFor="submitter_email">Your email *</Label>
+                    <Label htmlFor="submitter_email">Submitter email *</Label>
                     <Input
                       id="submitter_email"
                       type="email"
@@ -313,75 +642,228 @@ export function CommunityGroupsSubmitPage() {
                     />
                   </div>
                   <div className="sm:col-span-2 form-field-stack">
-                    <Label htmlFor="notes">Notes for reviewers (optional)</Label>
+                    <Label htmlFor="notes">Notes for reviewers</Label>
                     <Textarea
                       id="notes"
                       rows={3}
                       value={form.notes}
                       onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                      placeholder="Internal context only — not shown on the public directory."
+                      placeholder="Optional context for reviewers — not shown publicly."
                     />
                   </div>
                 </div>
-              </fieldset>
+              </FormSection>
+
+              {/* July participation — conditional */}
+              {includesJuly ? (
+                <FormSection
+                  title="July Community Social Participation"
+                  description="Let us know how your organization would like to be represented at the July community social session."
+                >
+                  <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
+                    <div className="sm:col-span-2 form-field-stack">
+                      <Label htmlFor="july_interest">
+                        Is your organization interested in attending the July community social? *
+                      </Label>
+                      <Select
+                        value={form.july_interest}
+                        onValueChange={(v) =>
+                          setForm((f) => ({
+                            ...f,
+                            july_interest: v as FormState['july_interest'],
+                          }))
+                        }
+                      >
+                        <SelectTrigger id="july_interest">
+                          <SelectValue placeholder="Select one" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={JULY_INTEREST_NONE} disabled>
+                            Select one
+                          </SelectItem>
+                          {JULY_INTEREST_OPTIONS.map((o) => (
+                            <SelectItem key={o.value} value={o.value}>
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="form-field-stack">
+                      <Label htmlFor="july_representative_name">Representative name *</Label>
+                      <Input
+                        id="july_representative_name"
+                        value={form.july_representative_name}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, july_representative_name: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="form-field-stack">
+                      <Label htmlFor="july_representative_contact">
+                        Representative phone/email *
+                      </Label>
+                      <Input
+                        id="july_representative_contact"
+                        value={form.july_representative_contact}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            july_representative_contact: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="form-field-stack">
+                      <Label htmlFor="july_estimated_attendees">Estimated number of attendees</Label>
+                      <Input
+                        id="july_estimated_attendees"
+                        type="number"
+                        min={1}
+                        value={form.july_estimated_attendees}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, july_estimated_attendees: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="form-field-stack">
+                      <Label htmlFor="july_intro_interest">
+                        Would your organization like to briefly introduce itself?
+                      </Label>
+                      <Select
+                        value={form.july_intro_interest}
+                        onValueChange={(v) =>
+                          setForm((f) => ({
+                            ...f,
+                            july_intro_interest: v as FormState['july_intro_interest'],
+                          }))
+                        }
+                      >
+                        <SelectTrigger id="july_intro_interest">
+                          <SelectValue placeholder="Optional" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={JULY_INTRO_NONE}>Not specified</SelectItem>
+                          {JULY_INTRO_OPTIONS.map((o) => (
+                            <SelectItem key={o.value} value={o.value}>
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="sm:col-span-2 form-field-stack">
+                      <Label htmlFor="july_topics">Any topics you would like discussed?</Label>
+                      <Textarea
+                        id="july_topics"
+                        rows={2}
+                        value={form.july_topics}
+                        onChange={(e) => setForm((f) => ({ ...f, july_topics: e.target.value }))}
+                      />
+                    </div>
+                    <div className="sm:col-span-2 form-field-stack">
+                      <Label htmlFor="july_notes">Notes for July planning team</Label>
+                      <Textarea
+                        id="july_notes"
+                        rows={2}
+                        value={form.july_notes}
+                        onChange={(e) => setForm((f) => ({ ...f, july_notes: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </FormSection>
+              ) : null}
+
+              {/* Authorization */}
+              <div className="rounded-xl border border-border/50 bg-muted/15 px-5 py-4">
+                <label className="flex cursor-pointer items-start gap-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={form.authorized_submission}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, authorized_submission: e.target.checked }))
+                    }
+                    className="mt-0.5 h-4 w-4 accent-primary"
+                    required
+                  />
+                  <span>
+                    I confirm that I am authorized to submit this organization&apos;s information,
+                    or that these are appropriate public/community contact details for KIGH
+                    follow-up and verification. *
+                  </span>
+                </label>
+              </div>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Button type="submit" size="lg" className="w-full sm:w-auto min-w-[14rem]" disabled={loading}>
-                  {loading ? 'Submitting…' : 'Submit for review'}
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full min-w-[14rem] sm:w-auto"
+                  disabled={loading}
+                >
+                  {loading ? 'Submitting…' : 'Submit organization for review'}
                 </Button>
-                <p className="text-xs text-muted-foreground sm:max-w-md">
-                  By submitting you confirm the information is accurate and may be displayed publicly
-                  after review.
-                </p>
               </div>
             </form>
           </div>
 
-          {/* Side: Before you submit */}
+          {/* Guidance sidebar */}
           <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
-            <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
+            <div className="community-submit-card rounded-2xl p-6">
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
                 Before you submit
               </p>
-              <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                A trusted directory takes care
-              </h2>
               <ul className="mt-4 space-y-4 text-sm text-muted-foreground">
                 <li className="flex gap-3">
-                  <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0 text-primary/70" />
+                  <Users className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" aria-hidden />
                   <span>
-                    <span className="font-medium text-foreground">Non-commercial listings only.</span>{' '}
-                    Businesses belong in the Business Directory.
+                    Community groups, churches, associations, welfare groups, youth groups,
+                    nonprofits, alumni groups, and institutions are welcome.
                   </span>
                 </li>
                 <li className="flex gap-3">
-                  <Eye className="h-4 w-4 mt-0.5 shrink-0 text-primary/70" />
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" aria-hidden />
                   <span>
-                    <span className="font-medium text-foreground">No private data.</span> Do not
-                    include private meeting links, member rosters, or personal phone numbers in the
-                    public fields.
+                    <span className="font-medium text-foreground">Commercial businesses</span>{' '}
+                    should use the{' '}
+                    <Link to="/businesses/submit" className="text-primary underline underline-offset-2">
+                      Business Directory
+                    </Link>
+                    .
                   </span>
                 </li>
                 <li className="flex gap-3">
-                  <Sparkles className="h-4 w-4 mt-0.5 shrink-0 text-primary/70" />
+                  <HeartHandshake className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" aria-hidden />
                   <span>
-                    <span className="font-medium text-foreground">Reviewed before publishing.</span>{' '}
-                    KIGH volunteers verify details so the directory stays trustworthy.
+                    You do not have to be a KIGH member to register, though membership is highly
+                    encouraged.
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" aria-hidden />
+                  <span>Directory listings are reviewed before publishing.</span>
+                </li>
+                <li className="flex gap-3">
+                  <Users className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" aria-hidden />
+                  <span>
+                    Organizations interested in the July community social should register or update
+                    their organization first, then select the July participation option.
                   </span>
                 </li>
               </ul>
             </div>
 
-            <div className="rounded-2xl border border-border/50 bg-muted/30 p-5 text-xs text-muted-foreground leading-relaxed">
-              <p className="font-semibold text-foreground mb-1">Need to update an existing listing?</p>
+            <div className="community-submit-card rounded-2xl p-5 text-sm leading-relaxed text-muted-foreground">
+              <p className="mb-1 font-semibold text-foreground">Need to update an existing listing?</p>
               <p>
-                Email us at the contact address in the footer with your organization name and the
-                changes you&apos;d like to make.
+                Choose &ldquo;Update an existing organization listing&rdquo; in the form and provide
+                the correct organization details. Our reviewers will verify the update before
+                publishing changes.
               </p>
             </div>
           </aside>
         </div>
       </section>
-    </>
+    </div>
   )
 }

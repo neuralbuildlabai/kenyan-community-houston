@@ -85,6 +85,31 @@
   .form-field-stack {
     @apply space-y-2.5;
   }
+
+  /** Community directory submit — faded full-page background */
+  .community-submit-page {
+    position: relative;
+    min-height: 100vh;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.93)),
+      url('/images/community/commsignup.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+  }
+
+  @media (max-width: 768px) {
+    .community-submit-page {
+      background-attachment: scroll;
+    }
+  }
+
+  .community-submit-card {
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+    backdrop-filter: blur(6px);
+  }
 }
 
 @layer utilities {
