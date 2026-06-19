@@ -8,6 +8,7 @@ import { PageLoader } from '@/components/LoadingSpinner'
 import { formatCategoryLabel } from '@/lib/communityCategories'
 import { formatDate } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
+import { isAnnouncementPubliclyActive } from '@/lib/announcementsPublic'
 import type { Announcement } from '@/lib/types'
 import { safeExternalHref } from '@/lib/externalUrl'
 
@@ -24,7 +25,8 @@ export function AnnouncementDetailPage() {
         .eq('slug', slug)
         .eq('status', 'published')
         .single()
-      setItem(data as Announcement)
+      const row = data as Announcement | null
+      setItem(row && isAnnouncementPubliclyActive(row) ? row : null)
       setLoading(false)
     }
     load()

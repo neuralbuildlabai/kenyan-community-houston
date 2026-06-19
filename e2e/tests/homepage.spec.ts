@@ -39,6 +39,21 @@ test.describe('homepage', () => {
       page.getByRole('heading', { name: /What's happening/i })
     ).toBeVisible()
 
+    const updatesSection = page.getByTestId('home-community-updates')
+    const updatesVisible = await updatesSection.isVisible().catch(() => false)
+    if (updatesVisible) {
+      await expect(
+        page.getByRole('heading', { name: /Community Updates/i })
+      ).toBeVisible()
+      await expect(page.getByTestId('home-cta-announcements')).toHaveAttribute(
+        'href',
+        '/announcements'
+      )
+      const cards = page.getByTestId('home-announcement-card')
+      expect(await cards.count()).toBeGreaterThan(0)
+      expect(await cards.count()).toBeLessThanOrEqual(3)
+    }
+
     const html = await page.content()
     expect(html).not.toContain('kigh-family-fun-day-2026.jpeg')
     expect(html).not.toMatch(/\/kigh-media\/events\/[^"']+\.(jpe?g|png)/i)

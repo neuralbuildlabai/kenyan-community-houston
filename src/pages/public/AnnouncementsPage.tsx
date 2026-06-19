@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { supabase } from '@/lib/supabase'
 import { ANNOUNCEMENT_CATEGORIES, categoryValuesMatchingCanonical } from '@/lib/constants'
+import { filterActiveAnnouncements, sortHomepageAnnouncements } from '@/lib/announcementsPublic'
 import type { Announcement } from '@/lib/types'
 
 export function AnnouncementsPage() {
@@ -33,7 +34,8 @@ export function AnnouncementsPage() {
       if (search) query = query.ilike('title', `%${search}%`)
 
       const { data } = await query
-      setItems((data as Announcement[]) ?? [])
+      const rows = filterActiveAnnouncements((data as Announcement[]) ?? [])
+      setItems(sortHomepageAnnouncements(rows))
       setLoading(false)
     }
     load()

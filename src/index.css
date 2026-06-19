@@ -159,6 +159,41 @@
     box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
     backdrop-filter: blur(6px);
   }
+
+  /** Homepage hero quick links — floating glass chips over the skyline */
+  .home-quick-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    padding: 0.5rem 1rem;
+    text-align: center;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: hsl(222 28% 12%);
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+    border-radius: 999px;
+    transition:
+      transform 160ms ease,
+      box-shadow 160ms ease,
+      background 160ms ease;
+  }
+
+  .home-quick-action:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16);
+  }
+
+  @media (min-width: 640px) {
+    .home-quick-action {
+      font-size: 0.875rem;
+    }
+  }
 }
 
 @layer utilities {

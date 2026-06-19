@@ -125,6 +125,8 @@ export interface Database {
           submitted_by: string | null
           approved_by: string | null
           published_at: string | null
+          expires_at: string | null
+          priority: number
           include_in_calendar: boolean
           linked_event_id: string | null
           calendar_start_date: string | null

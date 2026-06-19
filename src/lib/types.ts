@@ -473,6 +473,8 @@ export interface Announcement {
   submitted_by: string | null
   approved_by: string | null
   published_at: string | null
+  expires_at: string | null
+  priority: number
   /** When true, approval also publishes a calendar event (see calendar_* fields). */
   include_in_calendar?: boolean | null
   linked_event_id?: string | null

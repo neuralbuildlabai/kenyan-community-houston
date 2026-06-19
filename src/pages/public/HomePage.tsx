@@ -5,10 +5,12 @@ import { ArrowRight, HeartHandshake } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
-import type { Event } from '@/lib/types'
+import type { Event, Announcement } from '@/lib/types'
 import { buildHomepageWhatsHappeningList, filterPublishedUpcomingByStartDate } from '@/lib/homepageEvents'
+import { buildHomepageAnnouncementsList } from '@/lib/announcementsPublic'
 import { trackClick } from '@/lib/analytics'
 import { FeaturedPoll } from '@/components/landing/FeaturedPoll'
+import { HomeAnnouncementCard } from '@/components/landing/HomeAnnouncementCard'
 
 /** Optimized hero (see `public/kigh-media/houstonmainimage-hero.jpg`). */
 const HOME_HERO_IMAGE_JPEG = '/kigh-media/houstonmainimage-hero.jpg'
@@ -56,6 +58,7 @@ function eventAcceptsVolunteers(e: Event, now: Date = new Date()): boolean {
 
 export function HomePage() {
   const [events, setEvents] = useState<Event[]>([])
+  const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [moments, setMoments] = useState<HomeMoment[]>([])
   const [listsLoaded, setListsLoaded] = useState(false)
 
@@ -84,6 +87,21 @@ export function HomePage() {
         // list. Past events naturally drop off because the query
         // already filters by start_date >= today.
         if (!cancelled) setEvents(buildHomepageWhatsHappeningList(upcomingOnly, 5))
+
+        const { data: announcementRows } = await supabase
+          .from('announcements')
+          .select('*')
+          .eq('status', 'published')
+          .order('is_featured', { ascending: false })
+          .order('priority', { ascending: false })
+          .order('published_at', { ascending: false, nullsFirst: false })
+          .order('created_at', { ascending: false })
+          .limit(24)
+        if (!cancelled) {
+          setAnnouncements(
+            buildHomepageAnnouncementsList((announcementRows as Announcement[]) ?? [], 3)
+          )
+        }
 
         const { data: momentsRows } = await supabase
           .from('gallery_images_public')
@@ -152,9 +170,8 @@ export function HomePage() {
               Welcome to The Kenyans in Greater Houston Community Hub
             </h1>
             <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed text-white/88 sm:text-lg sm:leading-relaxed">
-              A trusted place to find what is happening, who is serving, and how to stay connected
-              across Greater Houston. Built for families, newcomers, professionals, youth, elders,
-              churches, businesses, and friends of Kenya.
+              Find events, resources, and neighbors across Greater Houston — built for families,
+              newcomers, professionals, and friends of Kenya.
             </p>
             <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
               <Button
@@ -188,25 +205,19 @@ export function HomePage() {
             </div>
 
             <div
-              className="mx-auto mt-10 grid w-full max-w-3xl grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4"
+              className="mx-auto mt-10 flex w-full max-w-3xl flex-wrap items-center justify-center gap-2.5 sm:gap-3"
               aria-label="Quick links"
             >
               {HERO_QUICK_LINKS.map((item) => (
-                <Button
+                <Link
                   key={item.testId}
-                  asChild
-                  variant="quick"
-                  size="sm"
-                  className="h-auto min-h-11 w-full whitespace-normal px-3 py-2 text-center text-xs leading-snug sm:text-sm"
+                  to={item.to}
+                  data-testid={item.testId}
+                  className="home-quick-action whitespace-normal sm:max-w-[11.5rem]"
+                  onClick={() => void trackClick(`home_quick_${item.testId}`, item.to)}
                 >
-                  <Link
-                    to={item.to}
-                    data-testid={item.testId}
-                    onClick={() => void trackClick(`home_quick_${item.testId}`, item.to)}
-                  >
-                    {item.label}
-                  </Link>
-                </Button>
+                  {item.label}
+                </Link>
               ))}
             </div>
           </div>
@@ -433,6 +444,48 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Community updates — active announcements */}
+      {announcements.length > 0 ? (
+        <section
+          className="relative z-20 px-4 pb-8 sm:px-6 lg:px-8"
+          aria-labelledby="home-community-updates-heading"
+          data-testid="home-community-updates"
+        >
+          <div className="public-container mx-auto rounded-3xl border border-border/45 bg-card/90 px-5 py-10 shadow-lg shadow-black/[0.04] backdrop-blur-sm sm:px-8 sm:py-12">
+            <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80">
+                  Stay informed
+                </p>
+                <h2
+                  id="home-community-updates-heading"
+                  className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
+                >
+                  Community Updates
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
+                  Important notices, opportunities, and announcements from Kenyans in Greater
+                  Houston.
+                </p>
+              </div>
+              <Link
+                to="/announcements"
+                data-testid="home-cta-announcements"
+                className="shrink-0 text-sm font-semibold text-primary underline decoration-primary/30 underline-offset-4 transition hover:decoration-primary"
+                onClick={() => void trackClick('home_community_updates_all', '/announcements')}
+              >
+                All updates
+              </Link>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {announcements.map((a) => (
+                <HomeAnnouncementCard key={a.id} announcement={a} />
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {/* Community moments */}
       {moments.length > 0 && (
