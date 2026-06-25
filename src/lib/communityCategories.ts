@@ -5,6 +5,7 @@
 export const COMMUNITY_SUBMISSION_CATEGORIES = [
   'Cultural / Community',
   'Faith / Religious',
+  'Entertainment / Nightlife',
   'Sports & Youth',
   'Education / Career',
   'Business / Networking',
@@ -29,7 +30,7 @@ const LEGACY_TO_CANONICAL: Record<string, CommunitySubmissionCategory> = {
   Sports: 'Sports & Youth',
   Networking: 'Business / Networking',
   Education: 'Education / Career',
-  'Music & Entertainment': 'Cultural / Community',
+  'Music & Entertainment': 'Entertainment / Nightlife',
   'Food & Dining': 'Family / Social',
   'Community Meeting': 'Cultural / Community',
   Fundraiser: 'Fundraiser / Support',

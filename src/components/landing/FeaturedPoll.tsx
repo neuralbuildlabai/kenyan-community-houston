@@ -32,7 +32,7 @@ export function FeaturedPoll() {
     }
   }, [])
 
-  if (loading || !poll) return null
+  if (loading || !poll || isPollClosed(poll)) return null
 
   const pollHref = `/polls/${poll.slug}`
   const pollClosed = isPollClosed(poll)

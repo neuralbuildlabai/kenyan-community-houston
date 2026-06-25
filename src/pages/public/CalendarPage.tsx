@@ -98,15 +98,15 @@ export function CalendarPage() {
     let list = events
     if (category) list = list.filter((e) => canonicalCategory(e.category) === category)
     if (tab === 'upcoming') {
-      list = list.filter((e) => !isEventPast(e.start_date))
+      list = list.filter((e) => !isEventPast(e))
       list = limitOccurrencesPerGroup(list, PUBLIC_MAX_UPCOMING_OCCURRENCES_PER_GROUP)
     } else if (tab === 'past') {
-      list = list.filter((e) => isEventPast(e.start_date))
+      list = list.filter((e) => isEventPast(e))
       list = [...list].sort((a, b) => parseISO(b.start_date).getTime() - parseISO(a.start_date).getTime())
     } else {
-      const past = list.filter((e) => isEventPast(e.start_date))
+      const past = list.filter((e) => isEventPast(e))
       const future = limitOccurrencesPerGroup(
-        list.filter((e) => !isEventPast(e.start_date)),
+        list.filter((e) => !isEventPast(e)),
         PUBLIC_MAX_UPCOMING_OCCURRENCES_PER_GROUP
       )
       list = [...past, ...future].sort((a, b) => parseISO(a.start_date).getTime() - parseISO(b.start_date).getTime())
@@ -308,7 +308,7 @@ export function CalendarPage() {
                       <div className="p-5 sm:p-6 flex-1 space-y-3 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge variant="secondary">{formatCategoryLabel(ev.category)}</Badge>
-                          {isEventPast(ev.start_date) ? (
+                          {isEventPast(ev) ? (
                             <Badge variant="muted">Past event</Badge>
                           ) : null}
                           {ev.is_virtual ? (

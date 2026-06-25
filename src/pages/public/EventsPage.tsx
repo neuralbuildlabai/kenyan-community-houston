@@ -50,8 +50,8 @@ export function EventsPage() {
   }, [search, category])
 
   const { featured, upcoming, past } = useMemo(() => {
-    const upcomingRows = events.filter((e) => !isEventPast(e.start_date))
-    const pastRows = events.filter((e) => isEventPast(e.start_date))
+    const upcomingRows = events.filter((e) => !isEventPast(e))
+    const pastRows = events.filter((e) => isEventPast(e))
     const upcomingSorted = limitOccurrencesPerGroup(
       upcomingRows,
       PUBLIC_MAX_UPCOMING_OCCURRENCES_PER_GROUP

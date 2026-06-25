@@ -169,7 +169,7 @@ export function AdminCalendarPage() {
   const hiddenRecurringIds = useMemo(() => {
     const futureByGroup = new Map<string, EventRow[]>()
     for (const e of displayed) {
-      if (isEventPast(e.start_date)) continue
+      if (isEventPast(e)) continue
       const k = publicRecurrenceGroupKey(e)
       const list = futureByGroup.get(k) ?? []
       list.push(e)

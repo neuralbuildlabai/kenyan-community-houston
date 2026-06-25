@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { buildHomepageWhatsHappeningList, dedupeUpcomingByDisplayTitle, filterPublishedUpcomingByStartDate } from '@/lib/homepageEvents'
+import {
+  buildHomepageWhatsHappeningList,
+  dedupeUpcomingByDisplayTitle,
+  filterPublishedUpcomingByStartDate,
+  filterPublishedUpcomingEvents,
+} from '@/lib/homepageEvents'
 import type { Event } from '@/lib/types'
 
 function baseEvent(overrides: Partial<Event> & { id: string }): Event {
@@ -31,6 +36,34 @@ function baseEvent(overrides: Partial<Event> & { id: string }): Event {
     ...rest,
   } as Event
 }
+
+describe('filterPublishedUpcomingEvents', () => {
+  const now = new Date('2026-06-01T12:00:00')
+
+  it('drops non-published and expired events', () => {
+    const rows = [
+      baseEvent({ id: 'a', slug: 'a', title: 'Future', start_date: '2026-12-01', status: 'published' }),
+      baseEvent({ id: 'b', slug: 'b', title: 'Past', start_date: '2026-01-01', status: 'published' }),
+      baseEvent({ id: 'c', slug: 'c', title: 'Draft', start_date: '2026-12-02', status: 'draft' }),
+    ]
+    const out = filterPublishedUpcomingEvents(rows, now)
+    expect(out.map((e) => e.id)).toEqual(['a'])
+  })
+
+  it('keeps multi-day events until end date passes', () => {
+    const rows = [
+      baseEvent({
+        id: 'ongoing',
+        slug: 'ongoing',
+        title: 'Conference',
+        start_date: '2026-05-30',
+        end_date: '2026-06-02',
+        status: 'published',
+      }),
+    ]
+    expect(filterPublishedUpcomingEvents(rows, now).map((e) => e.id)).toEqual(['ongoing'])
+  })
+})
 
 describe('filterPublishedUpcomingByStartDate', () => {
   it('drops non-published and dates before cutoff', () => {

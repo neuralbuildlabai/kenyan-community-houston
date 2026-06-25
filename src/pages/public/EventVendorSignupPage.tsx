@@ -141,7 +141,7 @@ export function EventVendorSignupPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!event?.id) return
-    if (isEventPast(event.start_date)) return
+    if (isEventPast(event)) return
     setError(null)
 
     const biz = businessName.trim()
@@ -241,7 +241,7 @@ export function EventVendorSignupPage() {
     )
   }
 
-  if (isEventPast(event.start_date)) {
+  if (isEventPast(event)) {
     return (
       <div className="mx-auto max-w-lg px-4 py-20 text-center">
         <SEOHead title={`Vendor — ${event.title}`} noIndex />

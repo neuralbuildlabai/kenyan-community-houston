@@ -1,4 +1,5 @@
 import type { Event } from '@/lib/types'
+import { isEventPast } from '@/lib/eventDate'
 import { dedupeToNextOccurrenceOnly } from '@/lib/eventRecurrencePublic'
 
 function normalizeTitle(title: string): string {
@@ -28,15 +29,26 @@ export function dedupeUpcomingByDisplayTitle(events: Event[]): Event[] {
 }
 
 /**
- * Homepage and other surfaces: only `published` rows on or after a
- * calendar start date (YYYY-MM-DD). Past or non-public statuses never
- * pass through.
+ * Homepage and other surfaces: only published events that have not
+ * expired (end date/time, or start date/time fallback).
  */
+export function filterPublishedUpcomingEvents(events: Event[], now: Date = new Date()): Event[] {
+  return events.filter((e) => e.status === 'published' && !isEventPast(e, now))
+}
+
+/** @deprecated Prefer {@link filterPublishedUpcomingEvents}. */
 export function filterPublishedUpcomingByStartDate(
   events: Event[],
-  startOnOrAfterYmd: string
+  startOnOrAfterYmd: string,
+  now: Date = new Date()
 ): Event[] {
-  return events.filter((e) => e.status === 'published' && e.start_date >= startOnOrAfterYmd)
+  return filterPublishedUpcomingEvents(
+    events.filter((e) => {
+      if (e.end_date && e.end_date >= startOnOrAfterYmd) return true
+      return e.start_date >= startOnOrAfterYmd
+    }),
+    now
+  )
 }
 
 /**

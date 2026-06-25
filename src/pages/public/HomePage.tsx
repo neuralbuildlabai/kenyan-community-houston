@@ -6,7 +6,7 @@ import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
 import type { Event, Announcement } from '@/lib/types'
-import { buildHomepageWhatsHappeningList, filterPublishedUpcomingByStartDate } from '@/lib/homepageEvents'
+import { buildHomepageWhatsHappeningList, filterPublishedUpcomingEvents } from '@/lib/homepageEvents'
 import { buildHomepageAnnouncementsList } from '@/lib/announcementsPublic'
 import { trackClick } from '@/lib/analytics'
 import { FeaturedPoll } from '@/components/landing/FeaturedPoll'
@@ -77,11 +77,11 @@ export function HomePage() {
           .from('events')
           .select('*')
           .eq('status', 'published')
-          .gte('start_date', todayYmd)
+          .or(`end_date.gte.${todayYmd},and(end_date.is.null,start_date.gte.${todayYmd})`)
           .order('start_date', { ascending: true })
           .limit(60)
         const raw = (ev as Event[]) ?? []
-        const upcomingOnly = filterPublishedUpcomingByStartDate(raw, todayYmd)
+        const upcomingOnly = filterPublishedUpcomingEvents(raw)
         // Show up to 5: the soonest 2 are visually elevated ("Coming up
         // next") and the remainder render as a compact "Also coming up"
         // list. Past events naturally drop off because the query

@@ -15,7 +15,7 @@ interface EventCardProps {
 }
 
 export function EventCard({ event, presentation = 'default' }: EventCardProps) {
-  const past = isEventPast(event.start_date)
+  const past = isEventPast(event)
   const archive = presentation === 'archive'
   return (
     <Card

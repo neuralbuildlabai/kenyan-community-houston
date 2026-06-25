@@ -118,7 +118,7 @@ export function EventDetailPage() {
 
   if (loading) return <PageLoader />
 
-  const past = event ? isEventPast(event.start_date) : false
+  const past = event ? isEventPast(event) : false
 
   if (!event) {
     return (

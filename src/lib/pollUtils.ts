@@ -7,6 +7,14 @@ export function isPollClosed(poll: Pick<DbPoll, 'closes_at'>, now: Date = new Da
   return !Number.isNaN(t) && t <= now.getTime()
 }
 
+/** True when a poll is eligible for the homepage featured widget. */
+export function isPollFeaturedPublicly(
+  poll: Pick<DbPoll, 'is_active' | 'is_featured' | 'closes_at'>,
+  now: Date = new Date()
+): boolean {
+  return poll.is_active && poll.is_featured && !isPollClosed(poll, now)
+}
+
 /** Friendly closing date for poll UI. */
 export function formatPollClosesAt(closesAt: string): string {
   const d = new Date(closesAt)

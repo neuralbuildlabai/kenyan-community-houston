@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { isPollFeaturedPublicly } from '@/lib/pollUtils'
 
 /**
  * Polls API — thin wrappers around the `polls`, `poll_options`, `poll_votes`
@@ -107,16 +108,18 @@ export async function fetchActivePolls(): Promise<PollWithOptions[]> {
 }
 
 export async function fetchFeaturedPoll(): Promise<PollWithOptions | null> {
-  const { data: poll, error } = await supabase
+  const { data: polls, error } = await supabase
     .from('polls')
     .select('*')
     .eq('is_active', true)
     .eq('is_featured', true)
     .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+    .limit(5)
 
-  if (error || !poll) return null
+  if (error || !polls || polls.length === 0) return null
+
+  const poll = (polls as DbPoll[]).find((p) => isPollFeaturedPublicly(p))
+  if (!poll) return null
 
   const { data: options, error: optErr } = await supabase
     .from('poll_options')
@@ -126,7 +129,7 @@ export async function fetchFeaturedPoll(): Promise<PollWithOptions | null> {
     .order('created_at')
 
   if (optErr) return null
-  return { ...(poll as DbPoll), options: (options ?? []) as DbPollOption[] }
+  return { ...poll, options: (options ?? []) as DbPollOption[] }
 }
 
 /**

@@ -95,7 +95,7 @@ export function EventVolunteerSignupPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!event?.id) return
-    if (isEventPast(event.start_date)) return
+    if (isEventPast(event)) return
     setError(null)
     const name = fullName.trim()
     if (name.length < 2) {
@@ -165,7 +165,7 @@ export function EventVolunteerSignupPage() {
     )
   }
 
-  if (isEventPast(event.start_date)) {
+  if (isEventPast(event)) {
     return (
       <div className="mx-auto max-w-lg px-4 py-20 text-center">
         <SEOHead title={`Volunteer — ${event.title}`} noIndex />

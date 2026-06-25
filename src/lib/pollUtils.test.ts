@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   formatPollClosesAt,
   isPollClosed,
+  isPollFeaturedPublicly,
   partitionPublicPolls,
 } from '@/lib/pollUtils'
 import type { PollWithOptions } from '@/lib/pollsApi'
@@ -78,15 +79,40 @@ describe('formatPollClosesAt', () => {
   })
 })
 
+describe('isPollFeaturedPublicly', () => {
+  it('requires active, featured, and not closed', () => {
+    const now = new Date('2026-06-18T12:00:00Z')
+    expect(
+      isPollFeaturedPublicly(
+        { is_active: true, is_featured: true, closes_at: '2026-07-01T00:00:00Z' },
+        now
+      )
+    ).toBe(true)
+    expect(
+      isPollFeaturedPublicly(
+        { is_active: true, is_featured: true, closes_at: '2026-06-01T00:00:00Z' },
+        now
+      )
+    ).toBe(false)
+  })
+})
+
 describe('fetchFeaturedPoll selection logic', () => {
-  it('picks newest featured active poll when multiple match', () => {
+  it('picks newest featured active open poll when multiple match', () => {
+    const now = new Date('2026-06-18T12:00:00Z')
     const polls = [
+      basePoll({
+        id: 'closed',
+        is_featured: true,
+        closes_at: '2026-06-01T00:00:00Z',
+        created_at: '2026-06-20T00:00:00Z',
+      }),
       basePoll({ id: 'old', is_featured: true, created_at: '2026-06-01T00:00:00Z' }),
       basePoll({ id: 'new', is_featured: true, created_at: '2026-06-15T00:00:00Z' }),
       basePoll({ id: 'other', is_featured: false, created_at: '2026-06-20T00:00:00Z' }),
     ]
     const featured = polls
-      .filter((p) => p.is_active && p.is_featured)
+      .filter((p) => isPollFeaturedPublicly(p, now))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
     expect(featured?.id).toBe('new')
   })
