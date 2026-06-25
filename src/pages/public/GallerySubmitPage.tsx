@@ -12,13 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/contexts/AuthContext'
 import {
-  GALLERY_MAX_INPUT_BYTES,
   GALLERY_PUBLIC_BUCKET,
   GALLERY_SUBMISSIONS_BUCKET,
   gallerySubmissionThumbPath,
   gallerySubmissionWebPath,
 } from '@/lib/galleryConstants'
 import { buildGalleryWebAndThumb, GalleryImageProcessingError } from '@/lib/galleryImageProcessing'
+import { isHeicFile, isLikelyImageFile } from '@/lib/imageOptimization'
 import { supabase } from '@/lib/supabase'
 import type { GalleryAlbum } from '@/lib/types'
 import { toast } from 'sonner'
@@ -89,14 +89,12 @@ export function GallerySubmitPage() {
     if (!list?.length) return
     const next: QueuedFile[] = []
     for (const file of Array.from(list)) {
-      if (!file.type.startsWith('image/')) {
+      if (!isLikelyImageFile(file)) {
         toast.error(`${file.name} is not an image.`)
         continue
       }
-      if (file.size > GALLERY_MAX_INPUT_BYTES) {
-        toast.error(
-          `${file.name} is too large (max ${Math.round(GALLERY_MAX_INPUT_BYTES / (1024 * 1024))} MB).`
-        )
+      if (isHeicFile(file)) {
+        toast.error(`${file.name} is HEIC/HEIF, which is not supported. Please convert to JPEG first.`)
         continue
       }
       next.push({
@@ -148,6 +146,8 @@ export function GallerySubmitPage() {
         : ({ kind: 'anon' as const, batchId: anonBatchId })
 
     let done = 0
+    let failed = 0
+    let optimizedCount = 0
     const total = queued.length
 
     for (const row of queued) {
@@ -164,13 +164,14 @@ export function GallerySubmitPage() {
         web = built.web
         thumb = built.thumb
         ext = mimeToExt(built.mime)
+        if (built.wasOptimized) optimizedCount += 1
       } catch (err) {
         const msg =
           err instanceof GalleryImageProcessingError ? err.message : 'Could not process image.'
         setQueued((q) => q.map((x) => (x.id === row.id ? { ...x, status: 'error', error: msg } : x)))
-        toast.error(msg)
-        setSubmitting(false)
-        return
+        failed += 1
+        console.warn(`[gallery submit] ${row.file.name}: ${msg}`)
+        continue
       }
 
       const fileId = newId()
@@ -188,9 +189,9 @@ export function GallerySubmitPage() {
       if (upWeb) {
         const msg = upWeb.message
         setQueued((q) => q.map((x) => (x.id === row.id ? { ...x, status: 'error', error: msg } : x)))
-        toast.error(msg)
-        setSubmitting(false)
-        return
+        failed += 1
+        console.warn(`[gallery submit] ${row.file.name}: ${msg}`)
+        continue
       }
       const { error: upTh } = await supabase.storage
         .from(GALLERY_SUBMISSIONS_BUCKET)
@@ -201,9 +202,9 @@ export function GallerySubmitPage() {
       if (upTh) {
         const msg = upTh.message
         setQueued((q) => q.map((x) => (x.id === row.id ? { ...x, status: 'error', error: msg } : x)))
-        toast.error(msg)
-        setSubmitting(false)
-        return
+        failed += 1
+        console.warn(`[gallery submit] ${row.file.name}: ${msg}`)
+        continue
       }
 
       setQueued((q) => q.map((x) => (x.id === row.id ? { ...x, status: 'saving' } : x)))
@@ -227,27 +228,33 @@ export function GallerySubmitPage() {
       if (ins) {
         const msg = ins.message
         setQueued((q) => q.map((x) => (x.id === row.id ? { ...x, status: 'error', error: msg } : x)))
-        if (/permission denied|row-level security|42501/i.test(msg)) {
-          toast.error(
-            user
-              ? 'Submission was blocked by permissions. Sign out and submit as a guest with your name and email, or contact KIGH for help.'
-              : 'Submission was blocked. Confirm your name and email, then try again. If this continues, contact KIGH.'
-          )
-        } else {
-          toast.error(msg)
-        }
-        setSubmitting(false)
-        return
+        failed += 1
+        console.warn(`[gallery submit] ${row.file.name}: ${msg}`)
+        continue
       }
 
       done++
-      setProgressPct(Math.round((done / total) * 100))
+      setProgressPct(Math.round(((done + failed) / total) * 100))
       setQueued((q) => q.map((x) => (x.id === row.id ? { ...x, status: 'done' } : x)))
     }
 
-    toast.success('Photos submitted for review. Thank you!')
+    if (done > 0 && failed === 0) {
+      if (optimizedCount > 0) {
+        toast.success('Photos submitted for review. Some large photos were optimized before upload. Thank you!')
+      } else {
+        toast.success('Photos submitted for review. Thank you!')
+      }
+      setQueued([])
+    } else if (done > 0 && failed > 0) {
+      toast.warning(`${done} photo${done === 1 ? '' : 's'} submitted for review. ${failed} could not be uploaded.`)
+      if (optimizedCount > 0) {
+        toast.message('Some large photos were optimized before upload.')
+      }
+    } else if (failed > 0) {
+      toast.error(`${failed} photo${failed === 1 ? '' : 's'} could not be uploaded. See queue details below.`)
+    }
+
     setSubmitting(false)
-    setQueued([])
   }
 
   return (

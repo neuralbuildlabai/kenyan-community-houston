@@ -7,8 +7,8 @@ export const GALLERY_PUBLIC_BUCKET = 'gallery-public'
 /** Aligned with migration 035 `file_size_limit` on both gallery buckets. */
 export const GALLERY_MAX_INPUT_BYTES = 12 * 1024 * 1024
 
-export const GALLERY_WEB_MAX_WIDTH = 1920
-export const GALLERY_THUMB_MAX_WIDTH = 500
+export const GALLERY_WEB_MAX_WIDTH = 2400
+export const GALLERY_THUMB_MAX_WIDTH = 800
 
 export function gallerySubmissionWebPath(
   owner: { kind: 'anon'; batchId: string } | { kind: 'user'; userId: string },

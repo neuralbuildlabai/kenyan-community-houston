@@ -314,18 +314,36 @@ export function AdminGalleryPage() {
     }
   }
 
+  async function setAlbumCover(
+    albumId: string,
+    thumbUrl: string | null,
+    imageUrl: string | null,
+    options?: { silent?: boolean }
+  ) {
+    const cover = thumbUrl ?? imageUrl
+    if (!cover) return
+    const { error } = await supabase.from('gallery_albums').update({ cover_url: cover }).eq('id', albumId)
+    if (error) toast.error(error.message)
+    else {
+      setAlbums((arr) => arr.map((a) => (a.id === albumId ? { ...a, cover_url: cover } : a)))
+      if (!options?.silent) {
+        toast.success('Cover updated')
+      }
+    }
+  }
+
+  type UploadImageResult =
+    | { ok: true; thumbUrl: string; webUrl: string; wasOptimized: boolean }
+    | { ok: false; reason: string }
+
   /**
    * Process + upload a single file into the public gallery bucket and
-   * insert the matching `gallery_images` row. Returns true on success.
-   *
-   * Pulled out of the change handler so the same code path is shared by
-   * the legacy single-file picker AND the new per-album multi-file
-   * picker on the Albums tab.
+   * insert the matching `gallery_images` row.
    */
   async function uploadOneImage(
     file: File,
     options: { albumId: string | null; caption: string | null }
-  ): Promise<boolean> {
+  ): Promise<UploadImageResult> {
     try {
       const built = await buildGalleryWebAndThumb(file)
       const ext = built.mime === 'image/webp' ? 'webp' : 'jpg'
@@ -339,16 +357,14 @@ export function AdminGalleryPage() {
         upsert: false,
       })
       if (upWeb) {
-        toast.error(`${file.name}: ${upWeb.message}`)
-        return false
+        return { ok: false, reason: `${file.name} failed to upload. Please try again.` }
       }
       const { error: upTh } = await supabase.storage.from(GALLERY_PUBLIC_BUCKET).upload(thumbPath, built.thumb, {
         contentType: ct,
         upsert: false,
       })
       if (upTh) {
-        toast.error(`${file.name}: ${upTh.message}`)
-        return false
+        return { ok: false, reason: `${file.name} failed to upload thumbnail. Please try again.` }
       }
       const { data: webPub } = supabase.storage.from(GALLERY_PUBLIC_BUCKET).getPublicUrl(webPath)
       const { data: thPub } = supabase.storage.from(GALLERY_PUBLIC_BUCKET).getPublicUrl(thumbPath)
@@ -363,24 +379,29 @@ export function AdminGalleryPage() {
         },
       ])
       if (dbError) {
-        toast.error(`${file.name}: failed to save image record`)
-        return false
+        return { ok: false, reason: `${file.name} failed to save image record.` }
       }
-      return true
+      return {
+        ok: true,
+        thumbUrl: thPub.publicUrl,
+        webUrl: webPub.publicUrl,
+        wasOptimized: built.wasOptimized,
+      }
     } catch (err) {
-      toast.error(
-        err instanceof GalleryImageProcessingError
-          ? `${file.name}: ${err.message}`
-          : `${file.name}: upload failed`
-      )
-      return false
+      return {
+        ok: false,
+        reason:
+          err instanceof GalleryImageProcessingError
+            ? err.message
+            : `${file.name} failed to upload. Please try again.`,
+      }
     }
   }
 
   /**
    * Multi-file upload entry point used by both the Published-tab
    * "Direct upload" picker and the per-album "Upload images" buttons
-   * on the Albums tab. Reports a single aggregated toast at the end.
+   * on the Albums tab. Reports aggregated toasts at the end.
    */
   async function uploadMany(
     files: FileList | File[] | null,
@@ -391,23 +412,58 @@ export function AdminGalleryPage() {
     setUploading(true)
     let ok = 0
     let failed = 0
+    let optimizedCount = 0
+    const failures: { name: string; reason: string }[] = []
+    const targetAlbum = target.albumId ? albums.find((a) => a.id === target.albumId) : null
+    const needsCover = !!targetAlbum && !targetAlbum.cover_url
+    let coverSet = false
+
     try {
-      // Sequential by design: keeps memory/network steady when an admin
-       // drops 20+ photos in at once, and lets us emit per-file toasts in order.
       for (const file of list) {
-        const success = await uploadOneImage(file, target)
-        if (success) ok += 1
-        else failed += 1
+        const result = await uploadOneImage(file, target)
+        if (result.ok) {
+          ok += 1
+          if (result.wasOptimized) optimizedCount += 1
+          if (needsCover && target.albumId && !coverSet) {
+            await setAlbumCover(target.albumId, result.thumbUrl, result.webUrl, { silent: true })
+            coverSet = true
+          }
+        } else {
+          failed += 1
+          failures.push({ name: file.name, reason: result.reason })
+          console.warn(`[gallery upload] ${file.name}: ${result.reason}`)
+        }
       }
-      if (ok > 0 && failed === 0) {
-        toast.success(`Uploaded ${ok} image${ok === 1 ? '' : 's'}`)
+
+      if (ok > 0) {
         setCaption('')
         void loadImages()
+        void loadAlbums()
+      }
+
+      if (ok > 0 && failed === 0) {
+        if (optimizedCount > 0) {
+          toast.success(
+            `Uploaded ${ok} image${ok === 1 ? '' : 's'}. Some large photos were optimized before upload.`
+          )
+        } else {
+          toast.success(`Uploaded ${ok} image${ok === 1 ? '' : 's'}`)
+        }
       } else if (ok > 0 && failed > 0) {
-        toast.warning(`Uploaded ${ok}; ${failed} failed`)
-        void loadImages()
+        toast.warning(
+          `${ok} image${ok === 1 ? '' : 's'} uploaded successfully. ${failed} could not be uploaded.`
+        )
+        if (optimizedCount > 0) {
+          toast.message('Some large photos were optimized before upload.')
+        }
+        for (const failure of failures) {
+          console.warn(`${failure.name}: ${failure.reason}`)
+        }
       } else if (failed > 0) {
-        // Individual errors already toasted above.
+        toast.error(`${failed} image${failed === 1 ? '' : 's'} could not be uploaded. See console for details.`)
+        for (const failure of failures) {
+          console.warn(`${failure.name}: ${failure.reason}`)
+        }
       }
     } finally {
       setUploading(false)
@@ -489,17 +545,6 @@ export function AdminGalleryPage() {
     else {
       toast.success('Saved')
       void loadImages()
-    }
-  }
-
-  async function setAlbumCover(albumId: string, thumbUrl: string | null, imageUrl: string | null) {
-    const cover = thumbUrl ?? imageUrl
-    if (!cover) return
-    const { error } = await supabase.from('gallery_albums').update({ cover_url: cover }).eq('id', albumId)
-    if (error) toast.error(error.message)
-    else {
-      toast.success('Cover updated')
-      void loadAlbums()
     }
   }
 
@@ -1030,7 +1075,7 @@ export function AdminGalleryPage() {
                   <div
                     key={img.id}
                     className={cn(
-                      'relative rounded-xl overflow-hidden bg-muted aspect-square ring-2',
+                      'relative rounded-xl overflow-hidden bg-muted aspect-[4/3] ring-2',
                       isSelected ? 'ring-primary/50' : 'ring-transparent'
                     )}
                   >
@@ -1042,7 +1087,7 @@ export function AdminGalleryPage() {
                         data-testid={`gallery-published-select-${img.id}`}
                       />
                     </div>
-                    <img src={thumb} alt="" className="w-full h-full object-cover" />
+                    <img src={thumb} alt="" className="gallery-image h-full w-full object-cover" />
                     
                     <div className="absolute inset-x-0 bottom-0 flex flex-wrap gap-1 bg-black/80 p-2">
                       <Button
@@ -1186,12 +1231,12 @@ export function AdminGalleryPage() {
                 const imgCount = imageCountByAlbum.get(a.id) ?? 0
                 return (
                   <Card key={a.id} className="overflow-hidden" data-testid={`gallery-album-card-${a.id}`}>
-                    <div className="aspect-[16/10] bg-muted relative">
+                    <div className="aspect-[4/3] bg-muted relative">
                       {a.cover_url ? (
                         <img
                           src={a.cover_url}
                           alt=""
-                          className="h-full w-full object-cover"
+                          className="album-cover-image h-full w-full object-cover"
                         />
                       ) : (
                         <div className="h-full w-full flex items-center justify-center text-muted-foreground/60">

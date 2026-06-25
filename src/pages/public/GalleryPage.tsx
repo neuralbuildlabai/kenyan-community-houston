@@ -156,7 +156,7 @@ export function GalleryPage() {
                           alt={displayAlt(img)}
                           loading="lazy"
                           decoding="async"
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                          className="gallery-image h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                       </button>
@@ -230,7 +230,7 @@ export function GalleryPage() {
                       <button
                         key={img.id}
                         type="button"
-                        className="group relative aspect-square cursor-pointer overflow-hidden rounded-xl bg-muted"
+                        className="group relative aspect-[4/3] cursor-pointer overflow-hidden rounded-xl bg-muted"
                         onClick={() => openLightbox(img)}
                       >
                         <img
@@ -238,7 +238,7 @@ export function GalleryPage() {
                           alt={displayAlt(img)}
                           loading="lazy"
                           decoding="async"
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                          className="gallery-image h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
                         />
                         {img.caption?.trim() ? (
                           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100">

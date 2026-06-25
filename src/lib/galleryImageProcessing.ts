@@ -1,4 +1,13 @@
-import { GALLERY_MAX_INPUT_BYTES, GALLERY_THUMB_MAX_WIDTH, GALLERY_WEB_MAX_WIDTH } from '@/lib/galleryConstants'
+import {
+  GALLERY_MAX_INPUT_BYTES,
+  GALLERY_THUMB_MAX_WIDTH,
+  GALLERY_WEB_MAX_WIDTH,
+} from '@/lib/galleryConstants'
+import {
+  ImageOptimizationError,
+  isLikelyImageFile,
+  optimizeImageFile,
+} from '@/lib/imageOptimization'
 
 function canEncodeWebp(): boolean {
   try {
@@ -14,7 +23,7 @@ function canEncodeWebp(): boolean {
 
 async function bitmapFromFile(file: File, maxWidth: number): Promise<ImageBitmap> {
   try {
-    return await createImageBitmap(file, { resizeWidth: maxWidth })
+    return await createImageBitmap(file, { resizeWidth: maxWidth, resizeQuality: 'high' })
   } catch {
     const url = URL.createObjectURL(file)
     try {
@@ -55,6 +64,23 @@ async function bitmapToBlob(bitmap: ImageBitmap, mime: 'image/webp' | 'image/jpe
   return blob
 }
 
+async function encodeWithQualitySteps(
+  file: File,
+  maxWidth: number,
+  mime: 'image/webp' | 'image/jpeg',
+  qualities: number[]
+): Promise<Blob> {
+  let lastBlob: Blob | null = null
+  for (const quality of qualities) {
+    const bitmap = await bitmapFromFile(file, maxWidth)
+    const blob = await bitmapToBlob(bitmap, mime, quality)
+    lastBlob = blob
+    if (blob.size <= GALLERY_MAX_INPUT_BYTES) return blob
+  }
+  if (lastBlob) return lastBlob
+  throw new Error('Image encoding failed')
+}
+
 export class GalleryImageProcessingError extends Error {
   constructor(message: string) {
     super(message)
@@ -62,31 +88,45 @@ export class GalleryImageProcessingError extends Error {
   }
 }
 
+export interface GalleryProcessedImage {
+  web: Blob
+  thumb: Blob
+  mime: 'image/webp' | 'image/jpeg'
+  wasOptimized: boolean
+}
+
 /**
- * Resize in-browser (strips EXIF via redraw), returns web + thumbnail blobs.
+ * Optimize large originals when needed, then return web + thumbnail blobs.
  * Prefer WebP when the browser supports encoding it; otherwise JPEG.
  */
-export async function buildGalleryWebAndThumb(file: File): Promise<{ web: Blob; thumb: Blob; mime: 'image/webp' | 'image/jpeg' }> {
-  if (!file.type.startsWith('image/')) {
+export async function buildGalleryWebAndThumb(file: File): Promise<GalleryProcessedImage> {
+  if (!isLikelyImageFile(file)) {
     throw new GalleryImageProcessingError('Please choose an image file (JPEG, PNG, or WebP).')
   }
-  if (file.size > GALLERY_MAX_INPUT_BYTES) {
-    throw new GalleryImageProcessingError(
-      `Each image must be under ${Math.round(GALLERY_MAX_INPUT_BYTES / (1024 * 1024))} MB after selection. Try a smaller photo.`
-    )
+
+  let sourceFile = file
+  let wasOptimized = false
+  try {
+    const optimized = await optimizeImageFile(file)
+    sourceFile = optimized.file
+    wasOptimized = optimized.wasOptimized
+  } catch (err) {
+    if (err instanceof ImageOptimizationError) {
+      throw new GalleryImageProcessingError(err.message)
+    }
+    throw err
   }
 
   const mime: 'image/webp' | 'image/jpeg' = canEncodeWebp() ? 'image/webp' : 'image/jpeg'
+  const webQualities = mime === 'image/webp' ? [0.82, 0.78, 0.74] : [0.88, 0.85, 0.82, 0.78]
+  const thumbQualities = mime === 'image/webp' ? [0.82, 0.78] : [0.85, 0.82, 0.78]
 
-  const webBmp = await bitmapFromFile(file, GALLERY_WEB_MAX_WIDTH)
-  const thumbBmp = await bitmapFromFile(file, GALLERY_THUMB_MAX_WIDTH)
-
-  const web = await bitmapToBlob(webBmp, mime, mime === 'image/webp' ? 0.82 : 0.88)
-  const thumb = await bitmapToBlob(thumbBmp, mime, mime === 'image/webp' ? 0.8 : 0.85)
+  const web = await encodeWithQualitySteps(sourceFile, GALLERY_WEB_MAX_WIDTH, mime, webQualities)
+  const thumb = await encodeWithQualitySteps(sourceFile, GALLERY_THUMB_MAX_WIDTH, mime, thumbQualities)
 
   if (web.size > GALLERY_MAX_INPUT_BYTES || thumb.size > GALLERY_MAX_INPUT_BYTES) {
-    throw new GalleryImageProcessingError('Compressed image is still too large. Try a smaller original.')
+    throw new GalleryImageProcessingError(`${file.name} could not be optimized below 12 MB.`)
   }
 
-  return { web, thumb, mime }
+  return { web, thumb, mime, wasOptimized }
 }
