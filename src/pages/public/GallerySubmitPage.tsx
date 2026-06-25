@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/contexts/AuthContext'
 import {
+  GALLERY_MAX_INPUT_BYTES,
   GALLERY_PUBLIC_BUCKET,
   GALLERY_SUBMISSIONS_BUCKET,
   gallerySubmissionThumbPath,
@@ -334,8 +335,9 @@ export function GallerySubmitPage() {
               <fieldset className="space-y-4">
                 <legend className="text-base font-semibold text-foreground">Photos</legend>
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  Max {Math.round(GALLERY_MAX_INPUT_BYTES / (1024 * 1024))} MB per file. Images are
-                  resized in your browser before upload (metadata is not kept).
+                  Large originals are accepted. Images are optimized in your browser before upload (up
+                  to {Math.round(GALLERY_MAX_INPUT_BYTES / (1024 * 1024))} MB after optimization). Metadata
+                  is not kept.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" variant="outline" className="gap-2" asChild disabled={submitting}>
