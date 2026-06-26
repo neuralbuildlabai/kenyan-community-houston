@@ -94,24 +94,31 @@ function AttentionRow({ item }: { item: AttentionItem }) {
       data-testid={item.testId}
       title={needsAction ? `${item.value} ${item.label.toLowerCase()}` : item.emptyLabel}
       className={cn(
-        'flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 transition-colors',
+        'group flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition-colors',
         needsAction
-          ? 'border-amber-200/80 bg-amber-50/50 hover:border-amber-300'
-          : 'border-border/60 bg-muted/10 hover:border-primary/25'
+          ? 'bg-amber-50/60 hover:bg-amber-50'
+          : 'hover:bg-slate-50/80'
       )}
     >
-      <span className="flex items-start gap-2 text-sm leading-snug text-muted-foreground">
-        {needsAction ? (
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden />
-        ) : (
-          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary/60" aria-hidden />
-        )}
-        <span>{item.label}</span>
+      <span className="flex min-w-0 items-center gap-2.5 text-[13px] leading-snug text-foreground/80">
+        <span
+          className={cn(
+            'flex h-7 w-7 shrink-0 items-center justify-center rounded-full',
+            needsAction ? 'bg-amber-100/90 text-amber-800' : 'bg-kenyan-green-100/60 text-kenyan-green-700'
+          )}
+        >
+          {needsAction ? (
+            <AlertCircle className="h-3.5 w-3.5" aria-hidden />
+          ) : (
+            <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+          )}
+        </span>
+        <span className="truncate">{item.label}</span>
       </span>
       <span
         className={cn(
-          'text-lg font-bold tabular-nums shrink-0',
-          needsAction ? 'text-amber-900' : 'text-foreground'
+          'shrink-0 rounded-full px-2.5 py-0.5 text-sm font-semibold tabular-nums',
+          needsAction ? 'bg-amber-200/50 text-amber-900' : 'bg-slate-100 text-slate-600'
         )}
         aria-label={needsAction ? `${item.value} need attention` : `${item.value}, no action needed`}
       >
@@ -126,16 +133,16 @@ export function NeedsAttentionPanel({ summary, loading = false }: NeedsAttention
 
   if (loading) {
     return (
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-14 animate-pulse rounded-lg bg-muted" />
+          <div key={i} className="h-12 animate-pulse rounded-xl bg-slate-100/80" />
         ))}
       </div>
     )
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid gap-1.5 sm:grid-cols-2">
       {items.map((item) => (
         <AttentionRow key={item.testId} item={item} />
       ))}

@@ -276,19 +276,23 @@ export function AdminDashboardPage() {
     : 0
 
   return (
-    <div className="-mx-4 -my-4 min-h-full space-y-8 bg-[hsl(48_38%_97%)] px-4 py-6 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+    <div className="-mx-4 -my-4 min-h-full space-y-7 bg-[hsl(48_32%_97%)] px-4 py-6 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
       {/* Header */}
-      <header className="rounded-xl border border-border/70 bg-white p-5 sm:p-6">
+      <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-kenyan-green-50/90 via-white to-[hsl(48_32%_98%)] px-5 py-6 sm:px-7 sm:py-7">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-kenyan-green-600/80 via-kenyan-green-500/50 to-teal-500/40"
+          aria-hidden
+        />
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-2xl space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          <div className="max-w-2xl space-y-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-[1.75rem]">
               Community Platform Dashboard
             </h1>
-            <p className="text-sm text-muted-foreground sm:text-base">
+            <p className="text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
               Operations and engagement overview of the community platform.
             </p>
-            <p className="text-xs text-muted-foreground pt-1">
-              <span className="font-medium text-foreground">{periodLabel}</span>
+            <p className="text-xs text-muted-foreground">
+              <span className="font-medium text-foreground/90">{periodLabel}</span>
               <span aria-hidden> · </span>
               {dateRangeLabel}
             </p>
@@ -300,7 +304,7 @@ export function AdminDashboardPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="gap-2"
+                className="gap-2 border-slate-200/70 bg-white/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-white"
                 onClick={() => void handleRefresh()}
                 disabled={refreshing}
                 aria-label="Refresh dashboard data"
@@ -308,7 +312,7 @@ export function AdminDashboardPage() {
                 <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden />
                 Refresh
               </Button>
-              <Button asChild variant="default" size="sm" className="gap-2">
+              <Button asChild variant="default" size="sm" className="gap-2 shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
                 <Link to="/admin/analytics">
                   <BarChart3 className="h-4 w-4" aria-hidden />
                   View full analytics
@@ -323,12 +327,18 @@ export function AdminDashboardPage() {
         <DashboardStatusBanner message={`${summaryError} KPI counts below may show zero until the summary service is available.`} />
       ) : null}
 
-      {/* Primary KPIs */}
-      <section aria-labelledby="primary-kpis-heading">
-        <h2 id="primary-kpis-heading" className="sr-only">
-          Primary KPIs
-        </h2>
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
+      {/* Primary KPIs — Community Snapshot */}
+      <section
+        aria-labelledby="primary-kpis-heading"
+        className="overflow-hidden rounded-2xl border border-kenyan-green-100/50 bg-gradient-to-br from-kenyan-green-50/50 via-white to-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+      >
+        <div className="border-b border-kenyan-green-100/40 px-5 py-3.5">
+          <h2 id="primary-kpis-heading" className="text-sm font-semibold tracking-tight text-foreground">
+            Community snapshot
+          </h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">Key platform metrics at a glance</p>
+        </div>
+        <div className="grid grid-cols-2 divide-x divide-y divide-kenyan-green-100/35 lg:grid-cols-3 xl:grid-cols-6 xl:divide-y-0">
           <AdminStatCard
             label="Total Members"
             value={summary?.members.total ?? 0}
@@ -336,6 +346,7 @@ export function AdminDashboardPage() {
             href="/admin/members"
             icon={Users}
             loading={loading}
+            layout="strip"
           />
           <AdminStatCard
             label="Active Members"
@@ -344,6 +355,7 @@ export function AdminDashboardPage() {
             href="/admin/members"
             icon={UserCheck}
             loading={loading}
+            layout="strip"
           />
           <AdminStatCard
             label="Published Events"
@@ -352,6 +364,7 @@ export function AdminDashboardPage() {
             href="/admin/calendar"
             icon={Calendar}
             loading={loading}
+            layout="strip"
           />
           <AdminStatCard
             label="Businesses Listed"
@@ -360,6 +373,7 @@ export function AdminDashboardPage() {
             href="/admin/businesses"
             icon={Building2}
             loading={loading}
+            layout="strip"
           />
           <AdminStatCard
             label="Live Fundraisers"
@@ -368,6 +382,7 @@ export function AdminDashboardPage() {
             href="/admin/fundraisers"
             icon={Heart}
             loading={loading}
+            layout="strip"
           />
           <AdminStatCard
             label="Pending Reviews"
@@ -377,16 +392,23 @@ export function AdminDashboardPage() {
             icon={ClipboardList}
             loading={loading}
             accent="warning"
+            layout="strip"
           />
         </div>
       </section>
 
-      {/* Secondary operational cards */}
-      <section aria-labelledby="operational-kpis-heading">
-        <h2 id="operational-kpis-heading" className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-          Operations
-        </h2>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+      {/* Secondary operational metrics */}
+      <section
+        aria-labelledby="operational-kpis-heading"
+        className="overflow-hidden rounded-2xl border border-slate-200/40 bg-white/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)]"
+      >
+        <div className="border-b border-slate-100/80 px-5 py-3.5">
+          <h2 id="operational-kpis-heading" className="text-sm font-semibold tracking-tight text-foreground">
+            Operations
+          </h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">Queues, signups, and day-to-day admin work</p>
+        </div>
+        <div className="grid grid-cols-2 divide-x divide-y divide-slate-100/80 md:grid-cols-3 lg:grid-cols-6 lg:divide-y-0">
           <AdminStatCard
             label="Membership Applications"
             value={summary?.members.pending ?? 0}
@@ -395,6 +417,7 @@ export function AdminDashboardPage() {
             icon={Users}
             loading={loading}
             accent="warning"
+            layout="compact"
           />
           <AdminStatCard
             label="Contact Messages"
@@ -404,6 +427,7 @@ export function AdminDashboardPage() {
             icon={MessageSquare}
             loading={loading}
             accent="warning"
+            layout="compact"
           />
           <AdminStatCard
             label="Gallery / Media Review"
@@ -419,6 +443,7 @@ export function AdminDashboardPage() {
             icon={Image}
             loading={loading}
             accent="warning"
+            layout="compact"
           />
           <AdminStatCard
             label="Volunteer Signups"
@@ -427,6 +452,7 @@ export function AdminDashboardPage() {
             href="/admin/volunteers"
             icon={HeartHandshake}
             loading={loading}
+            layout="compact"
           />
           <AdminStatCard
             label="Vendor Signups"
@@ -435,6 +461,7 @@ export function AdminDashboardPage() {
             href="/admin/vendors"
             icon={Store}
             loading={loading}
+            layout="compact"
           />
           <AdminStatCard
             label="Poll Activity"
@@ -443,78 +470,98 @@ export function AdminDashboardPage() {
             href="/admin/polls"
             icon={Vote}
             loading={loading}
+            layout="compact"
           />
         </div>
       </section>
 
-      {/* Analytics summary row */}
-      <section aria-labelledby="analytics-summary-heading">
-        <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <h2 id="analytics-summary-heading" className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Analytics summary
-          </h2>
-          {analyticsError ? (
-            <p role="status" className="text-xs text-amber-800">
-              {analyticsError}
-            </p>
-          ) : null}
+      {/* Analytics */}
+      <section aria-labelledby="analytics-summary-heading" className="space-y-5">
+        <div className="overflow-hidden rounded-2xl border border-teal-200/35 bg-gradient-to-br from-teal-50/30 via-white to-emerald-50/20 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+          <div className="flex flex-col gap-1 border-b border-teal-100/50 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 id="analytics-summary-heading" className="text-sm font-semibold tracking-tight text-foreground">
+                Analytics summary
+              </h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">{periodLabel} · {dateRangeLabel}</p>
+            </div>
+            {analyticsError ? (
+              <p role="status" className="text-xs text-amber-800">
+                {analyticsError}
+              </p>
+            ) : null}
+          </div>
+          <div className="grid grid-cols-2 divide-x divide-y divide-teal-100/40 md:grid-cols-3 lg:grid-cols-6 lg:divide-y-0">
+            <DashboardMetricCard label="Page Views" value={engagementTotals.page_views} icon={Eye} loading={analyticsLoading} layout="strip" />
+            <DashboardMetricCard
+              label="Unique Sessions"
+              value={engagementTotals.unique_sessions}
+              icon={Users}
+              loading={analyticsLoading}
+              layout="strip"
+            />
+            <DashboardMetricCard label="Total Clicks" value={engagementTotals.clicks} icon={MousePointerClick} loading={analyticsLoading} layout="strip" />
+            <DashboardMetricCard label="CTA Clicks" value={engagementTotals.cta_clicks} icon={BarChart3} loading={analyticsLoading} layout="strip" />
+            <DashboardMetricCard
+              label="Form Submissions"
+              value={engagementTotals.form_submissions}
+              icon={FileInput}
+              loading={analyticsLoading}
+              layout="strip"
+            />
+            <DashboardMetricCard label="Sign-ins" value={engagementTotals.sign_ins} icon={LogIn} loading={analyticsLoading} layout="strip" />
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-          <DashboardMetricCard label="Page Views" value={engagementTotals.page_views} icon={Eye} loading={analyticsLoading} />
-          <DashboardMetricCard
-            label="Unique Sessions"
-            value={engagementTotals.unique_sessions}
-            icon={Users}
-            loading={analyticsLoading}
-          />
-          <DashboardMetricCard label="Total Clicks" value={engagementTotals.clicks} icon={MousePointerClick} loading={analyticsLoading} />
-          <DashboardMetricCard label="CTA Clicks" value={engagementTotals.cta_clicks} icon={BarChart3} loading={analyticsLoading} />
-          <DashboardMetricCard
-            label="Form Submissions"
-            value={engagementTotals.form_submissions}
-            icon={FileInput}
-            loading={analyticsLoading}
-          />
-          <DashboardMetricCard label="Sign-ins" value={engagementTotals.sign_ins} icon={LogIn} loading={analyticsLoading} />
+
+        <DashboardSectionCard
+          title="Traffic & engagement trend"
+          description={`Page views, sessions, clicks, and form submissions — ${periodLabel.toLowerCase()}`}
+          variant="analytics"
+          icon={
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-100/70 text-teal-700">
+              <BarChart3 className="h-3.5 w-3.5" aria-hidden />
+            </span>
+          }
+        >
+          <TrafficTrendPanel points={trendPoints} loading={analyticsLoading} periodLabel={periodLabel} />
+        </DashboardSectionCard>
+
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <DashboardSectionCard title="Top accessed pages" description={periodLabel} variant="analytics">
+            <TopAccessedPagesTable rows={topPages} loading={analyticsLoading} periodLabel={periodLabel} />
+          </DashboardSectionCard>
+          <DashboardSectionCard title="Top clicked CTAs" description={periodLabel} variant="analytics">
+            <TopClickedCtasTable rows={topCtas} loading={analyticsLoading} periodLabel={periodLabel} />
+          </DashboardSectionCard>
         </div>
       </section>
 
-      {/* Traffic trend */}
-      <DashboardSectionCard
-        title="Traffic & engagement trend"
-        description={`Page views, sessions, clicks, and form submissions — ${periodLabel.toLowerCase()}`}
-        icon={<BarChart3 className="h-4 w-4 text-primary" aria-hidden />}
-      >
-        <TrafficTrendPanel points={trendPoints} loading={analyticsLoading} periodLabel={periodLabel} />
-      </DashboardSectionCard>
-
-      {/* Top pages & CTAs */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <DashboardSectionCard title="Top accessed pages" description={periodLabel}>
-          <TopAccessedPagesTable rows={topPages} loading={analyticsLoading} periodLabel={periodLabel} />
-        </DashboardSectionCard>
-        <DashboardSectionCard title="Top clicked CTAs" description={periodLabel}>
-          <TopClickedCtasTable rows={topCtas} loading={analyticsLoading} periodLabel={periodLabel} />
-        </DashboardSectionCard>
-      </div>
-
-      {/* Needs attention + side panels */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* Operational panels */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:items-start">
         <DashboardSectionCard
           id="needs-attention"
           title="Needs attention"
           description="Items that may require admin action"
-          icon={<Mail className="h-4 w-4 text-amber-700" aria-hidden />}
-          className="border-amber-200/50"
+          variant="attention"
+          icon={
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100/70 text-amber-800">
+              <Mail className="h-3.5 w-3.5" aria-hidden />
+            </span>
+          }
         >
           <NeedsAttentionPanel summary={summary} loading={loading} />
         </DashboardSectionCard>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           <DashboardSectionCard
             title="Upcoming events"
             description="Next published events on the calendar"
-            icon={<Calendar className="h-4 w-4 text-primary" aria-hidden />}
+            variant="operational"
+            icon={
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-kenyan-green-100/70 text-kenyan-green-800">
+                <Calendar className="h-3.5 w-3.5" aria-hidden />
+              </span>
+            }
             action={<UpcomingEventsPanelHeaderAction />}
           >
             <UpcomingEventsPanel events={upcoming} loading={loading} />
@@ -523,7 +570,12 @@ export function AdminDashboardPage() {
           <DashboardSectionCard
             title="Recent activity"
             description="Latest platform records"
-            icon={<Megaphone className="h-4 w-4 text-primary" aria-hidden />}
+            variant="operational"
+            icon={
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-kenyan-green-100/70 text-kenyan-green-800">
+                <Megaphone className="h-3.5 w-3.5" aria-hidden />
+              </span>
+            }
             action={<RecentActivityPanelHeaderAction />}
           >
             <RecentActivityPanel items={recent} loading={loading} />

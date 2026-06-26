@@ -25,12 +25,21 @@ export function PlatformOperationsSection({
   const tables = infrastructure?.largest_tables ?? []
   const warnings = infrastructure?.warnings ?? []
 
+  const warningCount = warnings.length
+  const tableCount = database?.table_count ?? 0
+  const objectCount = storage?.total_object_count ?? 0
+
   return (
     <DashboardSectionCard
       id="platform-operations"
       title="Platform Operations"
       description="Database, storage, and system health metrics visible to super admins only."
-      icon={<Server className="h-4 w-4 text-primary" aria-hidden />}
+      variant="system"
+      icon={
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200/70 text-slate-600">
+          <Server className="h-3.5 w-3.5" aria-hidden />
+        </span>
+      }
       action={
         showSystemHealthLink ? (
           <Link
@@ -43,21 +52,40 @@ export function PlatformOperationsSection({
       }
     >
       {error ? (
-        <p role="status" className="mb-4 text-xs text-amber-800">
+        <p role="status" className="mb-4 rounded-xl bg-amber-50/60 px-3 py-2 text-xs text-amber-900">
           {error}
         </p>
       ) : null}
-      <div className="space-y-6">
+
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="rounded-xl bg-slate-100/60 px-4 py-3">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Public tables</p>
+          <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">
+            {loading ? '—' : tableCount.toLocaleString()}
+          </p>
+        </div>
+        <div className="rounded-xl bg-slate-100/60 px-4 py-3">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Storage objects</p>
+          <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">
+            {loading ? '—' : objectCount.toLocaleString()}
+          </p>
+        </div>
+        <div className="rounded-xl bg-slate-100/60 px-4 py-3">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Active warnings</p>
+          <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">
+            {loading ? '—' : warningCount.toLocaleString()}
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-5">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <DatabaseOverviewCard
-            database={database ?? EMPTY_DASHBOARD_INFRASTRUCTURE.database}
-            loading={loading}
-          />
+          <DatabaseOverviewCard database={database ?? EMPTY_DASHBOARD_INFRASTRUCTURE.database} loading={loading} />
           <StorageOverviewPanel storage={storage ?? EMPTY_DASHBOARD_INFRASTRUCTURE.storage} loading={loading} />
         </div>
         <LargestTablesPanel tables={tables} loading={loading} />
         <div>
-          <h3 className="mb-2 text-sm font-semibold text-foreground">System warnings</h3>
+          <h3 className="mb-2 text-sm font-semibold tracking-tight text-foreground">System warnings</h3>
           <SystemWarningsPanel warnings={warnings} loading={loading} />
         </div>
         {infrastructure?.checked_at ? (

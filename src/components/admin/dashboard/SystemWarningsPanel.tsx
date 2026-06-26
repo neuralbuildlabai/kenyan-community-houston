@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { AlertCircle, AlertTriangle, Info } from 'lucide-react'
+import { AlertCircle, AlertTriangle, CheckCircle2, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { SystemWarning } from '@/lib/adminDashboardApi'
 
@@ -10,30 +10,30 @@ type SystemWarningsPanelProps = {
 
 function SeverityIcon({ severity }: { severity: SystemWarning['severity'] }) {
   if (severity === 'critical') {
-    return <AlertCircle className="h-4 w-4 shrink-0 text-red-700" aria-hidden />
+    return <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-700" aria-hidden />
   }
   if (severity === 'warning') {
-    return <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700" aria-hidden />
+    return <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-700" aria-hidden />
   }
-  return <Info className="h-4 w-4 shrink-0 text-primary/70" aria-hidden />
+  return <Info className="h-3.5 w-3.5 shrink-0 text-slate-500" aria-hidden />
 }
 
 function warningStyles(severity: SystemWarning['severity']): string {
   if (severity === 'critical') {
-    return 'border-red-200/80 bg-red-50/40 hover:border-red-300'
+    return 'bg-rose-50/60 hover:bg-rose-50'
   }
   if (severity === 'warning') {
-    return 'border-amber-200/80 bg-amber-50/40 hover:border-amber-300'
+    return 'bg-amber-50/60 hover:bg-amber-50'
   }
-  return 'border-border/60 bg-muted/10 hover:border-primary/25'
+  return 'hover:bg-slate-50/80'
 }
 
 export function SystemWarningsPanel({ warnings, loading = false }: SystemWarningsPanelProps) {
   if (loading) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="h-14 animate-pulse rounded-lg bg-muted/60" />
+          <div key={i} className="h-12 animate-pulse rounded-xl bg-slate-100/80" />
         ))}
       </div>
     )
@@ -41,33 +41,46 @@ export function SystemWarningsPanel({ warnings, loading = false }: SystemWarning
 
   if (warnings.length === 0) {
     return (
-      <p className="rounded-lg border border-border/60 bg-muted/10 px-3 py-4 text-sm text-muted-foreground">
-        No active system warnings from current metrics.
-      </p>
+      <div className="flex items-center gap-2.5 rounded-xl bg-kenyan-green-50/50 px-3 py-3 text-sm text-kenyan-green-800">
+        <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
+        <span>No active system warnings from current metrics.</span>
+      </div>
     )
   }
 
   return (
-    <div className="space-y-2">
+    <ul className="space-y-1">
       {warnings.map((warning) => (
-        <Link
-          key={`${warning.title}-${warning.checked_at}`}
-          to={warning.route}
-          className={cn(
-            'flex items-start gap-3 rounded-lg border px-3 py-2.5 transition-colors',
-            warningStyles(warning.severity)
-          )}
-        >
-          <SeverityIcon severity={warning.severity} />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-foreground">{warning.title}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">{warning.description}</p>
-          </div>
-          {warning.count > 0 ? (
-            <span className="shrink-0 text-lg font-bold tabular-nums text-foreground">{warning.count}</span>
-          ) : null}
-        </Link>
+        <li key={`${warning.title}-${warning.checked_at}`}>
+          <Link
+            to={warning.route}
+            className={cn(
+              'flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors',
+              warningStyles(warning.severity)
+            )}
+          >
+            <span
+              className={cn(
+                'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full',
+                warning.severity === 'critical' && 'bg-rose-100/80',
+                warning.severity === 'warning' && 'bg-amber-100/80',
+                warning.severity === 'info' && 'bg-slate-100'
+              )}
+            >
+              <SeverityIcon severity={warning.severity} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground">{warning.title}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{warning.description}</p>
+            </div>
+            {warning.count > 0 ? (
+              <span className="shrink-0 rounded-full bg-white/80 px-2 py-0.5 text-sm font-semibold tabular-nums text-foreground shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
+                {warning.count}
+              </span>
+            ) : null}
+          </Link>
+        </li>
       ))}
-    </div>
+    </ul>
   )
 }

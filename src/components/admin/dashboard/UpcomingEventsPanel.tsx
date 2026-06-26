@@ -33,7 +33,7 @@ export function UpcomingEventsPanel({ events, loading = false }: UpcomingEventsP
     return (
       <div className="space-y-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="h-16 animate-pulse rounded-lg bg-muted" />
+          <div key={i} className="h-14 animate-pulse rounded-xl bg-slate-100/80" />
         ))}
       </div>
     )
@@ -44,13 +44,13 @@ export function UpcomingEventsPanel({ events, loading = false }: UpcomingEventsP
       <DashboardEmptyState
         title="No upcoming events"
         description="Published events with future start dates will appear here."
-        icon={<Calendar className="h-8 w-8 text-muted-foreground/60" aria-hidden />}
+        icon={<Calendar className="h-7 w-7 text-muted-foreground/50" aria-hidden />}
       />
     )
   }
 
   return (
-    <ul className="divide-y divide-border/60">
+    <ul className="space-y-1">
       {events.map((event) => {
         const badge = eventDateBadge(event.start_date)
         const hasTime = event.start_date.includes('T')
@@ -58,19 +58,21 @@ export function UpcomingEventsPanel({ events, loading = false }: UpcomingEventsP
           <li key={event.id}>
             <Link
               to="/admin/calendar"
-              className="flex gap-3 py-3 first:pt-0 last:pb-0 hover:bg-muted/20 -mx-1 px-1 rounded-md transition-colors"
+              className="group flex gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-slate-50/80"
             >
-              <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg border border-primary/20 bg-primary/[0.06] text-center">
-                <span className="text-[10px] font-semibold leading-none text-primary">{badge.month}</span>
-                <span className="text-lg font-bold leading-tight text-foreground">{badge.day}</span>
+              <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl bg-gradient-to-b from-kenyan-green-50 to-white text-center shadow-[inset_0_0_0_1px_rgba(22,101,52,0.08)]">
+                <span className="text-[9px] font-semibold leading-none tracking-wide text-kenyan-green-700">
+                  {badge.month}
+                </span>
+                <span className="text-base font-bold leading-tight text-foreground">{badge.day}</span>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium text-foreground">{event.title}</p>
+              <div className="min-w-0 flex-1 border-l border-slate-100 pl-3">
+                <p className="truncate text-sm font-medium text-foreground group-hover:text-primary">{event.title}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {hasTime ? formatDateTime(event.start_date) : formatDateShort(event.start_date)}
                 </p>
                 {event.location ? (
-                  <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground truncate">
+                  <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
                     <MapPin className="h-3 w-3 shrink-0" aria-hidden />
                     {event.location}
                   </p>
@@ -86,7 +88,7 @@ export function UpcomingEventsPanel({ events, loading = false }: UpcomingEventsP
 
 export function UpcomingEventsPanelHeaderAction() {
   return (
-    <Button asChild variant="ghost" size="sm" className="h-8 gap-1 text-primary">
+    <Button asChild variant="ghost" size="sm" className="h-8 gap-1 text-primary hover:bg-kenyan-green-50">
       <Link to="/admin/calendar">
         Manage calendar <ArrowRight className="h-3.5 w-3.5" aria-hidden />
       </Link>
