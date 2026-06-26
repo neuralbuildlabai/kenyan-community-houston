@@ -5,9 +5,15 @@ import { prepareSignatureImagesInRoot } from '@/lib/signatureImageProcessing'
 
 export const CERTIFICATE_PRINT_ROOT_ID = 'kigh-certificate-print-root'
 
+/** html2canvas raster scale — 3 keeps seal text and fine borders sharp in PDF output. */
+export const CERTIFICATE_CAPTURE_SCALE = 3
+
 /** US Letter landscape at 96 CSS px per inch */
 const PAGE_WIDTH_PX = 11 * 96
 const PAGE_HEIGHT_PX = 8.5 * 96
+
+/** Warm ivory sheet tone — matches certificate background for clean PDF edges. */
+const CERTIFICATE_CAPTURE_BACKGROUND = '#fffef9'
 
 export type CertificatePdfDebugMeta = {
   templateId?: string
@@ -63,7 +69,7 @@ export function getCertificateSheetElement(elementOrId: HTMLElement | string): H
 function prepareSheetClone(sheet: HTMLElement): HTMLElement {
   const clone = sheet.cloneNode(true) as HTMLElement
   clone.removeAttribute('id')
-  clone.classList.add('certificate-export-clone')
+  clone.classList.add('certificate-export-clone', 'certificate-print-safe')
   clone.style.cssText = [
     'width:11in',
     'height:8.5in',
@@ -238,10 +244,10 @@ async function buildCaptureClone(elementOrId: HTMLElement | string): Promise<{
 
 async function captureSheetToCanvas(clone: HTMLElement): Promise<HTMLCanvasElement> {
   const canvas = await html2canvas(clone, {
-    scale: 2,
+    scale: CERTIFICATE_CAPTURE_SCALE,
     useCORS: true,
     logging: false,
-    backgroundColor: '#ffffff',
+    backgroundColor: CERTIFICATE_CAPTURE_BACKGROUND,
     scrollX: 0,
     scrollY: 0,
     width: PAGE_WIDTH_PX,
@@ -249,7 +255,7 @@ async function captureSheetToCanvas(clone: HTMLElement): Promise<HTMLCanvasEleme
     windowWidth: PAGE_WIDTH_PX,
     windowHeight: PAGE_HEIGHT_PX,
     onclone: (clonedDoc, element) => {
-      element.classList.add('certificate-export-clone')
+      element.classList.add('certificate-export-clone', 'certificate-print-safe')
       clonedDoc.querySelectorAll('.cert-heritage-pattern').forEach((el) => el.remove())
       clonedDoc.querySelectorAll<HTMLImageElement>('img').forEach((img) => {
         if (!img.complete || img.naturalWidth <= 0 || img.naturalHeight <= 0) {
@@ -301,14 +307,14 @@ export async function downloadCertificatePdf(
     logPdfDebug('image load summary before capture', imageSummary)
 
     const canvas = await captureSheetToCanvas(clone)
-    const imgData = canvas.toDataURL('image/jpeg', 0.98)
+    const imgData = canvas.toDataURL('image/png')
 
     const pdf = new jsPDF({
       orientation: 'landscape',
       unit: 'in',
       format: 'letter',
     })
-    pdf.addImage(imgData, 'JPEG', 0, 0, 11, 8.5)
+    pdf.addImage(imgData, 'PNG', 0, 0, 11, 8.5)
     pdf.save(certificatePdfFilename(recipientName, category))
 
     logPdfDebug('PDF generation end', { success: true })

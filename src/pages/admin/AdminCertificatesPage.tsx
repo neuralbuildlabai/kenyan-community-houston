@@ -55,6 +55,7 @@ import {
 import {
   CERTIFICATE_TEMPLATES,
   createDefaultCertificateForm,
+  formatCertificateReference,
   getCertificateTemplate,
   getLegacyDesignStyleForTemplate,
   type CertificateFormData,
@@ -103,6 +104,7 @@ async function waitForExportSheet(): Promise<HTMLElement | null> {
 export function AdminCertificatesPage() {
   const { user, profile } = useAuth()
   const [form, setForm] = useState<CertificateFormData>(createDefaultCertificateForm)
+  const [loadedRecordReference, setLoadedRecordReference] = useState<string | null>(null)
   const [signatures, setSignatures] = useState<CertificateSignature[]>([])
   const [signaturesLoading, setSignaturesLoading] = useState(true)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
@@ -227,12 +229,16 @@ export function AdminCertificatesPage() {
   }, [isPreviewOpen])
 
   function updateForm(patch: Partial<CertificateFormData>) {
+    if ('recipientName' in patch || 'templateId' in patch || 'issueDate' in patch) {
+      setLoadedRecordReference(null)
+    }
     setForm((prev) => ({ ...prev, ...patch }))
   }
 
   function handleTemplateChange(templateId: string) {
     const next = getCertificateTemplate(templateId)
     if (!next) return
+    setLoadedRecordReference(null)
     setForm((prev) => ({
       ...prev,
       templateId,
@@ -257,6 +263,7 @@ export function AdminCertificatesPage() {
 
   function handleReset() {
     setForm(createDefaultCertificateForm())
+    setLoadedRecordReference(null)
     setIsPreviewOpen(false)
   }
 
@@ -377,6 +384,7 @@ export function AdminCertificatesPage() {
 
   function loadRecordIntoForm(record: CertificateRecord) {
     setForm(recordToForm(record))
+    setLoadedRecordReference(formatCertificateReference(record.id))
     window.scrollTo({ top: 0, behavior: 'smooth' })
     toast.success('Certificate loaded for reprint.')
   }
@@ -384,6 +392,7 @@ export function AdminCertificatesPage() {
   async function loadRecordAndPrint(record: CertificateRecord) {
     flushSync(() => {
       setForm(recordToForm(record))
+      setLoadedRecordReference(formatCertificateReference(record.id))
     })
     toast.success('Certificate loaded for reprint.')
     setIsPrinting(true)
@@ -401,6 +410,7 @@ export function AdminCertificatesPage() {
 
   async function loadRecordAndPdf(record: CertificateRecord) {
     setForm(recordToForm(record))
+    setLoadedRecordReference(formatCertificateReference(record.id))
     const tmpl = getCertificateTemplate(record.template_id)
     setIsDownloading(true)
     try {
@@ -448,6 +458,7 @@ export function AdminCertificatesPage() {
   const certificateDocProps = {
     data: displayForm,
     resolvedSignature,
+    certificateReference: loadedRecordReference,
   }
 
   return (
@@ -456,7 +467,12 @@ export function AdminCertificatesPage() {
 
       {createPortal(
         <div id={CERTIFICATE_PRINT_ROOT_ID} className="certificate-print-root" aria-hidden="true">
-          <CertificateDocument id={CERTIFICATE_EXPORT_ID} {...certificateDocProps} scale={1} />
+          <CertificateDocument
+            id={CERTIFICATE_EXPORT_ID}
+            {...certificateDocProps}
+            scale={1}
+            printSafe
+          />
         </div>,
         document.body
       )}
@@ -648,10 +664,14 @@ export function AdminCertificatesPage() {
           </Card>
 
           <div className="min-w-0">
-            <div className="mb-3 flex items-center justify-between no-print">
+            <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between no-print">
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Live preview</h2>
               <span className="text-xs text-muted-foreground">US Letter · Landscape · 11 × 8.5 in</span>
             </div>
+            <p className="mb-3 text-xs text-muted-foreground no-print">
+              For best results, print from the downloaded PDF using high-quality color settings on 65–80 lb ivory
+              or linen certificate paper.
+            </p>
             <div
               ref={previewContainerRef}
               className="overflow-x-auto rounded-lg border bg-muted/30 p-4 flex justify-center min-h-[280px]"

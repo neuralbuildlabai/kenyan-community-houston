@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { KIGH_LOGO_ALT, KIGH_LOGO_PATH } from '@/lib/kighAssets'
 import { prepareSignatureImageForDisplay } from '@/lib/signatureImageProcessing'
 import {
-  CERTIFICATE_FOOTER_TEXT,
+  CERTIFICATE_FOOTER_OFFICIAL,
+  CERTIFICATE_FOOTER_WEBSITE,
   formatCertificateDate,
   getCertificateEventProgramDisplay,
   getCertificateTemplate,
@@ -21,6 +22,10 @@ type CertificateDocumentProps = {
   className?: string
   scale?: number
   resolvedSignature?: CertificateSignature | null
+  /** Optional saved-record reference shown in the footer when reprinting from history. */
+  certificateReference?: string | null
+  /** Stronger contrast for browser print and PDF capture; omit for on-screen preview. */
+  printSafe?: boolean
 }
 
 function CertificateLogo({ className }: { className?: string }) {
@@ -111,8 +116,8 @@ function CornerOrnament({ position }: { position: 'tl' | 'tr' | 'bl' | 'br' }) {
       viewBox="0 0 80 80"
       aria-hidden
     >
-      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.45" />
-      <circle cx="12" cy="12" r="5.5" fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.35" />
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="0.9" opacity="0.72" />
+      <circle cx="12" cy="12" r="5.5" fill="none" stroke="currentColor" strokeWidth="0.65" opacity="0.58" />
       <path
         d="M2 74 C2 22 22 2 74 2"
         fill="none"
@@ -125,7 +130,7 @@ function CornerOrnament({ position }: { position: 'tl' | 'tr' | 'bl' | 'br' }) {
         fill="none"
         stroke="currentColor"
         strokeWidth="1"
-        strokeOpacity="0.6"
+        strokeOpacity="0.78"
         strokeLinecap="round"
       />
       <path
@@ -133,7 +138,7 @@ function CornerOrnament({ position }: { position: 'tl' | 'tr' | 'bl' | 'br' }) {
         fill="none"
         stroke="currentColor"
         strokeWidth="0.55"
-        strokeOpacity="0.4"
+        strokeOpacity="0.55"
       />
       <path
         d="M14 14 Q28 8 38 14 Q48 20 52 32"
@@ -142,9 +147,9 @@ function CornerOrnament({ position }: { position: 'tl' | 'tr' | 'bl' | 'br' }) {
         strokeWidth="0.45"
         strokeOpacity="0.35"
       />
-      <circle cx="18" cy="10" r="1.4" fill="currentColor" opacity="0.45" />
-      <circle cx="10" cy="18" r="1.4" fill="currentColor" opacity="0.45" />
-      <circle cx="24" cy="6" r="0.9" fill="currentColor" opacity="0.3" />
+      <circle cx="18" cy="10" r="1.4" fill="currentColor" opacity="0.65" />
+      <circle cx="10" cy="18" r="1.4" fill="currentColor" opacity="0.65" />
+      <circle cx="24" cy="6" r="0.9" fill="currentColor" opacity="0.48" />
     </svg>
   )
 }
@@ -194,13 +199,13 @@ function BorderOrnamentFrame() {
           <path
             d="M0 3 C1.5 0.8 3 0.8 4.5 3 S6 5.2 6 3"
             fill="none"
-            stroke="rgba(168,150,100,0.18)"
+            stroke="rgba(120, 95, 55, 0.32)"
             strokeWidth="0.28"
           />
           <path
             d="M3 0 C4.8 1.5 4.8 3 3 4.5 S1.2 3 3 0"
             fill="none"
-            stroke="rgba(168,150,100,0.11)"
+            stroke="rgba(120, 95, 55, 0.22)"
             strokeWidth="0.22"
           />
           <circle cx="3" cy="3" r="0.35" fill="rgba(168,150,100,0.09)" />
@@ -263,15 +268,91 @@ function KenyaAccentBar() {
   return <div className="cert-kenya-accent" aria-hidden />
 }
 
+function SealLabelLines({ label }: { label: string }) {
+  const words = label.trim().split(/\s+/)
+  const useTwoLines = words.length >= 2 && label.length > 11
+  const mid = Math.ceil(words.length / 2)
+  const line1 = useTwoLines ? words.slice(0, mid).join(' ') : label
+  const line2 = useTwoLines ? words.slice(mid).join(' ') : null
+
+  return (
+    <>
+      <text x="60" y={useTwoLines ? 49 : 52} textAnchor="middle" className="cert-seal-svg-kigh">
+        KIGH
+      </text>
+      <text x="60" y={useTwoLines ? 62 : 66} textAnchor="middle" className="cert-seal-svg-label">
+        {line1}
+      </text>
+      {line2 ? (
+        <text x="60" y="69" textAnchor="middle" className="cert-seal-svg-label">
+          {line2}
+        </text>
+      ) : null}
+    </>
+  )
+}
+
 function OfficialSeal({ label }: { label: string }) {
+  const uid = useId().replace(/:/g, '')
+  const outerGrad = `${uid}-seal-outer`
+  const innerGrad = `${uid}-seal-inner`
+  const rimGrad = `${uid}-seal-rim`
+
+  const dots = Array.from({ length: 32 }, (_, index) => {
+    const angle = (index / 32) * Math.PI * 2 - Math.PI / 2
+    return {
+      cx: 60 + 53.5 * Math.cos(angle),
+      cy: 60 + 53.5 * Math.sin(angle),
+    }
+  })
+
   return (
     <div className="cert-official-seal" aria-hidden>
-      <div className="cert-official-seal-ring">
-        <div className="cert-official-seal-inner">
-          <span className="cert-official-seal-kigh">KIGH</span>
-          <span className="cert-official-seal-label">{label}</span>
-        </div>
-      </div>
+      <svg className="cert-official-seal-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id={outerGrad} cx="34%" cy="28%" r="72%" fx="30%" fy="24%">
+            <stop offset="0%" stopColor="#faf0d4" />
+            <stop offset="28%" stopColor="#ddb856" />
+            <stop offset="62%" stopColor="#b08828" />
+            <stop offset="100%" stopColor="#7a5818" />
+          </radialGradient>
+          <radialGradient id={innerGrad} cx="38%" cy="32%" r="68%" fx="34%" fy="28%">
+            <stop offset="0%" stopColor="#fff8e8" />
+            <stop offset="45%" stopColor="#e8c860" />
+            <stop offset="100%" stopColor="#a07828" />
+          </radialGradient>
+          <linearGradient id={rimGrad} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#8b6914" />
+            <stop offset="50%" stopColor="#5c4010" />
+            <stop offset="100%" stopColor="#8b6914" />
+          </linearGradient>
+        </defs>
+
+        <circle cx="60" cy="61" r="56" fill="none" stroke="#3d2a0a" strokeWidth="0.6" opacity="0.35" />
+        <circle cx="60" cy="60" r="57" fill={`url(#${outerGrad})`} stroke={`url(#${rimGrad})`} strokeWidth="2.8" />
+
+        {dots.map((dot, index) => (
+          <circle key={index} cx={dot.cx} cy={dot.cy} r="1.15" fill="#4a3410" />
+        ))}
+
+        <circle cx="60" cy="60" r="49.5" fill="none" stroke="#5c4010" strokeWidth="2" />
+        <circle cx="60" cy="60" r="47" fill="none" stroke="#c9a040" strokeWidth="0.7" />
+
+        <circle cx="60" cy="60" r="42" fill={`url(#${innerGrad})`} stroke="#5c4010" strokeWidth="1.6" />
+        <circle cx="60" cy="60" r="36.5" fill="none" stroke="#8b6914" strokeWidth="1" />
+        <circle cx="60" cy="60" r="33" fill="#f0dba0" fillOpacity="0.22" stroke="none" />
+
+        <defs>
+          <path id={`${uid}-arc-path`} d="M 26 58 A 34 34 0 0 1 94 58" />
+        </defs>
+        <text className="cert-seal-svg-arc">
+          <textPath href={`#${uid}-arc-path`} startOffset="50%" textAnchor="middle">
+            OFFICIAL SEAL
+          </textPath>
+        </text>
+
+        <SealLabelLines label={label} />
+      </svg>
     </div>
   )
 }
@@ -461,9 +542,11 @@ function SignatureBlock({
 function CertificateContent({
   data,
   resolvedSignature,
+  certificateReference,
 }: {
   data: CertificateFormData
   resolvedSignature?: CertificateSignature | null
+  certificateReference?: string | null
 }) {
   const template = getCertificateTemplate(data.templateId)
   if (!template) return null
@@ -538,7 +621,13 @@ function CertificateContent({
         </div>
       </div>
 
-      <footer className="cert-footer">{CERTIFICATE_FOOTER_TEXT}</footer>
+      <footer className="cert-footer">
+        <span className="cert-footer-official">{CERTIFICATE_FOOTER_OFFICIAL}</span>
+        <span className="cert-footer-site">{CERTIFICATE_FOOTER_WEBSITE}</span>
+        {certificateReference ? (
+          <span className="cert-footer-ref">Ref. {certificateReference}</span>
+        ) : null}
+      </footer>
     </div>
   )
 }
@@ -549,6 +638,8 @@ export function CertificateDocument({
   className,
   scale = 1,
   resolvedSignature,
+  certificateReference,
+  printSafe = false,
 }: CertificateDocumentProps) {
   const template = getCertificateTemplate(data.templateId)
   const templateClass = template ? `cert-template-${template.id}` : ''
@@ -557,7 +648,7 @@ export function CertificateDocument({
   const sheet = (
     <article
       id={id}
-      className={cn('certificate-sheet', templateClass, accentClass)}
+      className={cn('certificate-sheet', templateClass, accentClass, printSafe && 'certificate-print-safe')}
       aria-label="Certificate preview"
     >
       <PaperTexture />
@@ -569,7 +660,11 @@ export function CertificateDocument({
       <KenyaAccentBar />
       <OrnamentalBorder />
 
-      <CertificateContent data={data} resolvedSignature={resolvedSignature} />
+      <CertificateContent
+        data={data}
+        resolvedSignature={resolvedSignature}
+        certificateReference={certificateReference}
+      />
     </article>
   )
 
