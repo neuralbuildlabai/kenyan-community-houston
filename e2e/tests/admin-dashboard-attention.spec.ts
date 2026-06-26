@@ -10,7 +10,7 @@ test.describe('admin dashboard attention links', () => {
 
   test('attention rows link to filtered admin queues', async ({ page }) => {
     await page.goto('/admin/dashboard')
-    await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Community Platform Dashboard', level: 1 })).toBeVisible()
 
     await expect(page.getByTestId('attention-submissions')).toHaveAttribute('href', '/admin/submissions?status=pending')
     await expect(page.getByTestId('attention-members')).toHaveAttribute(
