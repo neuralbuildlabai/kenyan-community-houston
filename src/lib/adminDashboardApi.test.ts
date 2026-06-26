@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
   EMPTY_ADMIN_DASHBOARD_STATS,
+  analyticsPeriodToDays,
   mapAdminDashboardSummary,
+  mapEngagementByDayRows,
+  mapEngagementByMonthRows,
   mapSummaryToDashboardStats,
+  mapTopCtaRows,
+  mapTopPageRows,
 } from '@/lib/adminDashboardApi'
 
 describe('mapAdminDashboardSummary', () => {
@@ -91,5 +96,93 @@ describe('mapSummaryToDashboardStats', () => {
       fundraisers_active: 2,
       fundraisers_pending: 0,
     })
+  })
+})
+
+describe('analyticsPeriodToDays', () => {
+  it('maps dashboard period presets to day windows', () => {
+    expect(analyticsPeriodToDays('7d')).toBe(7)
+    expect(analyticsPeriodToDays('30d')).toBe(30)
+    expect(analyticsPeriodToDays('90d')).toBe(90)
+    expect(analyticsPeriodToDays('monthly')).toBe(30)
+  })
+})
+
+describe('mapEngagementByDayRows', () => {
+  it('normalizes daily engagement rows with numeric coercion', () => {
+    const rows = mapEngagementByDayRows([
+      {
+        bucket_date: '2026-06-01',
+        page_views: '10',
+        unique_sessions: 4,
+        clicks: 2,
+        cta_clicks: 1,
+        form_submissions: 0,
+        sign_ins: '3',
+      },
+    ])
+    expect(rows).toEqual([
+      {
+        bucket_date: '2026-06-01',
+        page_views: 10,
+        unique_sessions: 4,
+        clicks: 2,
+        cta_clicks: 1,
+        form_submissions: 0,
+        sign_ins: 3,
+      },
+    ])
+  })
+
+  it('returns empty array for invalid payloads', () => {
+    expect(mapEngagementByDayRows(null)).toEqual([])
+  })
+})
+
+describe('mapEngagementByMonthRows', () => {
+  it('maps monthly buckets', () => {
+    const rows = mapEngagementByMonthRows([
+      {
+        bucket_month: '2026-06-01',
+        page_views: 100,
+        unique_sessions: 20,
+        clicks: 15,
+        cta_clicks: 8,
+        form_submissions: 2,
+        sign_ins: 5,
+      },
+    ])
+    expect(rows[0]?.bucket_month).toBe('2026-06-01')
+    expect(rows[0]?.page_views).toBe(100)
+  })
+})
+
+describe('mapTopPageRows', () => {
+  it('defaults missing strings and numbers safely', () => {
+    expect(mapTopPageRows([{ path: null, views: null }])).toEqual([
+      {
+        path: '/',
+        page_title: '',
+        views: 0,
+        unique_sessions: 0,
+        clicks_on_path: 0,
+        last_accessed_at: '',
+      },
+    ])
+  })
+})
+
+describe('mapTopCtaRows', () => {
+  it('drops blank labels and preserves href when present', () => {
+    expect(mapTopCtaRows([{ element_label: '  ', clicks: 1 }])).toEqual([])
+    expect(mapTopCtaRows([{ element_label: 'hero_join', path: '/', clicks: 5, element_href: 'https://example.com' }])).toEqual([
+      {
+        element_label: 'hero_join',
+        path: '/',
+        clicks: 5,
+        last_clicked_at: '',
+        element_href: 'https://example.com',
+      },
+    ])
   })
 })

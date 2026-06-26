@@ -20,9 +20,19 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   EMPTY_ADMIN_DASHBOARD_STATS,
+  analyticsPeriodToDays,
   getAdminDashboardSummary,
+  getEngagementByDay,
+  getEngagementByMonth,
+  getTopCtas,
+  getTopPages,
   mapSummaryToDashboardStats,
   type AdminDashboardStats,
+  type DashboardAnalyticsPeriod,
+  type EngagementByDayRow,
+  type EngagementByMonthRow,
+  type TopCtaRow,
+  type TopPageRow,
 } from '@/lib/adminDashboardApi'
 import { supabase } from '@/lib/supabase'
 import { formatDateShort } from '@/lib/utils'
@@ -54,7 +64,14 @@ export function AdminDashboardPage() {
   const [weekActivity, setWeekActivity] = useState<BarDatum[]>([])
   const [summary7, setSummary7] = useState<Summary7 | null>(null)
   const [summaryError, setSummaryError] = useState<string | null>(null)
+  const [analyticsPeriod, setAnalyticsPeriod] = useState<DashboardAnalyticsPeriod>('30d')
+  const [engagementDaily, setEngagementDaily] = useState<EngagementByDayRow[]>([])
+  const [engagementMonthly, setEngagementMonthly] = useState<EngagementByMonthRow[]>([])
+  const [topPages, setTopPages] = useState<TopPageRow[]>([])
+  const [topCtas, setTopCtas] = useState<TopCtaRow[]>([])
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [analyticsLoading, setAnalyticsLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
@@ -138,6 +155,65 @@ export function AdminDashboardPage() {
     }
     void load()
   }, [])
+
+  useEffect(() => {
+    async function loadAnalytics() {
+      setAnalyticsLoading(true)
+      const days = analyticsPeriodToDays(analyticsPeriod)
+      const [dailyResult, monthlyResult, topPagesResult, topCtasResult] = await Promise.all([
+        analyticsPeriod === 'monthly'
+          ? Promise.resolve({ data: [] as EngagementByDayRow[], error: null as string | null })
+          : getEngagementByDay(days),
+        analyticsPeriod === 'monthly'
+          ? getEngagementByMonth(12)
+          : Promise.resolve({ data: [] as EngagementByMonthRow[], error: null as string | null }),
+        getTopPages(days, 10),
+        getTopCtas(days, 10),
+      ])
+
+      const errors = [
+        dailyResult.error,
+        monthlyResult.error,
+        topPagesResult.error,
+        topCtasResult.error,
+      ].filter(Boolean)
+
+      setAnalyticsError(
+        errors.length > 0
+          ? (errors[0] ??
+              'Analytics ranges are temporarily unavailable. Apply migration 069 or sign in with an elevated admin role.')
+          : null
+      )
+      setEngagementDaily(dailyResult.data)
+      setEngagementMonthly(monthlyResult.data)
+      setTopPages(topPagesResult.data)
+      setTopCtas(topCtasResult.data)
+      setAnalyticsLoading(false)
+    }
+    void loadAnalytics()
+  }, [analyticsPeriod])
+
+  const engagementBars: BarDatum[] =
+    analyticsPeriod === 'monthly'
+      ? engagementMonthly.map((row) => ({
+          label: row.bucket_month.slice(0, 7),
+          value: row.page_views + row.clicks + row.sign_ins + row.form_submissions,
+          sub: `${row.page_views} views · ${row.clicks} clicks`,
+        }))
+      : engagementDaily.map((row) => ({
+          label: row.bucket_date.slice(5),
+          value: row.page_views + row.clicks + row.sign_ins + row.form_submissions,
+          sub: `${row.page_views} views · ${row.clicks} clicks`,
+        }))
+
+  const analyticsPeriodLabel =
+    analyticsPeriod === 'monthly'
+      ? 'Last 12 months'
+      : analyticsPeriod === '7d'
+        ? 'Last 7 days'
+        : analyticsPeriod === '90d'
+          ? 'Last 90 days'
+          : 'Last 30 days'
 
   const totalPendingReview =
     (stats?.events_pending ?? 0) +
@@ -406,6 +482,136 @@ export function AdminDashboardPage() {
                     </Badge>
                   </div>
                 ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="border-primary/10">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" /> Site analytics ({analyticsPeriodLabel})
+          </CardTitle>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ['7d', '7d'],
+                ['30d', '30d'],
+                ['90d', '90d'],
+                ['monthly', 'Monthly'],
+              ] as const
+            ).map(([value, label]) => (
+              <Button
+                key={value}
+                type="button"
+                size="sm"
+                variant={analyticsPeriod === value ? 'default' : 'outline'}
+                className="h-8"
+                onClick={() => setAnalyticsPeriod(value)}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {analyticsError ? (
+            <p role="status" className="text-xs text-amber-800 bg-amber-50 border border-amber-200/70 rounded-lg px-3 py-2">
+              {analyticsError}
+            </p>
+          ) : null}
+          {analyticsLoading ? (
+            <div className="h-32 rounded-xl bg-muted animate-pulse" />
+          ) : engagementBars.length > 0 ? (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2">
+                {analyticsPeriod === 'monthly' ? 'Engagement by month' : 'Engagement by day'}
+              </p>
+              <SimpleBars data={engagementBars} />
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No public-site analytics for this period yet.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Top pages ({analyticsPeriodLabel})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {analyticsLoading ? (
+              <div className="h-40 rounded-xl bg-muted animate-pulse" />
+            ) : topPages.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No page view data for this period.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs text-muted-foreground border-b">
+                      <th className="pb-2 pr-3 font-medium">Path</th>
+                      <th className="pb-2 pr-3 font-medium">Views</th>
+                      <th className="pb-2 pr-3 font-medium">Sessions</th>
+                      <th className="pb-2 font-medium">Clicks</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {topPages.map((row) => (
+                      <tr key={row.path}>
+                        <td className="py-2 pr-3 min-w-0">
+                          <p className="font-medium truncate">{row.path}</p>
+                          {row.page_title ? (
+                            <p className="text-xs text-muted-foreground truncate">{row.page_title}</p>
+                          ) : null}
+                        </td>
+                        <td className="py-2 pr-3 tabular-nums">{row.views}</td>
+                        <td className="py-2 pr-3 tabular-nums">{row.unique_sessions}</td>
+                        <td className="py-2 tabular-nums">{row.clicks_on_path}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Top CTAs ({analyticsPeriodLabel})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {analyticsLoading ? (
+              <div className="h-40 rounded-xl bg-muted animate-pulse" />
+            ) : topCtas.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No CTA click data for this period.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs text-muted-foreground border-b">
+                      <th className="pb-2 pr-3 font-medium">Label</th>
+                      <th className="pb-2 pr-3 font-medium">Path</th>
+                      <th className="pb-2 font-medium">Clicks</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {topCtas.map((row) => (
+                      <tr key={`${row.element_label}-${row.path}`}>
+                        <td className="py-2 pr-3 min-w-0">
+                          <p className="font-medium truncate">{row.element_label}</p>
+                          {row.element_href ? (
+                            <p className="text-xs text-muted-foreground truncate">{row.element_href}</p>
+                          ) : null}
+                        </td>
+                        <td className="py-2 pr-3 truncate max-w-[8rem]">{row.path}</td>
+                        <td className="py-2 tabular-nums">{row.clicks}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </CardContent>

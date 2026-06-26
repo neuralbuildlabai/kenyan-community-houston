@@ -261,3 +261,183 @@ export async function getAdminDashboardSummary(): Promise<{
 
   return { data: mapped, error: null }
 }
+
+// ─── Analytics ranges (migration 069) ───────────────────────
+
+/** Click-style event types tracked in src/lib/analytics.ts */
+export const ANALYTICS_CLICK_EVENT_TYPES = ['cta_click', 'entity_click'] as const
+
+export type EngagementByDayRow = {
+  bucket_date: string
+  page_views: number
+  unique_sessions: number
+  clicks: number
+  cta_clicks: number
+  form_submissions: number
+  sign_ins: number
+}
+
+export type EngagementByMonthRow = {
+  bucket_month: string
+  page_views: number
+  unique_sessions: number
+  clicks: number
+  cta_clicks: number
+  form_submissions: number
+  sign_ins: number
+}
+
+export type TopPageRow = {
+  path: string
+  page_title: string
+  views: number
+  unique_sessions: number
+  clicks_on_path: number
+  last_accessed_at: string
+}
+
+export type TopCtaRow = {
+  element_label: string
+  path: string
+  clicks: number
+  last_clicked_at: string
+  element_href: string
+}
+
+export type DashboardAnalyticsPeriod = '7d' | '30d' | '90d' | 'monthly'
+
+export function analyticsPeriodToDays(period: DashboardAnalyticsPeriod): number {
+  switch (period) {
+    case '7d':
+      return 7
+    case '90d':
+      return 90
+    case '30d':
+    default:
+      return 30
+  }
+}
+
+function str(value: unknown, fallback = ''): string {
+  if (typeof value === 'string') return value
+  if (value == null) return fallback
+  return String(value)
+}
+
+function isoTimestamp(value: unknown): string {
+  if (typeof value === 'string' && value.trim() !== '') return value
+  return ''
+}
+
+function mapEngagementRow(
+  raw: unknown,
+  bucketKey: 'bucket_date' | 'bucket_month'
+): EngagementByDayRow | EngagementByMonthRow | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
+  const row = raw as Record<string, unknown>
+  const bucket = isoTimestamp(row[bucketKey])
+  if (!bucket) return null
+  return {
+    [bucketKey]: bucket,
+    page_views: num(row.page_views),
+    unique_sessions: num(row.unique_sessions),
+    clicks: num(row.clicks),
+    cta_clicks: num(row.cta_clicks),
+    form_submissions: num(row.form_submissions),
+    sign_ins: num(row.sign_ins),
+  } as EngagementByDayRow | EngagementByMonthRow
+}
+
+export function mapEngagementByDayRows(raw: unknown): EngagementByDayRow[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .map((row) => mapEngagementRow(row, 'bucket_date') as EngagementByDayRow | null)
+    .filter((row): row is EngagementByDayRow => row !== null)
+}
+
+export function mapEngagementByMonthRows(raw: unknown): EngagementByMonthRow[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .map((row) => mapEngagementRow(row, 'bucket_month') as EngagementByMonthRow | null)
+    .filter((row): row is EngagementByMonthRow => row !== null)
+}
+
+export function mapTopPageRows(raw: unknown): TopPageRow[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return null
+      const row = item as Record<string, unknown>
+      const path = str(row.path, '/')
+      return {
+        path,
+        page_title: str(row.page_title),
+        views: num(row.views),
+        unique_sessions: num(row.unique_sessions),
+        clicks_on_path: num(row.clicks_on_path),
+        last_accessed_at: isoTimestamp(row.last_accessed_at),
+      }
+    })
+    .filter((row): row is TopPageRow => row !== null)
+}
+
+export function mapTopCtaRows(raw: unknown): TopCtaRow[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return null
+      const row = item as Record<string, unknown>
+      const element_label = str(row.element_label).trim()
+      if (!element_label) return null
+      return {
+        element_label,
+        path: str(row.path, '/'),
+        clicks: num(row.clicks),
+        last_clicked_at: isoTimestamp(row.last_clicked_at),
+        element_href: str(row.element_href),
+      }
+    })
+    .filter((row): row is TopCtaRow => row !== null)
+}
+
+export async function getEngagementByDay(days = 30): Promise<{
+  data: EngagementByDayRow[]
+  error: string | null
+}> {
+  const { data, error } = await supabase.rpc('kigh_admin_engagement_by_day', { p_days: days })
+  if (error) return { data: [], error: error.message }
+  return { data: mapEngagementByDayRows(data), error: null }
+}
+
+export async function getEngagementByMonth(months = 12): Promise<{
+  data: EngagementByMonthRow[]
+  error: string | null
+}> {
+  const { data, error } = await supabase.rpc('kigh_admin_engagement_by_month', { p_months: months })
+  if (error) return { data: [], error: error.message }
+  return { data: mapEngagementByMonthRows(data), error: null }
+}
+
+export async function getTopPages(
+  days = 30,
+  limit = 10
+): Promise<{ data: TopPageRow[]; error: string | null }> {
+  const { data, error } = await supabase.rpc('kigh_admin_top_pages', {
+    p_days: days,
+    p_limit: limit,
+  })
+  if (error) return { data: [], error: error.message }
+  return { data: mapTopPageRows(data), error: null }
+}
+
+export async function getTopCtas(
+  days = 30,
+  limit = 10
+): Promise<{ data: TopCtaRow[]; error: string | null }> {
+  const { data, error } = await supabase.rpc('kigh_admin_top_ctas', {
+    p_days: days,
+    p_limit: limit,
+  })
+  if (error) return { data: [], error: error.message }
+  return { data: mapTopCtaRows(data), error: null }
+}
