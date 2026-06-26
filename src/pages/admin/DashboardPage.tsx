@@ -42,16 +42,19 @@ import {
   UpcomingEventsPanelHeaderAction,
   type UpcomingEventItem,
 } from '@/components/admin/dashboard/UpcomingEventsPanel'
+import { PlatformOperationsSection } from '@/components/admin/dashboard/PlatformOperationsSection'
 import {
   EMPTY_ADMIN_DASHBOARD_SUMMARY,
   analyticsPeriodToDays,
   getAdminDashboardSummary,
+  getDashboardInfrastructure,
   getEngagementByDay,
   getEngagementByMonth,
   getTopCtas,
   getTopPages,
   type AdminDashboardSummary,
   type DashboardAnalyticsPeriod,
+  type DashboardInfrastructureSummary,
   type EngagementByDayRow,
   type EngagementByMonthRow,
   type TopCtaRow,
@@ -63,9 +66,14 @@ import {
   analyticsPeriodLabel,
   engagementToTrendPoints,
 } from '@/lib/dashboardHelpers'
+import { isSystemHealthAdminRole } from '@/lib/platformAdmin'
+import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 
 export function AdminDashboardPage() {
+  const { role } = useAuth()
+  const isSuperAdmin = role === 'super_admin'
+  const showSystemHealthLink = isSystemHealthAdminRole(role)
   const [summary, setSummary] = useState<AdminDashboardSummary | null>(null)
   const [recent, setRecent] = useState<RecentActivityItem[]>([])
   const [upcoming, setUpcoming] = useState<UpcomingEventItem[]>([])
@@ -79,6 +87,9 @@ export function AdminDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [analyticsLoading, setAnalyticsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [infrastructure, setInfrastructure] = useState<DashboardInfrastructureSummary | null>(null)
+  const [infrastructureError, setInfrastructureError] = useState<string | null>(null)
+  const [infrastructureLoading, setInfrastructureLoading] = useState(false)
 
   const loadOperationalData = useCallback(async () => {
     const todayYmd = format(new Date(), 'yyyy-MM-dd')
@@ -194,6 +205,28 @@ export function AdminDashboardPage() {
     setAnalyticsLoading(false)
   }, [])
 
+  const loadInfrastructure = useCallback(async () => {
+    if (!isSuperAdmin) {
+      setInfrastructure(null)
+      setInfrastructureError(null)
+      setInfrastructureLoading(false)
+      return
+    }
+    setInfrastructureLoading(true)
+    const result = await getDashboardInfrastructure()
+    if (result.error || !result.data) {
+      setInfrastructureError(
+        result.error ??
+          'Platform infrastructure metrics are unavailable. Apply migration 070 or confirm super_admin access.'
+      )
+      setInfrastructure(null)
+    } else {
+      setInfrastructureError(null)
+      setInfrastructure(result.data)
+    }
+    setInfrastructureLoading(false)
+  }, [isSuperAdmin])
+
   useEffect(() => {
     async function init() {
       setLoading(true)
@@ -207,11 +240,19 @@ export function AdminDashboardPage() {
     void loadAnalytics(analyticsPeriod)
   }, [analyticsPeriod, loadAnalytics])
 
+  useEffect(() => {
+    void loadInfrastructure()
+  }, [loadInfrastructure])
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
-    await Promise.all([loadOperationalData(), loadAnalytics(analyticsPeriod)])
+    await Promise.all([
+      loadOperationalData(),
+      loadAnalytics(analyticsPeriod),
+      loadInfrastructure(),
+    ])
     setRefreshing(false)
-  }, [analyticsPeriod, loadAnalytics, loadOperationalData])
+  }, [analyticsPeriod, loadAnalytics, loadInfrastructure, loadOperationalData])
 
   const periodLabel = analyticsPeriodLabel(analyticsPeriod)
   const dateRangeLabel = analyticsDateRangeLabel(analyticsPeriod)
@@ -489,6 +530,15 @@ export function AdminDashboardPage() {
           </DashboardSectionCard>
         </div>
       </div>
+
+      {isSuperAdmin ? (
+        <PlatformOperationsSection
+          infrastructure={infrastructure}
+          loading={infrastructureLoading}
+          error={infrastructureError}
+          showSystemHealthLink={showSystemHealthLink}
+        />
+      ) : null}
     </div>
   )
 }

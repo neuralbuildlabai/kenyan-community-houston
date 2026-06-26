@@ -441,3 +441,216 @@ export async function getTopCtas(
   if (error) return { data: [], error: error.message }
   return { data: mapTopCtaRows(data), error: null }
 }
+
+// ─── Platform infrastructure (migration 070, super_admin only) ─
+
+export type DatabaseOverview = {
+  database_size_bytes: number
+  database_size_pretty: string
+  table_count: number
+  analytics_events_size_bytes: number | null
+  analytics_events_size_pretty: string | null
+  notes: string
+}
+
+export type LargestTableMetric = {
+  schema_name: string
+  table_name: string
+  row_estimate: number
+  table_size_bytes: number
+  index_size_bytes: number
+  total_size_bytes: number
+  total_size_pretty: string
+}
+
+export type StorageBucketMetric = {
+  bucket_id: string
+  object_count: number
+  total_size_bytes: number | null
+  total_size_pretty: string | null
+  unavailable_reason: string | null
+}
+
+export type StorageOverview = {
+  buckets: StorageBucketMetric[]
+  total_object_count: number
+  total_size_bytes: number | null
+  total_size_pretty: string | null
+  unavailable_reason: string | null
+}
+
+export type SystemWarningSeverity = 'info' | 'warning' | 'critical'
+
+export type SystemWarning = {
+  severity: SystemWarningSeverity
+  title: string
+  description: string
+  count: number
+  route: string
+  checked_at: string
+}
+
+export type DashboardInfrastructureSummary = {
+  checked_at: string
+  database: DatabaseOverview
+  largest_tables: LargestTableMetric[]
+  storage: StorageOverview
+  warnings: SystemWarning[]
+}
+
+function nullableNum(value: unknown): number | null {
+  if (value == null) return null
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed)) return parsed
+  }
+  return null
+}
+
+function nullableStr(value: unknown): string | null {
+  if (value == null) return null
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    return trimmed === '' ? null : trimmed
+  }
+  return String(value)
+}
+
+function warningSeverity(value: unknown): SystemWarningSeverity {
+  if (value === 'critical' || value === 'warning' || value === 'info') return value
+  return 'info'
+}
+
+export const EMPTY_DASHBOARD_INFRASTRUCTURE: DashboardInfrastructureSummary = {
+  checked_at: '',
+  database: {
+    database_size_bytes: 0,
+    database_size_pretty: '',
+    table_count: 0,
+    analytics_events_size_bytes: null,
+    analytics_events_size_pretty: null,
+    notes: '',
+  },
+  largest_tables: [],
+  storage: {
+    buckets: [],
+    total_object_count: 0,
+    total_size_bytes: null,
+    total_size_pretty: null,
+    unavailable_reason: null,
+  },
+  warnings: [],
+}
+
+export function mapStorageBucketMetric(raw: unknown): StorageBucketMetric | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
+  const row = raw as Record<string, unknown>
+  const bucket_id = str(row.bucket_id).trim()
+  if (!bucket_id) return null
+  return {
+    bucket_id,
+    object_count: num(row.object_count),
+    total_size_bytes: nullableNum(row.total_size_bytes),
+    total_size_pretty: nullableStr(row.total_size_pretty),
+    unavailable_reason: nullableStr(row.unavailable_reason),
+  }
+}
+
+export function mapStorageOverview(raw: unknown): StorageOverview {
+  const src = section(raw)
+  const bucketsRaw = src.buckets
+  const buckets = Array.isArray(bucketsRaw)
+    ? bucketsRaw
+        .map(mapStorageBucketMetric)
+        .filter((row): row is StorageBucketMetric => row !== null)
+    : []
+  return {
+    buckets,
+    total_object_count: num(src.total_object_count),
+    total_size_bytes: nullableNum(src.total_size_bytes),
+    total_size_pretty: nullableStr(src.total_size_pretty),
+    unavailable_reason: nullableStr(src.unavailable_reason),
+  }
+}
+
+export function mapLargestTableMetric(raw: unknown): LargestTableMetric | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
+  const row = raw as Record<string, unknown>
+  const table_name = str(row.table_name).trim()
+  if (!table_name) return null
+  return {
+    schema_name: str(row.schema_name, 'public'),
+    table_name,
+    row_estimate: num(row.row_estimate),
+    table_size_bytes: num(row.table_size_bytes),
+    index_size_bytes: num(row.index_size_bytes),
+    total_size_bytes: num(row.total_size_bytes),
+    total_size_pretty: str(row.total_size_pretty),
+  }
+}
+
+export function mapSystemWarning(raw: unknown): SystemWarning | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
+  const row = raw as Record<string, unknown>
+  const title = str(row.title).trim()
+  if (!title) return null
+  return {
+    severity: warningSeverity(row.severity),
+    title,
+    description: str(row.description),
+    count: num(row.count),
+    route: str(row.route, '/admin/dashboard'),
+    checked_at: isoTimestamp(row.checked_at),
+  }
+}
+
+export function mapDatabaseOverview(raw: unknown): DatabaseOverview {
+  const src = section(raw)
+  return {
+    database_size_bytes: num(src.database_size_bytes),
+    database_size_pretty: str(src.database_size_pretty),
+    table_count: num(src.table_count),
+    analytics_events_size_bytes: nullableNum(src.analytics_events_size_bytes),
+    analytics_events_size_pretty: nullableStr(src.analytics_events_size_pretty),
+    notes: str(src.notes),
+  }
+}
+
+export function mapDashboardInfrastructure(raw: unknown): DashboardInfrastructureSummary | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
+  const root = raw as Record<string, unknown>
+  const largestRaw = root.largest_tables
+  const warningsRaw = root.warnings
+  return {
+    checked_at: isoTimestamp(root.checked_at),
+    database: mapDatabaseOverview(root.database),
+    largest_tables: Array.isArray(largestRaw)
+      ? largestRaw
+          .map(mapLargestTableMetric)
+          .filter((row): row is LargestTableMetric => row !== null)
+      : [],
+    storage: mapStorageOverview(root.storage),
+    warnings: Array.isArray(warningsRaw)
+      ? warningsRaw.map(mapSystemWarning).filter((row): row is SystemWarning => row !== null)
+      : [],
+  }
+}
+
+export async function getDashboardInfrastructure(): Promise<{
+  data: DashboardInfrastructureSummary | null
+  error: string | null
+}> {
+  const { data, error } = await supabase.rpc('kigh_admin_dashboard_infrastructure')
+
+  if (error) {
+    return { data: null, error: error.message }
+  }
+
+  const mapped = mapDashboardInfrastructure(data)
+  if (!mapped) {
+    return { data: null, error: 'Unexpected infrastructure response shape.' }
+  }
+
+  return { data: mapped, error: null }
+}

@@ -3,9 +3,12 @@ import {
   EMPTY_ADMIN_DASHBOARD_STATS,
   analyticsPeriodToDays,
   mapAdminDashboardSummary,
+  mapDashboardInfrastructure,
   mapEngagementByDayRows,
   mapEngagementByMonthRows,
+  mapStorageOverview,
   mapSummaryToDashboardStats,
+  mapSystemWarning,
   mapTopCtaRows,
   mapTopPageRows,
 } from '@/lib/adminDashboardApi'
@@ -184,5 +187,96 @@ describe('mapTopCtaRows', () => {
         element_href: 'https://example.com',
       },
     ])
+  })
+})
+
+describe('mapDashboardInfrastructure', () => {
+  it('returns null for invalid payloads', () => {
+    expect(mapDashboardInfrastructure(null)).toBeNull()
+    expect(mapDashboardInfrastructure([])).toBeNull()
+  })
+
+  it('preserves null byte metrics instead of coercing to zero', () => {
+    const mapped = mapDashboardInfrastructure({
+      checked_at: '2026-06-26T12:00:00Z',
+      database: {
+        database_size_bytes: 1000,
+        database_size_pretty: '1000 bytes',
+        table_count: 42,
+        analytics_events_size_bytes: null,
+        analytics_events_size_pretty: null,
+        notes: 'Row counts are estimates.',
+      },
+      largest_tables: [
+        {
+          schema_name: 'public',
+          table_name: 'members',
+          row_estimate: '1200',
+          table_size_bytes: 500,
+          index_size_bytes: 100,
+          total_size_bytes: 600,
+          total_size_pretty: '600 bytes',
+        },
+      ],
+      storage: {
+        buckets: [
+          {
+            bucket_id: 'gallery',
+            object_count: 10,
+            total_size_bytes: null,
+            total_size_pretty: null,
+            unavailable_reason: 'Storage object byte size is not available from the current schema.',
+          },
+        ],
+        total_object_count: 10,
+        total_size_bytes: null,
+        total_size_pretty: null,
+        unavailable_reason: 'Storage object byte size is not available from the current schema.',
+      },
+      warnings: [
+        {
+          severity: 'warning',
+          title: 'Stale pending events',
+          description: 'Events pending review for more than 7 days.',
+          count: 2,
+          route: '/admin/submissions?status=pending',
+          checked_at: '2026-06-26T12:00:00Z',
+        },
+      ],
+    })
+
+    expect(mapped?.database.analytics_events_size_bytes).toBeNull()
+    expect(mapped?.storage.total_size_bytes).toBeNull()
+    expect(mapped?.storage.buckets[0]?.unavailable_reason).toContain('not available')
+    expect(mapped?.largest_tables[0]?.row_estimate).toBe(1200)
+    expect(mapped?.warnings[0]?.severity).toBe('warning')
+  })
+
+  it('defaults missing arrays to empty', () => {
+    const mapped = mapDashboardInfrastructure({
+      checked_at: '2026-01-01T00:00:00Z',
+      database: {},
+      storage: {},
+    })
+    expect(mapped?.largest_tables).toEqual([])
+    expect(mapped?.warnings).toEqual([])
+    expect(mapped?.storage.buckets).toEqual([])
+  })
+})
+
+describe('mapStorageOverview', () => {
+  it('maps bucket rows and keeps unavailable reasons', () => {
+    const storage = mapStorageOverview({
+      buckets: [{ bucket_id: 'gallery', object_count: 3 }],
+      total_object_count: 3,
+    })
+    expect(storage.buckets).toHaveLength(1)
+    expect(storage.total_object_count).toBe(3)
+  })
+})
+
+describe('mapSystemWarning', () => {
+  it('drops warnings without a title', () => {
+    expect(mapSystemWarning({ severity: 'info' })).toBeNull()
   })
 })
