@@ -66,13 +66,13 @@ import {
   analyticsPeriodLabel,
   engagementToTrendPoints,
 } from '@/lib/dashboardHelpers'
-import { isSystemHealthAdminRole } from '@/lib/platformAdmin'
+import { isSuperAdminRole, isSystemHealthAdminRole } from '@/lib/platformAdmin'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 
 export function AdminDashboardPage() {
-  const { role } = useAuth()
-  const isSuperAdmin = role === 'super_admin'
+  const { role, loading: authLoading } = useAuth()
+  const isSuperAdmin = isSuperAdminRole(role)
   const showSystemHealthLink = isSystemHealthAdminRole(role)
   const [summary, setSummary] = useState<AdminDashboardSummary | null>(null)
   const [recent, setRecent] = useState<RecentActivityItem[]>([])
@@ -206,7 +206,7 @@ export function AdminDashboardPage() {
   }, [])
 
   const loadInfrastructure = useCallback(async () => {
-    if (!isSuperAdmin) {
+    if (authLoading || !isSuperAdmin) {
       setInfrastructure(null)
       setInfrastructureError(null)
       setInfrastructureLoading(false)
@@ -225,7 +225,7 @@ export function AdminDashboardPage() {
       setInfrastructure(result.data)
     }
     setInfrastructureLoading(false)
-  }, [isSuperAdmin])
+  }, [authLoading, isSuperAdmin])
 
   useEffect(() => {
     async function init() {
@@ -531,7 +531,7 @@ export function AdminDashboardPage() {
         </div>
       </div>
 
-      {isSuperAdmin ? (
+      {!authLoading && isSuperAdmin ? (
         <PlatformOperationsSection
           infrastructure={infrastructure}
           loading={infrastructureLoading}
