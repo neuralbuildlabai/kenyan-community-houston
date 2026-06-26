@@ -25,6 +25,8 @@ export type CertificateTemplate = {
   subtitle: string
   category: string
   presentedToLabel: string
+  /** Uppercase label for the optional event/program highlight line. */
+  programHighlightLabel: string
   bodyText: string
   closingLine: string
   sealLabel: string
@@ -108,8 +110,9 @@ export const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
     subtitle: 'of Appreciation',
     category: 'Volunteer Appreciation',
     presentedToLabel: 'This is awarded to',
+    programHighlightLabel: 'Service / Program',
     bodyText:
-      'In sincere recognition of your generous volunteer service, dedication, and meaningful contribution to the Kenyans in Greater Houston Community.\n\nThrough your time, effort, and willingness to serve, you have helped strengthen our programs, uplift our events, and create a welcoming space for families and the wider community.',
+      'In sincere appreciation of your generous volunteer service, dedication, and meaningful contribution to the Kenyans in Greater Houston Community.\n\nThrough your time, effort, and willingness to serve, you have helped strengthen our programs, uplift our events, and create a welcoming space for families and the wider community.',
     closingLine: 'Presented with heartfelt gratitude by Kenyans in Greater Houston Community',
     sealLabel: 'Community Service',
     accentVariant: 'warm',
@@ -123,6 +126,7 @@ export const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
     subtitle: 'of Recognition',
     category: 'Community Speaker Recognition',
     presentedToLabel: 'This is awarded to',
+    programHighlightLabel: 'Recognition Occasion',
     bodyText:
       'In honor of your valuable contribution as a speaker and community forum leader for the Kenyans in Greater Houston Community.\n\nYour insight, leadership, and willingness to share knowledge have helped inform, inspire, and empower our community through meaningful dialogue and shared learning.',
     closingLine: 'Presented with sincere appreciation by Kenyans in Greater Houston Community',
@@ -138,8 +142,9 @@ export const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
     subtitle: 'of Community Service',
     category: 'Community Service & Leadership',
     presentedToLabel: 'This is awarded to',
+    programHighlightLabel: 'Service / Program',
     bodyText:
-      'In recognition of your outstanding service, leadership, and commitment to the growth and unity of the Kenyans in Greater Houston Community.\n\nYour dedication reflects the spirit of service, responsibility, and togetherness that continues to strengthen and uplift our community.',
+      'In honor of your outstanding service, leadership, and commitment to the growth and unity of the Kenyans in Greater Houston Community.\n\nYour dedication reflects the spirit of service, responsibility, and togetherness that continues to strengthen and uplift our community.',
     closingLine: 'Presented with deep appreciation by Kenyans in Greater Houston Community',
     sealLabel: 'Civic Leadership',
     accentVariant: 'prestigious',
@@ -153,8 +158,9 @@ export const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
     subtitle: 'of Appreciation',
     category: 'Donor & Sponsor Appreciation',
     presentedToLabel: 'This is awarded to',
+    programHighlightLabel: 'Recognition Occasion',
     bodyText:
-      'In grateful recognition of your generous support and valued partnership with the Kenyans in Greater Houston Community.\n\nYour contribution helps make our community programs, events, outreach, and shared initiatives possible, leaving a meaningful impact on the people we serve.',
+      'In grateful appreciation of your generous support and valued partnership with the Kenyans in Greater Houston Community.\n\nYour contribution helps make our community programs, events, outreach, and shared initiatives possible, leaving a meaningful impact on the people we serve.',
     closingLine: 'Presented with sincere gratitude by Kenyans in Greater Houston Community',
     sealLabel: 'Generous Support',
     accentVariant: 'premium',
@@ -168,8 +174,9 @@ export const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
     subtitle: 'of Achievement',
     category: 'Youth Achievement',
     presentedToLabel: 'This is awarded to',
+    programHighlightLabel: 'Recognition Occasion',
     bodyText:
-      'In recognition of your achievement, participation, and positive representation within the Kenyans in Greater Houston Community.\n\nYour dedication, growth, and example bring pride to our community and inspire others to pursue excellence with confidence and purpose.',
+      'In celebration of your achievement, participation, and positive representation within the Kenyans in Greater Houston Community.\n\nYour dedication, growth, and example bring pride to our community and inspire others to pursue excellence with confidence and purpose.',
     closingLine: 'Presented with pride and encouragement by Kenyans in Greater Houston Community',
     sealLabel: 'Youth Excellence',
     accentVariant: 'celebratory',
@@ -183,6 +190,7 @@ export const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
     subtitle: 'of Appreciation',
     category: 'Vendor & Community Partner',
     presentedToLabel: 'This is awarded to',
+    programHighlightLabel: 'Service / Program',
     bodyText:
       'In appreciation of your valued partnership, participation, and support of Kenyans in Greater Houston Community events and initiatives.\n\nYour presence and contribution help create meaningful community experiences, strengthen local connections, and support the spirit of collaboration across Greater Houston.',
     closingLine: 'Presented with sincere appreciation by Kenyans in Greater Houston Community',
@@ -197,6 +205,29 @@ export const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
 export function getCertificateTemplate(id: string): CertificateTemplate | undefined {
   return CERTIFICATE_TEMPLATES.find((t) => t.id === id)
 }
+
+export type CertificateEventProgramDisplay = {
+  label: string
+  name: string
+}
+
+/** Returns highlight content for the optional event/program field, or null when empty. */
+export function getCertificateEventProgramDisplay(
+  eventName: string,
+  templateId: string,
+): CertificateEventProgramDisplay | null {
+  const name = eventName.trim()
+  if (!name) return null
+
+  const template = getCertificateTemplate(templateId)
+  return {
+    label: template?.programHighlightLabel ?? 'Recognition Occasion',
+    name,
+  }
+}
+
+/** Legacy event line prefix — must not appear in rendered certificate output. */
+export const LEGACY_CERTIFICATE_EVENT_PREFIX = 'In recognition of:'
 
 export function getCertificateDesignStyle(id: string): CertificateDesignStyle | undefined {
   return CERTIFICATE_DESIGN_STYLES.find((s) => s.id === id)

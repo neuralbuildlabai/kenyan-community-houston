@@ -49,7 +49,7 @@
 
 .cert-body,
 .cert-closing,
-.cert-event,
+.certificate-program-name,
 .cert-meta-line {
   font-family: 'Libre Baskerville', Georgia, 'Times New Roman', Times, serif;
 }
@@ -57,7 +57,8 @@
 .cert-meta-caption,
 .cert-footer,
 .cert-awarded-label,
-.cert-org-name {
+.cert-org-name,
+.certificate-program-label {
   font-family: Inter, system-ui, sans-serif;
 }
 
@@ -651,13 +652,45 @@
   opacity: 0.35;
 }
 
-.cert-event {
-  margin: 0 0 0.05in;
-  font-size: 9.5pt;
+.certificate-program-highlight {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.035in;
+  margin: 0 0 0.08in;
+  max-width: 74%;
+  padding: 0 0.12in;
+}
+
+.certificate-program-label {
+  font-size: 6.5pt;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #9a8868;
+  line-height: 1.3;
+}
+
+.certificate-program-name {
+  font-family: 'Cormorant Garamond', 'Libre Baskerville', Georgia, serif;
+  font-size: 11pt;
+  font-weight: 600;
   font-style: italic;
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  color: #555;
+  letter-spacing: 0.04em;
+  color: #444;
+  line-height: 1.35;
+}
+
+.certificate-program-highlight::after {
+  content: '';
+  display: block;
+  width: 1.15in;
+  margin-top: 0.05in;
+  border-top: 0.5px solid rgba(168, 150, 100, 0.28);
+}
+
+.certificate-program-highlight + .cert-body {
+  margin-top: 0.04in;
 }
 
 .cert-body {

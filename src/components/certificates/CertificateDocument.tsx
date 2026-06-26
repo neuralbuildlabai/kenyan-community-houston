@@ -5,6 +5,7 @@ import { prepareSignatureImageForDisplay } from '@/lib/signatureImageProcessing'
 import {
   CERTIFICATE_FOOTER_TEXT,
   formatCertificateDate,
+  getCertificateEventProgramDisplay,
   getCertificateTemplate,
   KIGH_ORG_NAME,
   type CertificateFormData,
@@ -469,6 +470,7 @@ function CertificateContent({
 
   const displayDate = formatCertificateDate(data.issueDate)
   const recipient = data.recipientName.trim() || 'Recipient Name'
+  const eventProgram = getCertificateEventProgramDisplay(data.eventName, data.templateId)
 
   return (
     <div className="cert-inner">
@@ -511,8 +513,11 @@ function CertificateContent({
 
       <TemplateAccent templateId={data.templateId} />
 
-      {data.eventName.trim() ? (
-        <p className="cert-event">In recognition of: {data.eventName.trim()}</p>
+      {eventProgram ? (
+        <div className="certificate-program-highlight">
+          <div className="certificate-program-label">{eventProgram.label}</div>
+          <div className="certificate-program-name">{eventProgram.name}</div>
+        </div>
       ) : null}
 
       <p className="cert-body">{template.bodyText}</p>
