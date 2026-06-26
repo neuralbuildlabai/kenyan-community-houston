@@ -44,8 +44,18 @@ export type CertificateDesignStyle = {
 
 export const KIGH_ORG_NAME = 'Kenyans in Greater Houston Community'
 
-export const CERTIFICATE_FOOTER_TEXT =
-  'Official Certificate of Recognition | kenyansingreaterhouston.org'
+export const CERTIFICATE_FOOTER_OFFICIAL = 'Official Certificate of Recognition'
+
+export const CERTIFICATE_FOOTER_WEBSITE = 'kenyansingreaterhouston.org'
+
+/** @deprecated Prefer CERTIFICATE_FOOTER_OFFICIAL + CERTIFICATE_FOOTER_WEBSITE in layout. */
+export const CERTIFICATE_FOOTER_TEXT = `${CERTIFICATE_FOOTER_OFFICIAL} | ${CERTIFICATE_FOOTER_WEBSITE}`
+
+/** Short printable reference from a saved certificate record UUID. */
+export function formatCertificateReference(recordId: string): string {
+  const compact = recordId.replace(/-/g, '').slice(0, 8).toUpperCase()
+  return compact ? `KIGH-${compact}` : ''
+}
 
 export const BIG_FIVE_CERTIFICATE_BG_PATH = '/kigh-media/kigh-big-five-certificate-bg.png'
 

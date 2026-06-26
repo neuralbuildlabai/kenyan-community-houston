@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   CERTIFICATE_TEMPLATES,
+  formatCertificateReference,
   getCertificateEventProgramDisplay,
   LEGACY_CERTIFICATE_EVENT_PREFIX,
 } from './certificateTemplates'
@@ -27,6 +28,16 @@ describe('getCertificateEventProgramDisplay', () => {
     expect(display?.name).toBe('Family Fun Day')
     expect(display?.name).not.toContain(LEGACY_CERTIFICATE_EVENT_PREFIX)
     expect(JSON.stringify(display)).not.toContain(LEGACY_CERTIFICATE_EVENT_PREFIX)
+  })
+})
+
+describe('formatCertificateReference', () => {
+  it('formats a UUID into a short KIGH reference code', () => {
+    expect(formatCertificateReference('a1b2c3d4-e5f6-7890-abcd-ef1234567890')).toBe('KIGH-A1B2C3D4')
+  })
+
+  it('returns empty string for invalid input', () => {
+    expect(formatCertificateReference('')).toBe('')
   })
 })
 

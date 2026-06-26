@@ -80,6 +80,7 @@ import { AdminVendorsPage } from '@/pages/admin/AdminVendorsPage'
 import { AdminVendorDirectoryPage } from '@/pages/admin/AdminVendorDirectoryPage'
 import { AdminCertificatesPage } from '@/pages/admin/AdminCertificatesPage'
 import { CertificatePreviewPage } from '@/pages/dev/CertificatePreviewPage'
+import { CertificateDevExportPage } from '@/pages/dev/CertificateDevExportPage'
 import { SYSTEM_HEALTH_ADMIN_ROLES } from '@/lib/platformAdmin'
 
 import { RequireAuth } from '@/components/RequireAuth'
@@ -141,7 +142,10 @@ export default function App() {
               <Route path="resources" element={<ResourcesPage />} />
               <Route path="certificates-and-acknowledgements" element={<CertificatesAndAcknowledgementsPage />} />
               {import.meta.env.DEV ? (
-                <Route path="dev/certificate-preview" element={<CertificatePreviewPage />} />
+                <>
+                  <Route path="dev/certificate-preview" element={<CertificatePreviewPage />} />
+                  <Route path="dev/certificate-export" element={<CertificateDevExportPage />} />
+                </>
               ) : null}
               <Route path="login" element={<LoginPage />} />
               <Route path="admin/login" element={<LoginPage />} />
