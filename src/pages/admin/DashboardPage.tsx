@@ -18,27 +18,16 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  EMPTY_ADMIN_DASHBOARD_STATS,
+  getAdminDashboardSummary,
+  mapSummaryToDashboardStats,
+  type AdminDashboardStats,
+} from '@/lib/adminDashboardApi'
 import { supabase } from '@/lib/supabase'
 import { formatDateShort } from '@/lib/utils'
 import { format } from 'date-fns'
 import { SimpleBars, type BarDatum } from '@/components/admin/SimpleBars'
-
-interface Stats {
-  members_total: number
-  members_pending: number
-  events_published: number
-  events_pending: number
-  announcements_published: number
-  announcements_pending: number
-  businesses_published: number
-  businesses_pending: number
-  fundraisers_active: number
-  fundraisers_pending: number
-  gallery_pending: number
-  media_submissions_pending: number
-  contacts_new: number
-  profiles_total: number
-}
 
 interface RecentItem {
   id: string
@@ -59,31 +48,19 @@ type Summary7 = {
 }
 
 export function AdminDashboardPage() {
-  const [stats, setStats] = useState<Stats | null>(null)
+  const [stats, setStats] = useState<AdminDashboardStats | null>(null)
   const [recent, setRecent] = useState<RecentItem[]>([])
   const [upcoming, setUpcoming] = useState<{ id: string; title: string; start_date: string; location: string }[]>([])
   const [weekActivity, setWeekActivity] = useState<BarDatum[]>([])
   const [summary7, setSummary7] = useState<Summary7 | null>(null)
+  const [summaryError, setSummaryError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       const todayYmd = format(new Date(), 'yyyy-MM-dd')
       const [
-        { count: members_total },
-        { count: members_pending },
-        { count: events_published },
-        { count: events_pending },
-        { count: announcements_published },
-        { count: announcements_pending },
-        { count: businesses_published },
-        { count: businesses_pending },
-        { count: fundraisers_active },
-        { count: fundraisers_pending },
-        { count: gallery_pending },
-        { count: media_submissions_pending },
-        { count: contacts_new },
-        { count: profiles_total },
+        dashboardSummaryResult,
         { data: recentEvents },
         { data: recentAnn },
         { data: recentBiz },
@@ -92,20 +69,7 @@ export function AdminDashboardPage() {
         { data: rpcWeekData, error: rpcWeekError },
         { data: rpcSummaryData, error: rpcSummaryError },
       ] = await Promise.all([
-        supabase.from('members').select('*', { count: 'exact', head: true }),
-        supabase.from('members').select('*', { count: 'exact', head: true }).eq('membership_status', 'pending'),
-        supabase.from('events').select('*', { count: 'exact', head: true }).eq('status', 'published'),
-        supabase.from('events').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('announcements').select('*', { count: 'exact', head: true }).eq('status', 'published'),
-        supabase.from('announcements').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('businesses').select('*', { count: 'exact', head: true }).eq('status', 'published'),
-        supabase.from('businesses').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('fundraisers').select('*', { count: 'exact', head: true }).eq('status', 'published'),
-        supabase.from('fundraisers').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('gallery_images').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('member_media_submissions').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('contact_submissions').select('*', { count: 'exact', head: true }).eq('status', 'new'),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
+        getAdminDashboardSummary(),
         supabase.from('events').select('id, title, status, created_at').order('created_at', { ascending: false }).limit(4),
         supabase.from('announcements').select('id, title, status, created_at').order('created_at', { ascending: false }).limit(4),
         supabase.from('businesses').select('id, name, status, created_at').order('created_at', { ascending: false }).limit(3),
@@ -121,22 +85,16 @@ export function AdminDashboardPage() {
         supabase.rpc('kigh_admin_analytics_summary', { p_days: 7 }),
       ])
 
-      setStats({
-        members_total: members_total ?? 0,
-        members_pending: members_pending ?? 0,
-        events_published: events_published ?? 0,
-        events_pending: events_pending ?? 0,
-        announcements_published: announcements_published ?? 0,
-        announcements_pending: announcements_pending ?? 0,
-        businesses_published: businesses_published ?? 0,
-        businesses_pending: businesses_pending ?? 0,
-        fundraisers_active: fundraisers_active ?? 0,
-        fundraisers_pending: fundraisers_pending ?? 0,
-        gallery_pending: gallery_pending ?? 0,
-        media_submissions_pending: media_submissions_pending ?? 0,
-        contacts_new: contacts_new ?? 0,
-        profiles_total: profiles_total ?? 0,
-      })
+      if (dashboardSummaryResult.error || !dashboardSummaryResult.data) {
+        setSummaryError(
+          dashboardSummaryResult.error ??
+            'Dashboard summary is temporarily unavailable. Apply migration 068 or sign in with an elevated admin role.'
+        )
+        setStats({ ...EMPTY_ADMIN_DASHBOARD_STATS })
+      } else {
+        setSummaryError(null)
+        setStats(mapSummaryToDashboardStats(dashboardSummaryResult.data))
+      }
 
       const combined: RecentItem[] = [
         ...(recentEvents ?? []).map((e) => ({ ...e, type: 'Event' })),
@@ -265,6 +223,15 @@ export function AdminDashboardPage() {
           </div>
         </div>
       </div>
+
+      {summaryError ? (
+        <div
+          role="status"
+          className="rounded-xl border border-amber-200/70 bg-amber-50/80 px-4 py-3 text-sm text-amber-950"
+        >
+          {summaryError} KPI counts below may show zero until the summary service is available.
+        </div>
+      ) : null}
 
       {loading ? (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
