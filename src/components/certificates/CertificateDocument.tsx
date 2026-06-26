@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { KIGH_LOGO_ALT, KIGH_LOGO_PATH } from '@/lib/kighAssets'
+import { prepareSignatureImageForDisplay } from '@/lib/signatureImageProcessing'
 import {
   CERTIFICATE_FOOTER_TEXT,
   formatCertificateDate,
@@ -387,6 +389,30 @@ function TemplateAccent({ templateId }: { templateId: string }) {
   }
 }
 
+function useProcessedSignatureUrl(rawUrl: string | null): string | null {
+  const [displayUrl, setDisplayUrl] = useState<string | null>(rawUrl)
+
+  useEffect(() => {
+    if (!rawUrl) {
+      setDisplayUrl(null)
+      return
+    }
+
+    let cancelled = false
+    setDisplayUrl(rawUrl)
+
+    void prepareSignatureImageForDisplay(rawUrl).then((processed) => {
+      if (!cancelled) setDisplayUrl(processed)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [rawUrl])
+
+  return displayUrl
+}
+
 function SignatureBlock({
   data,
   resolvedSignature,
@@ -395,6 +421,11 @@ function SignatureBlock({
   resolvedSignature?: CertificateSignature | null
 }) {
   const hasImage = Boolean(resolvedSignature?.image_url)
+  const rawSignatureUrl =
+    hasImage && resolvedSignature
+      ? getSignaturePublicUrl(resolvedSignature.image_url)
+      : null
+  const signatureUrl = useProcessedSignatureUrl(rawSignatureUrl)
   const signerName =
     resolvedSignature?.signer_name?.trim() ||
     data.signature1Name.trim() ||
@@ -407,13 +438,15 @@ function SignatureBlock({
   return (
     <div className="cert-meta-col cert-signature-col">
       <div className="cert-signature-area">
-        {hasImage && resolvedSignature ? (
-          <img
-            src={getSignaturePublicUrl(resolvedSignature.image_url)}
-            alt=""
-            className="cert-signature-image"
-            crossOrigin="anonymous"
-          />
+        {signatureUrl ? (
+          <div className="cert-signature-ink">
+            <img
+              src={signatureUrl}
+              alt=""
+              className="cert-signature-image"
+              crossOrigin="anonymous"
+            />
+          </div>
         ) : (
           <div className="cert-signature-blank" aria-hidden />
         )}

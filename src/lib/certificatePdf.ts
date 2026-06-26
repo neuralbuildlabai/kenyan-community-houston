@@ -1,6 +1,7 @@
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
 import { certificatePdfFilename } from '@/lib/certificateTemplates'
+import { prepareSignatureImagesInRoot } from '@/lib/signatureImageProcessing'
 
 export const CERTIFICATE_PRINT_ROOT_ID = 'kigh-certificate-print-root'
 
@@ -225,6 +226,8 @@ async function buildCaptureClone(elementOrId: HTMLElement | string): Promise<{
   await waitForLayout()
   reloadCloneImages(clone)
   await waitForCloneImages(clone)
+  await prepareSignatureImagesInRoot(clone)
+  await waitForCloneImages(clone)
   sanitizeCloneForCapture(clone)
 
   const cloneDimensions = assertSheetDimensions(clone)
@@ -353,6 +356,8 @@ export async function printCertificate(elementOrId?: HTMLElement | string): Prom
   }
 
   await waitForLayout()
+  await waitForPrintImages(printRoot)
+  await prepareSignatureImagesInRoot(printRoot)
   await waitForPrintImages(printRoot)
   await waitForLayout()
 
