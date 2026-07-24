@@ -50,6 +50,8 @@ import { CommunityFeedPage } from '@/pages/public/CommunityFeedPage'
 import { PollDetailPage } from '@/pages/public/PollDetailPage'
 import { PollsIndexPage } from '@/pages/public/PollsIndexPage'
 import { NotFoundPage } from '@/pages/public/NotFoundPage'
+import { MemorialsIndexPage } from '@/pages/public/MemorialsIndexPage'
+import { CollinsColloNamaswaMemorialPage } from '@/pages/public/CollinsColloNamaswaMemorialPage'
 
 import { AdminDashboardPage } from '@/pages/admin/DashboardPage'
 import { AdminCalendarPage } from '@/pages/admin/CalendarPage'
@@ -121,6 +123,13 @@ export default function App() {
               <Route path="community-support" element={<CommunitySupportPage />} />
               <Route path="community-support/submit" element={<SubmitFundraiserPage />} />
               <Route path="community-support/:slug" element={<FundraiserDetailPage />} />
+
+              {/* Permanent memorial URLs — do not rename (printed QR destinations). */}
+              <Route path="memorials" element={<MemorialsIndexPage />} />
+              <Route
+                path="memorials/collins-collo-namaswa"
+                element={<CollinsColloNamaswaMemorialPage />}
+              />
 
               <Route path="sports-youth" element={<SportsYouthPage />} />
               <Route path="sports-youth/:slug" element={<SportsDetailPage />} />

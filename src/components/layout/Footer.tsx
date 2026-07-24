@@ -38,6 +38,7 @@ const resources = [
   { to: '/resources', label: 'Resources' },
   { to: '/announcements', label: 'Announcements' },
   { to: '/community-support', label: 'Community Support' },
+  { to: '/memorials', label: 'Memorials' },
   { to: '/serve', label: 'Call to Serve' },
   { to: '/governance', label: 'Governance' },
 ]
