@@ -78,6 +78,25 @@ export function CommunitySupportPage() {
       />
 
       <PublicSection className="!py-10 sm:!py-12 lg:!py-14">
+        <div className="mb-8 rounded-2xl border border-border/60 bg-gradient-to-br from-secondary/50 via-card to-background px-5 py-5 sm:px-6 sm:py-6">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            In remembrance
+          </p>
+          <h2 className="mt-1.5 text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+            Collins “Collo” Namaswa
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            Forever in Our Hearts — a quiet memorial page with Collo’s funeral program, shared with
+            care for family and community.
+          </p>
+          <Link
+            to="/memorials/collins-collo-namaswa"
+            className="mt-3 inline-flex text-sm font-medium text-primary underline decoration-primary/25 underline-offset-[5px] transition-colors hover:decoration-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 rounded-sm"
+          >
+            Visit memorial
+          </Link>
+        </div>
+
         <Alert className="mb-10 border-amber-200/80 bg-amber-50/70">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-sm leading-relaxed text-amber-900">
