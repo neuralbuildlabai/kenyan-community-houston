@@ -27,6 +27,9 @@ describe('memorials registry', () => {
     expect(entry?.qrPngPath).toBe(
       '/memorials/collins-collo-namaswa/collins-collo-namaswa-memorial-qr.png',
     )
+    expect(entry?.qrPrintPngPath).toBe(
+      '/memorials/collins-collo-namaswa/collins-collo-namaswa-memorial-qr-print.png',
+    )
     expect(entry?.qrSvgPath).toBe(
       '/memorials/collins-collo-namaswa/collins-collo-namaswa-memorial-qr.svg',
     )

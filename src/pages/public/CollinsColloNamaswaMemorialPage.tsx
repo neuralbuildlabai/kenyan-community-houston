@@ -174,19 +174,22 @@ export function CollinsColloNamaswaMemorialPage() {
 
       <PublicSection
         id="memorial-qr"
-        title="Return to this page"
-        description="Scan this QR code anytime to return to Collo’s memorial page on the Kenyans in Greater Houston website."
+        title="Scan For Funeral Program"
+        description="Scan this QR code to open Collo’s memorial page and funeral program on the Kenyans in Greater Houston website."
         className="!py-10 sm:!py-12"
         contentClassName="max-w-xl"
       >
         <figure className="mx-auto flex max-w-sm flex-col items-center">
-          <div className="rounded-2xl border border-border/50 bg-white p-6 shadow-sm">
+          <div className="w-full rounded-2xl border border-border/50 bg-white px-6 pb-6 pt-5 shadow-sm">
+            <p className="mb-4 text-center text-sm font-semibold tracking-tight text-foreground sm:text-base">
+              Scan For Funeral Program
+            </p>
             <img
               src={memorial.qrPngPath}
-              alt={`QR code linking to the memorial page for ${memorial.fullName}`}
+              alt={`QR code — Scan For Funeral Program for ${memorial.fullName}`}
               width={240}
               height={240}
-              className="h-56 w-56 sm:h-60 sm:w-60"
+              className="mx-auto h-56 w-56 sm:h-60 sm:w-60"
               decoding="async"
             />
           </div>
@@ -199,9 +202,9 @@ export function CollinsColloNamaswaMemorialPage() {
           <div className="mt-5 flex flex-wrap justify-center gap-3">
             <Button asChild size="sm" variant="outline">
               <a
-                href={memorial.qrPngPath}
-                download="collins-collo-namaswa-memorial-qr.png"
-                aria-label="Download memorial QR code as PNG"
+                href={memorial.qrPrintPngPath}
+                download="collins-collo-namaswa-memorial-qr-print.png"
+                aria-label="Download Scan For Funeral Program QR code as PNG"
               >
                 <Download className="mr-2 h-3.5 w-3.5" aria-hidden />
                 Download QR (PNG)
@@ -211,7 +214,7 @@ export function CollinsColloNamaswaMemorialPage() {
               <a
                 href={memorial.qrSvgPath}
                 download="collins-collo-namaswa-memorial-qr.svg"
-                aria-label="Download memorial QR code as SVG for printing"
+                aria-label="Download Scan For Funeral Program QR code as SVG for printing"
               >
                 Download QR (SVG)
               </a>

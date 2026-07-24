@@ -23,9 +23,10 @@ test.describe('Collins Collo Namaswa memorial', () => {
     await expect(viewLink).toHaveAttribute('href', COLLINS_COLLO_NAMASWA.funeralProgramPath)
     await expect(downloadLink).toHaveAttribute('href', COLLINS_COLLO_NAMASWA.funeralProgramPath)
 
-    const qr = page.getByRole('img', { name: /QR code linking to the memorial page/i })
+    const qr = page.getByRole('img', { name: /Scan For Funeral Program/i })
     await expect(qr).toBeVisible()
     await expect(qr).toHaveAttribute('src', COLLINS_COLLO_NAMASWA.qrPngPath)
+    await expect(page.getByRole('heading', { name: /Scan For Funeral Program/i })).toBeVisible()
 
     // Soft privacy check — private residence must not appear on the public page.
     const html = await page.content()
@@ -39,6 +40,9 @@ test.describe('Collins Collo Namaswa memorial', () => {
 
     const png = await request.get(COLLINS_COLLO_NAMASWA.qrPngPath)
     expect(png.ok()).toBeTruthy()
+
+    const printPng = await request.get(COLLINS_COLLO_NAMASWA.qrPrintPngPath)
+    expect(printPng.ok()).toBeTruthy()
 
     const svg = await request.get(COLLINS_COLLO_NAMASWA.qrSvgPath)
     expect(svg.ok()).toBeTruthy()

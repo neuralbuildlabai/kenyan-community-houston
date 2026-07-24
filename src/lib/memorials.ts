@@ -21,8 +21,10 @@ export type MemorialEntry = {
   /** Public path to the funeral program PDF under /public */
   funeralProgramPath: string
   funeralProgramTitle: string
-  /** Public path to QR PNG */
+  /** Public path to QR PNG (clean code for on-page display) */
   qrPngPath: string
+  /** Print-ready QR PNG with header label */
+  qrPrintPngPath: string
   /** Public path to QR SVG */
   qrSvgPath: string
   /** Permanent public URL (no www) — must match printed QR destination */
@@ -48,6 +50,9 @@ export const COLLINS_COLLO_NAMASWA: MemorialEntry = {
     '/memorials/collins-collo-namaswa/collins-collo-namaswa-funeral-program.pdf',
   funeralProgramTitle: 'Funeral Program for Collins “Collo” Namaswa',
   qrPngPath: '/memorials/collins-collo-namaswa/collins-collo-namaswa-memorial-qr.png',
+  /** Print-ready QR with “Scan For Funeral Program” header */
+  qrPrintPngPath:
+    '/memorials/collins-collo-namaswa/collins-collo-namaswa-memorial-qr-print.png',
   qrSvgPath: '/memorials/collins-collo-namaswa/collins-collo-namaswa-memorial-qr.svg',
   permanentUrl: `${MEMORIAL_SITE_ORIGIN}/memorials/${COLLINS_COLLO_NAMASWA_SLUG}`,
   introduction:
