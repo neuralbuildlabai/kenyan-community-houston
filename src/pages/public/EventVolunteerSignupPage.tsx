@@ -7,6 +7,15 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { PageLoader } from '@/components/LoadingSpinner'
 import { supabase } from '@/lib/supabase'
 import type { Event } from '@/lib/types'
@@ -14,6 +23,7 @@ import { isEventPast } from '@/lib/eventDate'
 import { formatDate, isValidEmail } from '@/lib/utils'
 import { sanitizePhoneInput, validatePhoneNumber, PHONE_VALIDATION_USER_MESSAGE } from '@/lib/phoneValidation'
 import { validateCommunityContent, validatePublicCommunityContent } from '@/lib/communityModeration'
+import { VOLUNTEER_ROLE_GROUPS, VOLUNTEER_ROLE_OTHER_VALUE } from '@/lib/eventVolunteerSignup'
 
 function rpcErrorToMessage(err: { message?: string } | null): string {
   const raw = (err?.message ?? '').trim()
@@ -32,6 +42,9 @@ function rpcErrorToMessage(err: { message?: string } | null): string {
   if (/name_required/i.test(raw)) {
     return 'Please enter your full name (2–120 characters).'
   }
+  if (/membership_requires_email/i.test(raw)) {
+    return 'Please add your email address so KIGH can follow up about membership.'
+  }
   if (/invalid_note/i.test(raw)) {
     return 'Please revise your role or availability note so it follows community guidelines.'
   }
@@ -45,6 +58,19 @@ function rpcErrorToMessage(err: { message?: string } | null): string {
  * member status is required when the event is published, volunteer signup is enabled,
  * and signup is still open (if a close date is set). Organizer/admin tools handle PII;
  * volunteer phone numbers are not shown on the public event page.
+ *
+ * The "role" field is a dropdown (VOLUNTEER_ROLE_GROUPS) rather than free text so
+ * admins get clean, filterable role labels instead of typo'd variants. It covers
+ * both guest presenters (teachers, counselors, advisors) and day-of event helpers,
+ * so one link/form serves either kind of event. Picking "Other" reveals a short
+ * write-in field.
+ *
+ * Membership interest (added migration 071): a separate, fully optional opt-in.
+ * Checking "I'd also like to become a KIGH member" reveals dues + constitution
+ * copy and a distinct "Accept" checkbox. A pending public.members row is only
+ * created when that Accept checkbox is explicitly checked too — never from the
+ * interest checkbox alone. See create_event_volunteer_signup (migration 071)
+ * for the server-side guard this relies on.
  */
 export function EventVolunteerSignupPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -55,10 +81,14 @@ export function EventVolunteerSignupPage() {
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [role, setRole] = useState('')
+  const [customRole, setCustomRole] = useState('')
   const [note, setNote] = useState('')
   const [consent, setConsent] = useState(false)
+  const [wantsMembership, setWantsMembership] = useState(false)
+  const [membershipTermsAccepted, setMembershipTermsAccepted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
+  const [membershipRequested, setMembershipRequested] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -112,7 +142,12 @@ export function EventVolunteerSignupPage() {
       setError('Please enter a valid email address or leave it blank.')
       return
     }
-    const r = role.trim()
+    const isOtherRole = role === VOLUNTEER_ROLE_OTHER_VALUE
+    const r = (isOtherRole ? customRole : role).trim()
+    if (isOtherRole && r.length < 2) {
+      setError('Please describe your role or topic (or choose one from the list).')
+      return
+    }
     if (r) {
       const vr = validateCommunityContent(r)
       if (!vr.ok) {
@@ -132,6 +167,16 @@ export function EventVolunteerSignupPage() {
       setError('Please confirm you agree that KIGH may contact you about volunteering.')
       return
     }
+    if (wantsMembership) {
+      if (!em) {
+        setError('Please add your email address so KIGH can follow up about membership.')
+        return
+      }
+      if (!membershipTermsAccepted) {
+        setError("Please check “I accept” under membership to include your membership request, or uncheck the membership box to skip it.")
+        return
+      }
+    }
 
     setSubmitting(true)
     const { error: rpcErr } = await supabase.rpc('create_event_volunteer_signup', {
@@ -141,12 +186,15 @@ export function EventVolunteerSignupPage() {
       p_email: em || null,
       p_volunteer_role: r || null,
       p_availability_note: n || null,
+      p_wants_membership: wantsMembership,
+      p_membership_terms_accepted: wantsMembership && membershipTermsAccepted,
     })
     setSubmitting(false)
     if (rpcErr) {
       setError(rpcErrorToMessage(rpcErr))
       return
     }
+    setMembershipRequested(wantsMembership && membershipTermsAccepted)
     setDone(true)
   }
 
@@ -252,8 +300,18 @@ export function EventVolunteerSignupPage() {
           </p>
 
           {done ? (
-            <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-foreground">
-              Thank you for signing up to volunteer. A KIGH organizer may contact you with next steps.
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-foreground space-y-2">
+              <p>Thank you for signing up to volunteer. A KIGH organizer may contact you with next steps.</p>
+              {membershipRequested ? (
+                <p>
+                  We've also started your KIGH membership application. A KIGH representative will follow up to
+                  confirm your mailing address and finish your file. You can send the $20/year dues anytime via{' '}
+                  <Link to="/support" className="font-medium text-primary underline underline-offset-2">
+                    Support KIGH
+                  </Link>
+                  .
+                </p>
+              ) : null}
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -280,12 +338,53 @@ export function EventVolunteerSignupPage() {
                 <Input id="vol-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
               </div>
               <div className="form-field-stack">
-                <Label htmlFor="vol-role">Volunteer role / area of interest</Label>
-                <Input id="vol-role" value={role} onChange={(e) => setRole(e.target.value)} placeholder="Optional" />
+                <Label htmlFor="vol-role">What role are you signing up for?</Label>
+                <Select
+                  value={role || undefined}
+                  onValueChange={(v) => {
+                    setRole(v)
+                    if (v !== VOLUNTEER_ROLE_OTHER_VALUE) setCustomRole('')
+                  }}
+                >
+                  <SelectTrigger id="vol-role">
+                    <SelectValue placeholder="Select a role (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VOLUNTEER_ROLE_GROUPS.map((group) => (
+                      <SelectGroup key={group.heading}>
+                        <SelectLabel>{group.heading}</SelectLabel>
+                        {group.options.map((opt) => (
+                          <SelectItem key={opt} value={opt}>
+                            {opt}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
+                    <SelectGroup>
+                      <SelectItem value={VOLUNTEER_ROLE_OTHER_VALUE}>Other — write in</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                {role === VOLUNTEER_ROLE_OTHER_VALUE ? (
+                  <Input
+                    className="mt-2"
+                    value={customRole}
+                    onChange={(e) => setCustomRole(e.target.value)}
+                    placeholder="Tell us your role or topic"
+                    maxLength={120}
+                    autoFocus
+                  />
+                ) : null}
               </div>
               <div className="form-field-stack">
-                <Label htmlFor="vol-note">Availability note</Label>
-                <Textarea id="vol-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" />
+                <Label htmlFor="vol-note">Anything else you'd like us to know?</Label>
+                <Textarea
+                  id="vol-note"
+                  rows={3}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Optional — session title, availability, etc."
+                />
               </div>
               <div className="flex items-start gap-3 rounded-lg border p-3">
                 <Checkbox id="vol-consent" checked={consent} onCheckedChange={(v) => setConsent(v === true)} className="mt-0.5" />
@@ -293,6 +392,56 @@ export function EventVolunteerSignupPage() {
                   I agree that KIGH may contact me about volunteering for this event. *
                 </Label>
               </div>
+
+              <div className="rounded-lg border p-3 space-y-3">
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="vol-member-interest"
+                    checked={wantsMembership}
+                    onCheckedChange={(v) => {
+                      const checked = v === true
+                      setWantsMembership(checked)
+                      if (!checked) setMembershipTermsAccepted(false)
+                    }}
+                    className="mt-0.5"
+                  />
+                  <Label htmlFor="vol-member-interest" className="text-sm font-normal leading-snug cursor-pointer">
+                    I'd also like to become a KIGH member
+                  </Label>
+                </div>
+
+                {wantsMembership ? (
+                  <div className="ml-7 space-y-3 rounded-md border border-primary/20 bg-primary/[0.04] p-3">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      KIGH membership is <strong className="text-foreground">$20/year</strong>, payable anytime via{' '}
+                      <Link to="/support" className="text-primary underline underline-offset-2">
+                        Support KIGH
+                      </Link>{' '}
+                      (CashApp, Venmo, or PayPal). A KIGH representative will follow up to confirm your mailing
+                      address and finish your application — this signup only starts it.
+                    </p>
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id="vol-member-accept"
+                        checked={membershipTermsAccepted}
+                        onCheckedChange={(v) => setMembershipTermsAccepted(v === true)}
+                        className="mt-0.5"
+                      />
+                      <Label htmlFor="vol-member-accept" className="text-sm font-normal leading-snug cursor-pointer">
+                        I accept KIGH's{' '}
+                        <Link to="/governance" className="text-primary underline underline-offset-2" target="_blank" rel="noopener noreferrer">
+                          Constitution &amp; Bylaws
+                        </Link>{' '}
+                        and consent to being contacted about membership. *
+                      </Label>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Requires an email above — that's how KIGH will reach you about next steps.
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
               <Button type="submit" className="w-full" disabled={submitting}>
                 {submitting ? 'Submitting…' : 'Submit signup'}

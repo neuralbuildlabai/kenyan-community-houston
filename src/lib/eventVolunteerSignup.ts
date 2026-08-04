@@ -73,3 +73,41 @@ export function generateVolunteerSignupSlug(input: {
 
   return `volunteer-${Date.now().toString(36)}`
 }
+
+/**
+ * Grouped role options for the "What role are you signing up for?" dropdown
+ * on the public volunteer/presenter signup form. Covers both guest
+ * presenters (teachers, counselors, advisors — the Back-to-School Virtual
+ * Session use case) and day-of event helpers, so the same signup link and
+ * form work for either kind of event without adding a second flow.
+ *
+ * Values are stored as-is in `event_volunteer_signups.volunteer_role`
+ * (free text, max 120 chars — see migration 034) so admins filtering
+ * `/admin/volunteers` see clean, consistent labels instead of free-typed
+ * variants of the same role.
+ */
+export const VOLUNTEER_ROLE_GROUPS: { heading: string; options: string[] }[] = [
+  {
+    heading: 'Presenting a topic',
+    options: [
+      'Teacher / Educator',
+      'School Counselor',
+      'College / University Advisor',
+      'Financial Aid / Scholarship Advisor',
+      'Career / Mentor Coach',
+      'Tutor / Learning Specialist',
+    ],
+  },
+  {
+    heading: 'Helping with the event',
+    options: [
+      'Tech / Zoom support',
+      'Registration / check-in',
+      'Communications / social media',
+      'General helper',
+    ],
+  },
+]
+
+/** Sentinel value for the "Other — write in" option; never saved as-is. */
+export const VOLUNTEER_ROLE_OTHER_VALUE = '__other__'

@@ -26,6 +26,7 @@ Public page: `EventVolunteerSignupPage` at `/events/:slug/volunteer`.
 
 - Explains privacy (name and phone visible only to authorized organizers).
 - Optional aggregate: “Volunteers signed up: *n*” when the event has signup enabled (RPC `public_event_volunteer_signup_count`).
+- **Role** is a grouped dropdown (`VOLUNTEER_ROLE_GROUPS` in `src/lib/eventVolunteerSignup.ts`) covering both guest presenters (Teacher/Educator, School Counselor, College/University Advisor, Financial Aid/Scholarship Advisor, Career/Mentor Coach, Tutor/Learning Specialist) and day-of event helpers (Tech/Zoom support, Registration/check-in, Communications/social media, General helper), plus an “Other — write in” option. This keeps `event_volunteer_signups.volunteer_role` clean and filterable in the admin list instead of free-typed variants of the same role.
 
 ## 5. Required fields
 
@@ -81,3 +82,14 @@ Public page: `EventVolunteerSignupPage` at `/events/:slug/volunteer`.
 ## 12. Future production duplication
 
 When UAT is cloned to production, include migration **034** in the production migration chain. Re-point `VITE_PUBLIC_SITE_URL` / `VITE_APP_URL` to the production domain so generated share links and WhatsApp messages resolve correctly. No separate Twilio or SMS integration is introduced by this feature.
+
+## 13. Membership interest opt-in (migration 071)
+
+The volunteer/presenter signup form also offers a fully optional "I'd also like to become a KIGH member" checkbox. It is **off by default and never creates a membership record on its own**.
+
+- Checking it reveals dues ($20/year, payable via `/support`) and constitution/consent copy, plus a separate **"I accept…"** checkbox.
+- A pending `public.members` row (`membership_status = 'pending'`, `dues_status = 'pending'`, `agreed_to_constitution = true`, `consent_to_communications = true`) is created **only** when that Accept checkbox is checked too, and only if the submitter provided an email (required in that case — enforced both client-side and server-side via the `membership_requires_email` error).
+- The row intentionally has no `user_id` (they haven't created a login account) and no address — an admin follows up via **Admin → Members** to collect the rest and mark dues paid, or the person later self-serves a full membership application under the same email (migration 027's legacy-claim logic links it to their new auth account automatically).
+- Duplicate protection: if an email already has a `members` row (any status), the insert is a silent no-op (`on conflict ((lower(email))) do nothing`) — the volunteer/presenter signup still succeeds either way.
+- **Guard rail note**: `public.members` has a hard trigger (migration 025) blocking any insert with `user_id is null` unless the caller is an elevated admin, specifically to prevent unaccountable member rows. Migration 071 adds one narrow, session-scoped bypass (`kigh.allow_pending_member_lead`) used only inside `create_event_volunteer_signup`, immediately before this specific insert. No other code path receives this bypass — do not reuse the flag elsewhere without deliberately re-reviewing this tradeoff.
+- These leads are easy to distinguish in **Admin → Members**: filter to `membership_status = pending` with no linked account, or search `review_notes` for "Auto-created from event volunteer/presenter signup".
