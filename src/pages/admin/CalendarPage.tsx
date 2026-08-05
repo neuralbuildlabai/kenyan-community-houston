@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { MapLink } from '@/components/MapLink'
+import { SubmissionMediaUploadField } from '@/components/public/SubmissionMediaUploadField'
+import { uploadSubmissionMedia } from '@/lib/submissionMediaUpload'
 import { supabase } from '@/lib/supabase'
 import { CALENDAR_FILTER_CATEGORIES } from '@/lib/constants'
 import {
@@ -134,6 +136,33 @@ export function AdminCalendarPage() {
   const [saving, setSaving] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [showAllRecurring, setShowAllRecurring] = useState(false)
+  // Flyer upload state (admin editor). Uploads land in the same
+  // kigh-submission-media bucket the public submit form uses; the
+  // resulting public URL is written to form.image_url on success.
+  const [flyerFileName, setFlyerFileName] = useState<string | null>(null)
+  const [flyerUploading, setFlyerUploading] = useState(false)
+  const [flyerError, setFlyerError] = useState<string | null>(null)
+
+  async function handleFlyerPick(file: File) {
+    setFlyerError(null)
+    setFlyerFileName(file.name)
+    setFlyerUploading(true)
+    const res = await uploadSubmissionMedia(supabase, file)
+    setFlyerUploading(false)
+    if ('error' in res) {
+      setFlyerError(res.error)
+      setFlyerFileName(null)
+      return
+    }
+    setForm((f) => ({ ...f, image_url: res.publicUrl }))
+    toast.success('Flyer uploaded')
+  }
+
+  function handleFlyerClear() {
+    setFlyerFileName(null)
+    setFlyerError(null)
+    setForm((f) => ({ ...f, image_url: '' }))
+  }
 
   async function load() {
     setLoading(true)
@@ -197,6 +226,8 @@ export function AdminCalendarPage() {
 
   function openCreate() {
     setForm(defaultForm())
+    setFlyerFileName(null)
+    setFlyerError(null)
     setDialogOpen(true)
   }
 
@@ -246,6 +277,8 @@ export function AdminCalendarPage() {
       vendor_other_fee_usd:
         e.vendor_other_fee_cents != null ? (e.vendor_other_fee_cents / 100).toString() : '',
     })
+    setFlyerFileName(null)
+    setFlyerError(null)
     setDialogOpen(true)
   }
 
@@ -640,14 +673,40 @@ export function AdminCalendarPage() {
               <Label>Registration / RSVP URL</Label>
               <Input value={form.registration_url} onChange={(e) => setForm((f) => ({ ...f, registration_url: e.target.value }))} />
             </div>
-            <div className="sm:col-span-2 form-field-stack">
-              <Label>Image URL</Label>
-              <Input value={form.image_url} onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))} />
+            <div className="sm:col-span-2">
+              <SubmissionMediaUploadField
+                inputId="admin-event-flyer"
+                label="Event flyer"
+                selectedFileName={flyerFileName}
+                uploadedUrl={form.image_url || null}
+                uploading={flyerUploading}
+                error={flyerError}
+                onPickFile={handleFlyerPick}
+                onClear={handleFlyerClear}
+              />
+              {form.image_url && !flyerUploading ? (
+                <img
+                  src={form.image_url}
+                  alt="Flyer preview"
+                  className="mt-2 max-h-48 rounded-lg border object-contain"
+                />
+              ) : null}
             </div>
-            <div className="sm:col-span-2 form-field-stack">
-              <Label>Flyer URL (legacy)</Label>
-              <Input value={form.flyer_url} onChange={(e) => setForm((f) => ({ ...f, flyer_url: e.target.value }))} />
-            </div>
+            <details className="sm:col-span-2">
+              <summary className="cursor-pointer text-xs text-muted-foreground">
+                Advanced: paste image / flyer URLs manually
+              </summary>
+              <div className="mt-3 grid gap-4">
+                <div className="form-field-stack">
+                  <Label>Image URL</Label>
+                  <Input value={form.image_url} onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))} />
+                </div>
+                <div className="form-field-stack">
+                  <Label>Flyer URL (legacy)</Label>
+                  <Input value={form.flyer_url} onChange={(e) => setForm((f) => ({ ...f, flyer_url: e.target.value }))} />
+                </div>
+              </div>
+            </details>
             <div className="flex items-center gap-3 sm:col-span-2">
               <Switch checked={form.is_featured} onCheckedChange={(v) => setForm((f) => ({ ...f, is_featured: v }))} id="feat" />
               <Label htmlFor="feat">Featured on listings</Label>
