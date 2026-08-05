@@ -17,6 +17,7 @@ import {
   PRIVATE_SIGNED_URL_EXPIRY_SEC,
   sanitizeStorageFileName,
 } from '@/lib/kighPrivateStorage'
+import { submissionMediaAcceptAttr, uploadSubmissionMedia } from '@/lib/submissionMediaUpload'
 import { toast } from 'sonner'
 import type { Resource, ResourceAccessLevel, ResourceStatus } from '@/lib/types'
 
@@ -54,6 +55,25 @@ export function AdminResourcesPage() {
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
+  // Public upload: goes straight to the public submission-media bucket
+  // and fills form.file_url with the resulting public URL, so a resource
+  // can be published to the public Resources page without hosting the
+  // file elsewhere. (JPEG/PNG/WebP/PDF — same as the public submit form.)
+  const [publicUploading, setPublicUploading] = useState(false)
+  const publicFileInputRef = useRef<HTMLInputElement>(null)
+
+  async function handlePublicUpload(file: File) {
+    setPublicUploading(true)
+    const res = await uploadSubmissionMedia(supabase, file)
+    setPublicUploading(false)
+    if ('error' in res) {
+      toast.error(res.error)
+      return
+    }
+    const ext = file.name.lastIndexOf('.') >= 0 ? file.name.slice(file.name.lastIndexOf('.') + 1).toLowerCase() : ''
+    setForm((f) => ({ ...f, file_url: res.publicUrl, file_type: f.file_type.trim() || ext }))
+    toast.success('File uploaded — remember to Save')
+  }
   const [storedPrivate, setStoredPrivate] = useState<{
     bucket: string
     path: string
@@ -546,6 +566,50 @@ export function AdminResourcesPage() {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                Appears on the public Resources page only when status is{' '}
+                <strong>published</strong> and access level is <strong>public</strong>.
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-primary/25 bg-primary/[0.04] p-3 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Upload className="h-4 w-4 text-primary" />
+                Public file
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Upload a file the community can view or download directly (JPEG, PNG, WebP, or
+                PDF, max 10 MB). The link fills the File URL below automatically. For Word/Excel
+                files, paste a hosted link in External URL instead.
+              </p>
+              <input
+                ref={publicFileInputRef}
+                type="file"
+                accept={submissionMediaAcceptAttr}
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  e.target.value = ''
+                  if (f) void handlePublicUpload(f)
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                disabled={publicUploading || !!pendingFile || !!storedPrivate}
+                title={pendingFile || storedPrivate ? 'This resource has a private file — remove it to attach a public one.' : undefined}
+                onClick={() => publicFileInputRef.current?.click()}
+              >
+                <Upload className="h-3.5 w-3.5" />
+                {publicUploading ? 'Uploading…' : 'Upload public file…'}
+              </Button>
+              {form.file_url ? (
+                <p className="text-xs text-muted-foreground break-all">
+                  File URL set: <span className="font-medium text-foreground">{form.file_url}</span>
+                </p>
+              ) : null}
             </div>
 
             <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
