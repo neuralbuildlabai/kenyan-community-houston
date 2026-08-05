@@ -17,7 +17,7 @@ import {
   PRIVATE_SIGNED_URL_EXPIRY_SEC,
   sanitizeStorageFileName,
 } from '@/lib/kighPrivateStorage'
-import { submissionMediaAcceptAttr, uploadSubmissionMedia } from '@/lib/submissionMediaUpload'
+import { documentUploadAcceptAttr, uploadSubmissionMedia } from '@/lib/submissionMediaUpload'
 import { toast } from 'sonner'
 import type { Resource, ResourceAccessLevel, ResourceStatus } from '@/lib/types'
 
@@ -79,6 +79,7 @@ export function AdminResourcesPage() {
     path: string
     name: string | null
     size: number | null
+    mime: string | null
   } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -164,6 +165,7 @@ export function AdminResourcesPage() {
             path: x.storage_path,
             name: x.original_filename ?? null,
             size: x.file_size ?? null,
+            mime: x.mime_type ?? null,
           }
         : null
     )
@@ -281,6 +283,61 @@ export function AdminResourcesPage() {
   async function downloadSignedFromForm() {
     if (!storedPrivate) return
     await downloadSignedUrl(storedPrivate.bucket, storedPrivate.path)
+  }
+
+  /**
+   * Approve a privately-uploaded document for public view: copy it from
+   * the private bucket into the public submission-media bucket, point
+   * file_url at the public copy, tag the resource access_level='public',
+   * and clear the private storage fields. The private object is removed
+   * afterwards (best effort) so there's exactly one canonical copy.
+   *
+   * Accepts all bucket-allowed types (images, PDF, Word, PowerPoint,
+   * Excel — migration 075); anything else surfaces a clear error.
+   */
+  async function approveMakePublic() {
+    if (!form.id || !storedPrivate) return
+    setPublicUploading(true)
+    try {
+      const { data: blob, error: dlErr } = await supabase.storage
+        .from(storedPrivate.bucket)
+        .download(storedPrivate.path)
+      if (dlErr || !blob) throw new Error(dlErr?.message ?? 'Could not read the private file')
+      const name = storedPrivate.name ?? 'document'
+      const file = new File([blob], name, { type: storedPrivate.mime || blob.type || '' })
+      const res = await uploadSubmissionMedia(supabase, file)
+      if ('error' in res) throw new Error(res.error)
+      const ext = name.lastIndexOf('.') >= 0 ? name.slice(name.lastIndexOf('.') + 1).toLowerCase() : ''
+      const { error } = await supabase
+        .from('resources')
+        .update({
+          file_url: res.publicUrl,
+          file_type: form.file_type.trim() || ext || null,
+          access_level: 'public',
+          storage_bucket: null,
+          storage_path: null,
+          original_filename: null,
+          file_size: null,
+          mime_type: null,
+        })
+        .eq('id', form.id)
+      if (error) throw error
+      // Best-effort cleanup — the public copy is canonical now.
+      await supabase.storage.from(storedPrivate.bucket).remove([storedPrivate.path])
+      setStoredPrivate(null)
+      setForm((f) => ({
+        ...f,
+        file_url: res.publicUrl,
+        access_level: 'public',
+        file_type: f.file_type.trim() || ext,
+      }))
+      toast.success('Approved — file is now public. Set status to published to show it on the site.')
+      await load()
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Could not make the file public')
+    } finally {
+      setPublicUploading(false)
+    }
   }
 
   async function removeStoredPrivate() {
@@ -578,14 +635,14 @@ export function AdminResourcesPage() {
                 Public file
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Upload a file the community can view or download directly (JPEG, PNG, WebP, or
-                PDF, max 10 MB). The link fills the File URL below automatically. For Word/Excel
-                files, paste a hosted link in External URL instead.
+                Upload a file the community can view or download directly — PDF, Word,
+                PowerPoint, Excel, or image, up to 25 MB. The link fills the File URL below
+                automatically.
               </p>
               <input
                 ref={publicFileInputRef}
                 type="file"
-                accept={submissionMediaAcceptAttr}
+                accept={documentUploadAcceptAttr}
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0]
@@ -657,6 +714,16 @@ export function AdminResourcesPage() {
                   <Button type="button" size="sm" variant="outline" className="gap-1 h-8" onClick={() => void downloadSignedFromForm()}>
                     <Download className="h-3.5 w-3.5" />
                     Download private file
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="gap-1 h-8"
+                    disabled={publicUploading}
+                    onClick={() => void approveMakePublic()}
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                    {publicUploading ? 'Approving…' : 'Approve & make public'}
                   </Button>
                   <Button type="button" size="sm" variant="destructive" className="gap-1 h-8" onClick={() => void removeStoredPrivate()}>
                     <Trash2 className="h-3.5 w-3.5" />

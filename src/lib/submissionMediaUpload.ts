@@ -3,25 +3,37 @@ import type { SupabaseClient } from '@/lib/supabase'
 /** Public bucket for pending-review uploads; paths are unguessable UUID segments. */
 export const KIGH_SUBMISSION_MEDIA_BUCKET = 'kigh-submission-media'
 
-/** 10 MB — aligned with `023_kigh_submission_media_bucket.sql` `file_size_limit`. */
-export const SUBMISSION_MEDIA_MAX_BYTES = 10 * 1024 * 1024
+/** 25 MB — aligned with the bucket `file_size_limit` (migration 075). */
+export const SUBMISSION_MEDIA_MAX_BYTES = 25 * 1024 * 1024
 
+/** Keep in sync with the bucket's allowed_mime_types AND the insert
+ *  policy's extension regex (migrations 023 + 075). */
 const MIME_EXT: Record<string, string> = {
   'image/jpeg': '.jpg',
   'image/png': '.png',
   'image/webp': '.webp',
   'application/pdf': '.pdf',
+  'application/msword': '.doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+  'application/vnd.ms-powerpoint': '.ppt',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+  'application/vnd.ms-excel': '.xls',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
 }
 
+/** Images + PDF only — used by public submission forms (flyers, posters). */
 export const submissionMediaAcceptAttr = 'image/jpeg,image/png,image/webp,application/pdf'
+
+/** Full document set — used by admin uploads (resource library documents). */
+export const documentUploadAcceptAttr = Object.keys(MIME_EXT).join(',')
 
 export function validateSubmissionMediaFile(file: File): string | null {
   if (!file.size) return 'Please choose a non-empty file.'
   if (!MIME_EXT[file.type]) {
-    return 'Use a JPEG, PNG, WebP, or PDF file (max 10 MB).'
+    return 'Use a JPEG, PNG, WebP, PDF, Word, PowerPoint, or Excel file (max 25 MB).'
   }
   if (file.size > SUBMISSION_MEDIA_MAX_BYTES) {
-    return 'File is too large (maximum 10 MB).'
+    return 'File is too large (maximum 25 MB).'
   }
   return null
 }
