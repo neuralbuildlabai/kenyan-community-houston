@@ -23,7 +23,7 @@ import { isEventPast } from '@/lib/eventDate'
 import { formatDate, isValidEmail } from '@/lib/utils'
 import { sanitizePhoneInput, validatePhoneNumber, PHONE_VALIDATION_USER_MESSAGE } from '@/lib/phoneValidation'
 import { validateCommunityContent, validatePublicCommunityContent } from '@/lib/communityModeration'
-import { resolveVolunteerRoleGroups, VOLUNTEER_ROLE_OTHER_VALUE } from '@/lib/eventVolunteerSignup'
+import { isDuesWaiverActive, resolveVolunteerRoleGroups, VOLUNTEER_ROLE_OTHER_VALUE } from '@/lib/eventVolunteerSignup'
 
 function rpcErrorToMessage(err: { message?: string } | null): string {
   const raw = (err?.message ?? '').trim()
@@ -321,9 +321,9 @@ export function EventVolunteerSignupPage() {
               {membershipRequested ? (
                 <>
                   <p className="text-muted-foreground">
-                    Karibu! Your KIGH membership application has been started — a representative
-                    will follow up to welcome you. Annual dues are waived for 2026; voluntary
-                    contributions help fund welfare support, youth programs, and community events.
+                    {isDuesWaiverActive()
+                      ? 'Karibu! Your KIGH membership application has been started — a representative will follow up to welcome you. Annual dues are waived for 2026; voluntary contributions help fund welfare support, youth programs, and community events.'
+                      : 'Karibu! Your KIGH membership application has been started — a representative will follow up to welcome you. Annual dues are $20/year, payable via Support KIGH, and fund welfare support, youth programs, and community events.'}
                   </p>
                   <div className="flex flex-wrap gap-2 pt-2">
                     <Button asChild size="sm" className="gap-1.5">
@@ -459,14 +459,24 @@ export function EventVolunteerSignupPage() {
                         and consent to be contacted about membership. *
                       </Label>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      Annual dues ($20) are <span className="font-semibold text-foreground/80">waived for 2026</span>.
-                      Voluntary contributions via{' '}
-                      <Link to="/support" className="text-primary underline underline-offset-2">
-                        Support KIGH
-                      </Link>{' '}
-                      help fund welfare, youth programs, and community events. Requires an email above.
-                    </p>
+                    {isDuesWaiverActive() ? (
+                      <p className="text-[11px] text-muted-foreground">
+                        Annual dues ($20) are <span className="font-semibold text-foreground/80">waived for 2026</span>.
+                        Voluntary contributions via{' '}
+                        <Link to="/support" className="text-primary underline underline-offset-2">
+                          Support KIGH
+                        </Link>{' '}
+                        help fund welfare, youth programs, and community events. Requires an email above.
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground">
+                        Annual dues are $20/year, payable via{' '}
+                        <Link to="/support" className="text-primary underline underline-offset-2">
+                          Support KIGH
+                        </Link>
+                        . Dues fund welfare, youth programs, and community events. Requires an email above.
+                      </p>
+                    )}
                   </div>
                 ) : null}
               </div>

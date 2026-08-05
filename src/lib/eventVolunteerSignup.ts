@@ -74,6 +74,23 @@ export function generateVolunteerSignupSlug(input: {
   return `volunteer-${Date.now().toString(36)}`
 }
 
+/**
+ * 2026 dues waiver — sunset date.
+ *
+ * KIGH waived the $20 annual dues for 2026 (community decision). The
+ * waiver messaging and the waived dues_status automatically end at
+ * Dec 1, 2026 00:00 America/Chicago (CST = UTC-6): from that moment,
+ * 2027 dues are in play and the form/DB switch to normal dues language
+ * with NO deploy needed. Migration 074 encodes the same boundary
+ * server-side in create_event_volunteer_signup — keep the two in sync
+ * if this date ever changes.
+ */
+export const DUES_WAIVER_ENDS_AT = new Date('2026-12-01T06:00:00Z')
+
+export function isDuesWaiverActive(now: Date = new Date()): boolean {
+  return now < DUES_WAIVER_ENDS_AT
+}
+
 export type VolunteerRoleGroup = { heading: string; options: string[] }
 
 /**
