@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Calendar, MapPin, ArrowLeft, HeartHandshake } from 'lucide-react'
+import { Calendar, MapPin, ArrowLeft, HeartHandshake, ShieldCheck } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,10 +43,10 @@ function rpcErrorToMessage(err: { message?: string } | null): string {
     return 'Please enter your full name (2–120 characters).'
   }
   if (/membership_requires_email/i.test(raw)) {
-    return 'Please add your email address so KIGH can follow up about membership.'
+    return 'Please add your email so KIGH can follow up about membership.'
   }
   if (/invalid_note/i.test(raw)) {
-    return 'Please revise your role or availability note so it follows community guidelines.'
+    return 'Please revise your role or note so it follows community guidelines.'
   }
   return raw || 'Something went wrong. Please try again.'
 }
@@ -65,12 +65,11 @@ function rpcErrorToMessage(err: { message?: string } | null): string {
  * so one link/form serves either kind of event. Picking "Other" reveals a short
  * write-in field.
  *
- * Membership interest (added migration 071): a separate, fully optional opt-in.
- * Checking "I'd also like to become a KIGH member" reveals dues + constitution
- * copy and a distinct "Accept" checkbox. A pending public.members row is only
- * created when that Accept checkbox is explicitly checked too — never from the
- * interest checkbox alone. See create_event_volunteer_signup (migration 071)
- * for the server-side guard this relies on.
+ * Membership interest (migration 071): a separate, fully optional opt-in. Checking
+ * "Become a KIGH member" reveals dues + constitution copy and a distinct "I accept"
+ * checkbox. A pending public.members row is only created when that Accept checkbox
+ * is explicitly checked too — never from the interest checkbox alone. See
+ * create_event_volunteer_signup (migration 071) for the server-side guard.
  */
 export function EventVolunteerSignupPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -145,7 +144,7 @@ export function EventVolunteerSignupPage() {
     const isOtherRole = role === VOLUNTEER_ROLE_OTHER_VALUE
     const r = (isOtherRole ? customRole : role).trim()
     if (isOtherRole && r.length < 2) {
-      setError('Please describe your role or topic (or choose one from the list).')
+      setError('Please describe your role, or choose one from the list.')
       return
     }
     if (r) {
@@ -164,16 +163,16 @@ export function EventVolunteerSignupPage() {
       }
     }
     if (!consent) {
-      setError('Please confirm you agree that KIGH may contact you about volunteering.')
+      setError('Please confirm KIGH may contact you about this event.')
       return
     }
     if (wantsMembership) {
       if (!em) {
-        setError('Please add your email address so KIGH can follow up about membership.')
+        setError('Please add your email so KIGH can follow up about membership.')
         return
       }
       if (!membershipTermsAccepted) {
-        setError("Please check “I accept” under membership to include your membership request, or uncheck the membership box to skip it.")
+        setError('Please check "I accept" under membership, or uncheck the membership box to skip it.')
         return
       }
     }
@@ -265,21 +264,34 @@ export function EventVolunteerSignupPage() {
           </Link>
         </Button>
 
-        <div className="rounded-2xl border border-border/80 bg-muted/15 p-6 sm:p-8 space-y-6">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card p-6 sm:p-8 space-y-6 shadow-[0_1px_2px_rgb(23_25_20/0.04),0_20px_44px_-28px_rgb(23_25_20/0.25)]">
+          {/* Kenya flag accent */}
+          <div
+            aria-hidden
+            className="absolute inset-x-0 top-0 h-1"
+            style={{
+              background:
+                'linear-gradient(90deg,#0a0a0a 0%,#0a0a0a 32%,#be123c 32%,#be123c 50%,#fff 50%,#fff 52%,#15803d 52%,#15803d 100%)',
+            }}
+          />
+
+          <div className="flex items-start gap-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md">
               <HeartHandshake className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground leading-tight">Volunteer for this event</h1>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/80 mb-1">
+                Kenyans in Greater Houston
+              </p>
+              <h1 className="text-2xl font-bold text-foreground leading-tight tracking-tight">Volunteer for this event</h1>
               <p className="text-lg font-medium text-foreground mt-1">{event.title}</p>
               <div className="mt-3 space-y-1 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 shrink-0" />
+                  <Calendar className="h-4 w-4 shrink-0 text-primary/70" />
                   {formatDate(event.start_date, 'EEEE, MMMM d, yyyy')}
                 </div>
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 shrink-0" />
+                  <MapPin className="h-4 w-4 shrink-0 text-primary/70" />
                   {event.is_virtual ? 'Virtual / online' : event.location}
                 </div>
               </div>
@@ -290,26 +302,27 @@ export function EventVolunteerSignupPage() {
           </div>
 
           {event.volunteer_signup_instructions ? (
-            <div className="rounded-lg border bg-background/80 p-4 text-sm text-muted-foreground whitespace-pre-wrap">
+            <div className="rounded-xl border border-kenyan-gold-200/80 bg-kenyan-gold-50/60 p-4 text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed">
               {event.volunteer_signup_instructions}
             </div>
           ) : null}
 
-          <p className="text-xs text-muted-foreground">
-            Your name and phone number are visible only to authorized KIGH organizers.
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <ShieldCheck className="h-3.5 w-3.5 text-primary/70" />
+            Your contact details are visible only to KIGH organizers.
           </p>
 
           {done ? (
-            <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-foreground space-y-2">
-              <p>Thank you for signing up to volunteer. A KIGH organizer may contact you with next steps.</p>
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 text-sm text-foreground space-y-2">
+              <p className="font-semibold text-base">Thank you — you're signed up.</p>
+              <p className="text-muted-foreground">A KIGH organizer will reach out with next steps.</p>
               {membershipRequested ? (
-                <p>
-                  We've also started your KIGH membership application. A KIGH representative will follow up to
-                  confirm your mailing address and finish your file. You can send the $20/year dues anytime via{' '}
+                <p className="text-muted-foreground">
+                  Your membership application has been started. Dues ($20/year) can be sent anytime via{' '}
                   <Link to="/support" className="font-medium text-primary underline underline-offset-2">
                     Support KIGH
                   </Link>
-                  .
+                  ; a representative will follow up to complete your file.
                 </p>
               ) : null}
             </div>
@@ -328,17 +341,16 @@ export function EventVolunteerSignupPage() {
                   value={phone}
                   onChange={(e) => setPhone(sanitizePhoneInput(e.target.value))}
                   autoComplete="tel"
-                  placeholder="e.g. +17135551234"
+                  placeholder="+17135551234"
                   required
                 />
-                <p className="text-xs text-muted-foreground">International format: optional +, then digits only (7–15 digits).</p>
               </div>
               <div className="form-field-stack">
                 <Label htmlFor="vol-email">Email</Label>
                 <Input id="vol-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
               </div>
               <div className="form-field-stack">
-                <Label htmlFor="vol-role">What role are you signing up for?</Label>
+                <Label htmlFor="vol-role">Your role</Label>
                 <Select
                   value={role || undefined}
                   onValueChange={(v) => {
@@ -370,30 +382,30 @@ export function EventVolunteerSignupPage() {
                     className="mt-2"
                     value={customRole}
                     onChange={(e) => setCustomRole(e.target.value)}
-                    placeholder="Tell us your role or topic"
+                    placeholder="Your role or topic"
                     maxLength={120}
                     autoFocus
                   />
                 ) : null}
               </div>
               <div className="form-field-stack">
-                <Label htmlFor="vol-note">Anything else you'd like us to know?</Label>
+                <Label htmlFor="vol-note">Notes</Label>
                 <Textarea
                   id="vol-note"
                   rows={3}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder="Optional — session title, availability, etc."
+                  placeholder="Session topic, availability… (optional)"
                 />
               </div>
-              <div className="flex items-start gap-3 rounded-lg border p-3">
+              <div className="flex items-start gap-3 rounded-xl border p-3.5 transition-colors has-[:checked]:border-primary/30 has-[:checked]:bg-primary/[0.04]">
                 <Checkbox id="vol-consent" checked={consent} onCheckedChange={(v) => setConsent(v === true)} className="mt-0.5" />
                 <Label htmlFor="vol-consent" className="text-sm font-normal leading-snug cursor-pointer">
-                  I agree that KIGH may contact me about volunteering for this event. *
+                  KIGH may contact me about this event. *
                 </Label>
               </div>
 
-              <div className="rounded-lg border p-3 space-y-3">
+              <div className="rounded-xl border p-3.5 space-y-3 transition-colors has-[:checked]:border-primary/30 has-[:checked]:bg-primary/[0.04]">
                 <div className="flex items-start gap-3">
                   <Checkbox
                     id="vol-member-interest"
@@ -405,20 +417,22 @@ export function EventVolunteerSignupPage() {
                     }}
                     className="mt-0.5"
                   />
-                  <Label htmlFor="vol-member-interest" className="text-sm font-normal leading-snug cursor-pointer">
-                    I'd also like to become a KIGH member
-                  </Label>
+                  <div>
+                    <Label htmlFor="vol-member-interest" className="text-sm font-medium leading-snug cursor-pointer">
+                      Become a KIGH member
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">Optional · $20/year dues</p>
+                  </div>
                 </div>
 
                 {wantsMembership ? (
-                  <div className="ml-7 space-y-3 rounded-md border border-primary/20 bg-primary/[0.04] p-3">
+                  <div className="ml-7 space-y-3 rounded-lg border border-primary/20 bg-background/60 p-3.5">
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      KIGH membership is <strong className="text-foreground">$20/year</strong>, payable anytime via{' '}
-                      <Link to="/support" className="text-primary underline underline-offset-2">
+                      Dues are payable via{' '}
+                      <Link to="/support" className="font-medium text-primary underline underline-offset-2">
                         Support KIGH
-                      </Link>{' '}
-                      (CashApp, Venmo, or PayPal). A KIGH representative will follow up to confirm your mailing
-                      address and finish your application — this signup only starts it.
+                      </Link>
+                      . A representative will follow up to complete your application.
                     </p>
                     <div className="flex items-start gap-3">
                       <Checkbox
@@ -428,22 +442,20 @@ export function EventVolunteerSignupPage() {
                         className="mt-0.5"
                       />
                       <Label htmlFor="vol-member-accept" className="text-sm font-normal leading-snug cursor-pointer">
-                        I accept KIGH's{' '}
+                        I accept the{' '}
                         <Link to="/governance" className="text-primary underline underline-offset-2" target="_blank" rel="noopener noreferrer">
                           Constitution &amp; Bylaws
                         </Link>{' '}
-                        and consent to being contacted about membership. *
+                        and consent to be contacted about membership. *
                       </Label>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      Requires an email above — that's how KIGH will reach you about next steps.
-                    </p>
+                    <p className="text-[11px] text-muted-foreground">Requires an email above.</p>
                   </div>
                 ) : null}
               </div>
 
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
-              <Button type="submit" className="w-full" disabled={submitting}>
+              <Button type="submit" className="w-full font-semibold shadow-md" size="lg" disabled={submitting}>
                 {submitting ? 'Submitting…' : 'Submit signup'}
               </Button>
             </form>
