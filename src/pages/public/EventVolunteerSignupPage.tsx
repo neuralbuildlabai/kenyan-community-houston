@@ -319,15 +319,21 @@ export function EventVolunteerSignupPage() {
               <p className="font-semibold text-base">Thank you — you're signed up.</p>
               <p className="text-muted-foreground">A KIGH organizer will reach out with next steps.</p>
               {membershipRequested ? (
-                <p className="text-muted-foreground">
-                  Karibu! Your KIGH membership application has been started — a representative will
-                  follow up to welcome you and complete your file. When you're ready, annual dues
-                  ($20) can be sent via{' '}
-                  <Link to="/support" className="font-medium text-primary underline underline-offset-2">
-                    Support KIGH
-                  </Link>
-                  .
-                </p>
+                <>
+                  <p className="text-muted-foreground">
+                    Karibu! Your KIGH membership application has been started — a representative
+                    will follow up to welcome you. Annual dues are waived for 2026; voluntary
+                    contributions help fund welfare support, youth programs, and community events.
+                  </p>
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    <Button asChild size="sm" className="gap-1.5">
+                      <Link to="/about">Learn more about KIGH</Link>
+                    </Button>
+                    <Button asChild size="sm" variant="outline">
+                      <Link to="/support">Support KIGH</Link>
+                    </Button>
+                  </div>
+                </>
               ) : null}
             </div>
           ) : (
@@ -454,11 +460,12 @@ export function EventVolunteerSignupPage() {
                       </Label>
                     </div>
                     <p className="text-[11px] text-muted-foreground">
-                      Next step after signup: annual dues of $20, payable anytime via{' '}
+                      Annual dues ($20) are <span className="font-semibold text-foreground/80">waived for 2026</span>.
+                      Voluntary contributions via{' '}
                       <Link to="/support" className="text-primary underline underline-offset-2">
                         Support KIGH
-                      </Link>
-                      . Requires an email above.
+                      </Link>{' '}
+                      help fund welfare, youth programs, and community events. Requires an email above.
                     </p>
                   </div>
                 ) : null}
