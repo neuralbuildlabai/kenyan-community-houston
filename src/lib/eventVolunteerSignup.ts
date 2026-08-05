@@ -1,4 +1,4 @@
-import type { VolunteerSignupStatus } from '@/lib/types'
+import type { Event, VolunteerSignupStatus } from '@/lib/types'
 
 export const VOLUNTEER_SIGNUP_STATUSES: VolunteerSignupStatus[] = [
   'submitted',
@@ -74,36 +74,46 @@ export function generateVolunteerSignupSlug(input: {
   return `volunteer-${Date.now().toString(36)}`
 }
 
+export type VolunteerRoleGroup = { heading: string; options: string[] }
+
 /**
- * Grouped role options for the "What role are you signing up for?" dropdown
- * on the public volunteer/presenter signup form. Covers both guest
- * presenters (teachers, counselors, advisors — the Back-to-School Virtual
- * Session use case) and day-of event helpers, so the same signup link and
- * form work for either kind of event without adding a second flow.
+ * DEFAULT role options for the "Your role" dropdown on the public
+ * volunteer/presenter signup form. Deliberately event-agnostic so the
+ * same form serves every recurring KIGH event — back-to-school,
+ * financial literacy (insurance, tax, investing), health sessions,
+ * social groups, fun days — without per-event code changes.
+ *
+ * A specific event can override this entire list by setting
+ * `events.volunteer_role_options` (migration 072); see
+ * resolveVolunteerRoleGroups below.
  *
  * Values are stored as-is in `event_volunteer_signups.volunteer_role`
- * (free text, max 120 chars — see migration 034) so admins filtering
- * `/admin/volunteers` see clean, consistent labels instead of free-typed
- * variants of the same role.
+ * (free text, max 120 chars — migration 034) so admins filtering
+ * `/admin/volunteers` see clean, consistent labels.
  */
-export const VOLUNTEER_ROLE_GROUPS: { heading: string; options: string[] }[] = [
+export const VOLUNTEER_ROLE_GROUPS: VolunteerRoleGroup[] = [
   {
-    heading: 'Presenting a topic',
+    heading: 'Presenting or sharing expertise',
     options: [
-      'Teacher / Educator',
-      'School Counselor',
-      'College / University Advisor',
-      'Financial Aid / Scholarship Advisor',
-      'Career / Mentor Coach',
-      'Tutor / Learning Specialist',
+      'Guest Speaker / Presenter',
+      'Educator / Teacher',
+      'School or Career Counselor',
+      'College / Scholarship Advisor',
+      'Finance / Tax Professional',
+      'Insurance Professional',
+      'Health & Wellness Professional',
+      'Legal / Immigration Professional',
+      'Business / Entrepreneurship Mentor',
     ],
   },
   {
     heading: 'Helping with the event',
     options: [
+      'Host / Moderator / MC',
       'Tech / Zoom support',
       'Registration / check-in',
       'Communications / social media',
+      'Setup & logistics',
       'General helper',
     ],
   },
@@ -111,3 +121,20 @@ export const VOLUNTEER_ROLE_GROUPS: { heading: string; options: string[] }[] = [
 
 /** Sentinel value for the "Other — write in" option; never saved as-is. */
 export const VOLUNTEER_ROLE_OTHER_VALUE = '__other__'
+
+/**
+ * Role groups for a given event: the event's own
+ * `volunteer_role_options` when set (single "Roles for this event"
+ * group), otherwise the default generic groups.
+ */
+export function resolveVolunteerRoleGroups(
+  event: Pick<Event, 'volunteer_role_options'> | null | undefined
+): VolunteerRoleGroup[] {
+  const custom = (event?.volunteer_role_options ?? [])
+    .map((r) => (r ?? '').trim())
+    .filter((r) => r.length >= 2 && r.length <= 120)
+  if (custom.length > 0) {
+    return [{ heading: 'Roles for this event', options: custom }]
+  }
+  return VOLUNTEER_ROLE_GROUPS
+}

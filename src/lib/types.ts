@@ -237,6 +237,10 @@ export interface Event {
   volunteer_signup_instructions?: string | null
   volunteer_slots_needed?: number | null
   volunteer_signup_closes_at?: string | null
+  /** Optional per-event role list for the signup dropdown (migration 072).
+   *  When null/empty the app falls back to the default generic groups in
+   *  `VOLUNTEER_ROLE_GROUPS`. */
+  volunteer_role_options?: string[] | null
   /** Vendor signup (migration 050). */
   vendor_signup_enabled?: boolean | null
   vendor_signup_closes_at?: string | null

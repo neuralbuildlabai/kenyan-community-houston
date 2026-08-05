@@ -23,7 +23,7 @@ import { isEventPast } from '@/lib/eventDate'
 import { formatDate, isValidEmail } from '@/lib/utils'
 import { sanitizePhoneInput, validatePhoneNumber, PHONE_VALIDATION_USER_MESSAGE } from '@/lib/phoneValidation'
 import { validateCommunityContent, validatePublicCommunityContent } from '@/lib/communityModeration'
-import { VOLUNTEER_ROLE_GROUPS, VOLUNTEER_ROLE_OTHER_VALUE } from '@/lib/eventVolunteerSignup'
+import { resolveVolunteerRoleGroups, VOLUNTEER_ROLE_OTHER_VALUE } from '@/lib/eventVolunteerSignup'
 
 function rpcErrorToMessage(err: { message?: string } | null): string {
   const raw = (err?.message ?? '').trim()
@@ -120,6 +120,8 @@ export function EventVolunteerSignupPage() {
 
   const nowClosed =
     !!event?.volunteer_signup_closes_at && new Date(event.volunteer_signup_closes_at) <= new Date()
+
+  const roleGroups = resolveVolunteerRoleGroups(event)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -318,11 +320,13 @@ export function EventVolunteerSignupPage() {
               <p className="text-muted-foreground">A KIGH organizer will reach out with next steps.</p>
               {membershipRequested ? (
                 <p className="text-muted-foreground">
-                  Your membership application has been started. Dues ($20/year) can be sent anytime via{' '}
+                  Karibu! Your KIGH membership application has been started — a representative will
+                  follow up to welcome you and complete your file. When you're ready, annual dues
+                  ($20) can be sent via{' '}
                   <Link to="/support" className="font-medium text-primary underline underline-offset-2">
                     Support KIGH
                   </Link>
-                  ; a representative will follow up to complete your file.
+                  .
                 </p>
               ) : null}
             </div>
@@ -362,7 +366,7 @@ export function EventVolunteerSignupPage() {
                     <SelectValue placeholder="Select a role (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    {VOLUNTEER_ROLE_GROUPS.map((group) => (
+                    {roleGroups.map((group) => (
                       <SelectGroup key={group.heading}>
                         <SelectLabel>{group.heading}</SelectLabel>
                         {group.options.map((opt) => (
@@ -419,20 +423,20 @@ export function EventVolunteerSignupPage() {
                   />
                   <div>
                     <Label htmlFor="vol-member-interest" className="text-sm font-medium leading-snug cursor-pointer">
-                      Become a KIGH member
+                      Join KIGH as a member
                     </Label>
-                    <p className="text-xs text-muted-foreground mt-0.5">Optional · $20/year dues</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Belong to Greater Houston's Kenyan community
+                    </p>
                   </div>
                 </div>
 
                 {wantsMembership ? (
                   <div className="ml-7 space-y-3 rounded-lg border border-primary/20 bg-background/60 p-3.5">
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Dues are payable via{' '}
-                      <Link to="/support" className="font-medium text-primary underline underline-offset-2">
-                        Support KIGH
-                      </Link>
-                      . A representative will follow up to complete your application.
+                    <p className="text-xs text-foreground/80 leading-relaxed">
+                      Membership means belonging — community events, resources, youth and family
+                      programs, and neighbors who stand with you when it matters. Members also have
+                      a voice in shaping KIGH's direction.
                     </p>
                     <div className="flex items-start gap-3">
                       <Checkbox
@@ -449,7 +453,13 @@ export function EventVolunteerSignupPage() {
                         and consent to be contacted about membership. *
                       </Label>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">Requires an email above.</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Next step after signup: annual dues of $20, payable anytime via{' '}
+                      <Link to="/support" className="text-primary underline underline-offset-2">
+                        Support KIGH
+                      </Link>
+                      . Requires an email above.
+                    </p>
                   </div>
                 ) : null}
               </div>
