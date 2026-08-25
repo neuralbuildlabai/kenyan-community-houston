@@ -51,6 +51,12 @@ test.describe('event volunteer signups', () => {
 
     await expectPublicVolunteerSignupPath(page, slug)
 
+    const participate = page.getByLabel(/How would you like to participate/i)
+    if (await participate.isVisible()) {
+      await participate.click()
+      await page.getByRole('option', { name: 'Individual volunteer' }).click()
+    }
+
     await nameInput.fill(' ')
     await page.locator('#vol-phone').fill('+15551234567')
     await page.getByRole('checkbox', { name: /agree that KIGH may contact me/i }).check()

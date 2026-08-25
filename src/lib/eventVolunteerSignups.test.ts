@@ -4,9 +4,11 @@ import {
   buildVolunteerShareMessage,
   buildVolunteerSignupUrl,
   buildVolunteerWhatsAppShareUrl,
+  resolveVolunteerRoleGroups,
   volunteerSignupPath,
   volunteerSignupStatusLabel,
 } from '@/lib/eventVolunteerSignup'
+import { participationTypeToken } from '@/lib/eventParticipation'
 
 describe('eventVolunteerSignup helpers', () => {
   beforeEach(() => {
@@ -46,5 +48,18 @@ describe('eventVolunteerSignup helpers', () => {
       expect(volunteerSignupStatusLabel(s).length).toBeGreaterThan(1)
     }
     expect(volunteerSignupStatusLabel('unknown')).toBe('unknown')
+  })
+
+  it('resolveVolunteerRoleGroups ignores participation-type tokens', () => {
+    const groups = resolveVolunteerRoleGroups({
+      volunteer_role_options: [
+        participationTypeToken('speaker_panelist'),
+        participationTypeToken('business_professional'),
+        'Insurance Professional',
+      ],
+    })
+    expect(groups).toEqual([
+      { heading: 'Roles for this event', options: ['Insurance Professional'] },
+    ])
   })
 })

@@ -1,4 +1,4 @@
-/** Submission purpose — organization record is always required; July is optional add-on. */
+/** Submission purpose — organization record is always required; event participation is optional add-on. */
 export type CommunityGroupSubmissionPurpose =
   | 'directory_listing'
   | 'directory_and_july_participation'
@@ -21,7 +21,7 @@ export const SUBMISSION_PURPOSE_OPTIONS: {
   },
   {
     value: 'directory_and_july_participation',
-    label: 'Add our organization and participate in the July community social',
+    label: 'Add our organization and participate in a community event',
   },
   {
     value: 'update_existing',
@@ -29,7 +29,7 @@ export const SUBMISSION_PURPOSE_OPTIONS: {
   },
   {
     value: 'update_existing_and_july_participation',
-    label: 'Update our organization listing and participate in the July community social',
+    label: 'Update our organization listing and participate in a community event',
   },
 ]
 
@@ -69,11 +69,11 @@ export function submissionPurposeBadge(purpose: string | null | undefined): stri
     case 'directory_listing':
       return 'Directory Listing'
     case 'directory_and_july_participation':
-      return 'Directory + July'
+      return 'Directory + Event'
     case 'update_existing':
       return 'Update Existing'
     case 'update_existing_and_july_participation':
-      return 'Update + July'
+      return 'Update + Event'
     default:
       return 'Directory Listing'
   }

@@ -96,6 +96,7 @@ export interface Database {
           volunteer_signup_instructions?: string | null
           volunteer_slots_needed?: number | null
           volunteer_signup_closes_at?: string | null
+          volunteer_role_options?: string[] | null
         }
         Insert: Partial<Database['public']['Tables']['events']['Row']> & {
           title: string

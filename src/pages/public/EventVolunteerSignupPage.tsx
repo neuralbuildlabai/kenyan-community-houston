@@ -24,6 +24,16 @@ import { formatDate, isValidEmail } from '@/lib/utils'
 import { sanitizePhoneInput, validatePhoneNumber, PHONE_VALIDATION_USER_MESSAGE } from '@/lib/phoneValidation'
 import { validateCommunityContent, validatePublicCommunityContent } from '@/lib/communityModeration'
 import { isDuesWaiverActive, resolveVolunteerRoleGroups, VOLUNTEER_ROLE_OTHER_VALUE } from '@/lib/eventVolunteerSignup'
+import {
+  buildSignupRoleAndNote,
+  eventApplicationGate,
+  organizationRegisterHref,
+  publicParticipationOptionsForEvent,
+  vendorSignupHref,
+  type OrgRegistrationStatus,
+  type ParticipationTypeId,
+} from '@/lib/eventParticipation'
+import { OrganizationRegistrationPrompt } from '@/components/public/OrganizationRegistrationPrompt'
 
 function rpcErrorToMessage(err: { message?: string } | null): string {
   const raw = (err?.message ?? '').trim()
@@ -79,6 +89,9 @@ export function EventVolunteerSignupPage() {
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
+  const [participationType, setParticipationType] = useState<ParticipationTypeId | ''>('')
+  const [orgStatus, setOrgStatus] = useState<OrgRegistrationStatus | ''>('')
+  const [organizationName, setOrganizationName] = useState('')
   const [role, setRole] = useState('')
   const [customRole, setCustomRole] = useState('')
   const [note, setNote] = useState('')
@@ -122,12 +135,25 @@ export function EventVolunteerSignupPage() {
     !!event?.volunteer_signup_closes_at && new Date(event.volunteer_signup_closes_at) <= new Date()
 
   const roleGroups = resolveVolunteerRoleGroups(event)
+  const participationOptions = publicParticipationOptionsForEvent(event)
+  const gate = eventApplicationGate({
+    participationType,
+    orgStatus,
+    organizationName,
+  })
+  const returnPath = event ? `/events/${event.slug}/volunteer` : ''
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!event?.id) return
     if (isEventPast(event)) return
     setError(null)
+    if (gate.redirectToVendor) return
+    if (!gate.canSubmit) {
+      setError(gate.reason ?? 'Please complete the participation questions.')
+      return
+    }
+    if (!participationType) return
     const name = fullName.trim()
     if (name.length < 2) {
       setError('Please enter your full name.')
@@ -179,14 +205,21 @@ export function EventVolunteerSignupPage() {
       }
     }
 
+    const encoded = buildSignupRoleAndNote({
+      participationType,
+      volunteerRole: r,
+      organizationName: gate.showOrgQuestion ? organizationName : null,
+      note: n,
+    })
+
     setSubmitting(true)
     const { error: rpcErr } = await supabase.rpc('create_event_volunteer_signup', {
       p_event_id: event.id,
       p_full_name: name,
       p_phone: phoneRes.value,
       p_email: em || null,
-      p_volunteer_role: r || null,
-      p_availability_note: n || null,
+      p_volunteer_role: encoded.volunteer_role,
+      p_availability_note: encoded.availability_note,
       p_wants_membership: wantsMembership,
       p_membership_terms_accepted: wantsMembership && membershipTermsAccepted,
     })
@@ -339,6 +372,60 @@ export function EventVolunteerSignupPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="form-field-stack">
+                <Label htmlFor="vol-participate">How would you like to participate?</Label>
+                <Select
+                  value={participationType || undefined}
+                  onValueChange={(v) => {
+                    setParticipationType(v as ParticipationTypeId)
+                    setOrgStatus('')
+                    setOrganizationName('')
+                    setError(null)
+                  }}
+                >
+                  <SelectTrigger id="vol-participate" data-testid="participate-type">
+                    <SelectValue placeholder="Select one" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {participationOptions.map((opt) => (
+                      <SelectItem key={opt.id} value={opt.id}>
+                        {opt.publicLabel}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {gate.redirectToVendor && event ? (
+                <div className="space-y-3 rounded-xl border border-kenyan-gold-200 bg-kenyan-gold-50/60 p-4">
+                  <p className="text-sm text-foreground/85 leading-relaxed">
+                    Vendor booths and paid tables use the separate vendor signup. Speakers, volunteers,
+                    support groups, and panelists are not charged through that workflow.
+                  </p>
+                  <Button asChild>
+                    <Link to={vendorSignupHref(event.slug)}>Continue to vendor signup</Link>
+                  </Button>
+                </div>
+              ) : null}
+
+              {gate.showOrgQuestion && participationType && participationType !== 'vendor' ? (
+                <OrganizationRegistrationPrompt
+                  participationType={participationType}
+                  registerHref={organizationRegisterHref(participationType, returnPath)}
+                  status={orgStatus}
+                  onStatusChange={(s) => {
+                    setOrgStatus(s)
+                    if (s === 'no') setOrganizationName('')
+                  }}
+                  organizationName={organizationName}
+                  onOrganizationNameChange={setOrganizationName}
+                  showLookup={gate.showOrgLookup}
+                  showRegisterPrompt={gate.showRegisterPrompt}
+                />
+              ) : null}
+
+              {!gate.redirectToVendor && (gate.canSubmit || !gate.showRegisterPrompt || gate.showOrgLookup) ? (
+                <>
+              <div className="form-field-stack">
                 <Label htmlFor="vol-name">Full name *</Label>
                 <Input id="vol-name" value={fullName} onChange={(e) => setFullName(e.target.value)} autoComplete="name" required />
               </div>
@@ -485,6 +572,10 @@ export function EventVolunteerSignupPage() {
               <Button type="submit" className="w-full font-semibold shadow-md" size="lg" disabled={submitting}>
                 {submitting ? 'Submitting…' : 'Submit signup'}
               </Button>
+                </>
+              ) : error ? (
+                <p className="text-sm text-destructive">{error}</p>
+              ) : null}
             </form>
           )}
         </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, CheckCircle, ShieldCheck, Sparkles, Users } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,7 @@ import { normalizeExternalUrl } from '@/lib/externalUrl'
 import { sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
 import { BEST_CONTACT_METHOD_OPTIONS, type BestContactMethod } from '@/lib/communityGroupSubmission'
 import { toast } from 'sonner'
+import { eventApplicationReturnPath } from '@/lib/eventParticipation'
 
 const CATEGORY_NONE = '__none__'
 const CONTACT_METHOD_NONE = '__none__'
@@ -88,6 +89,8 @@ function FormSection({
 }
 
 export function CommunityGroupsSubmitPage() {
+  const [searchParams] = useSearchParams()
+  const returnTo = eventApplicationReturnPath(searchParams.get('from'))
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [form, setForm] = useState<FormState>(emptyForm)
@@ -200,9 +203,16 @@ export function CommunityGroupsSubmitPage() {
             Your organization was submitted for review. KIGH volunteers will verify details before
             anything appears on the public directory.
           </p>
-          <Button asChild className="mt-8">
-            <Link to="/community-groups">Back to Community Directory</Link>
-          </Button>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            {returnTo ? (
+              <Button asChild>
+                <Link to={returnTo}>Return to event application</Link>
+              </Button>
+            ) : null}
+            <Button asChild variant={returnTo ? 'outline' : 'default'}>
+              <Link to="/community-groups">Back to Community Directory</Link>
+            </Button>
+          </div>
         </div>
       </div>
     )

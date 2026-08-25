@@ -471,7 +471,7 @@ export function AdminCommunityGroupsPage() {
                   </div>
                   {submissionPurposeIncludesJuly(editingRow.submission_purpose ?? '') ? (
                     <div className="border-t border-border/40 pt-2">
-                      <span className="font-medium text-foreground">July:</span>{' '}
+                      <span className="font-medium text-foreground">Event participation:</span>{' '}
                       {julyInterestLabel(editingRow.july_interest)}
                       {editingRow.july_representative_name
                         ? ` · Rep: ${editingRow.july_representative_name}`
@@ -486,7 +486,7 @@ export function AdminCommunityGroupsPage() {
                         <div className="mt-1">Topics: {editingRow.july_topics}</div>
                       ) : null}
                       {editingRow.july_notes ? (
-                        <div className="mt-1">July notes: {editingRow.july_notes}</div>
+                        <div className="mt-1">Notes: {editingRow.july_notes}</div>
                       ) : null}
                     </div>
                   ) : null}

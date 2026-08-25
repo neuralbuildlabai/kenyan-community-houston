@@ -33,6 +33,12 @@ import {
   resolveVendorFeeCents,
   vendorCategoryLabel,
 } from '@/lib/eventVendorSignup'
+import { OrganizationRegistrationPrompt } from '@/components/public/OrganizationRegistrationPrompt'
+import {
+  eventApplicationGate,
+  organizationRegisterHref,
+  type OrgRegistrationStatus,
+} from '@/lib/eventParticipation'
 
 /**
  * Translates an RPC error message string into something a vendor
@@ -104,6 +110,7 @@ export function EventVendorSignupPage() {
   const [category, setCategory] = useState<VendorCategory>('other')
   const [description, setDescription] = useState('')
 
+  const [orgStatus, setOrgStatus] = useState<OrgRegistrationStatus | ''>('')
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState<VendorSignupSuccess | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -138,11 +145,23 @@ export function EventVendorSignupPage() {
     !!event?.vendor_signup_closes_at &&
     new Date(event.vendor_signup_closes_at) <= new Date()
 
+  const gate = eventApplicationGate({
+    participationType: 'vendor',
+    orgStatus,
+    organizationName: businessName,
+    forVendorForm: true,
+  })
+  const returnPath = event ? `/events/${event.slug}/vendor` : ''
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!event?.id) return
     if (isEventPast(event)) return
     setError(null)
+    if (!gate.canSubmit) {
+      setError(gate.reason ?? 'Please complete the organization questions.')
+      return
+    }
 
     const biz = businessName.trim()
     if (biz.length < 2 || biz.length > 200) {
@@ -357,6 +376,23 @@ export function EventVendorSignupPage() {
             />
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
+              <OrganizationRegistrationPrompt
+                participationType="vendor"
+                registerHref={organizationRegisterHref('vendor', returnPath)}
+                status={orgStatus}
+                onStatusChange={(s) => {
+                  setOrgStatus(s)
+                  if (s === 'no') setBusinessName('')
+                }}
+                organizationName={businessName}
+                onOrganizationNameChange={setBusinessName}
+                showLookup={gate.showOrgLookup}
+                showRegisterPrompt={gate.showRegisterPrompt}
+              />
+
+              {gate.canSubmit || gate.showOrgLookup ? (
+                <>
+              {!gate.showOrgLookup ? (
               <div className="form-field-stack">
                 <Label htmlFor="vendor-business">Business name *</Label>
                 <Input
@@ -367,6 +403,7 @@ export function EventVendorSignupPage() {
                   required
                 />
               </div>
+              ) : null}
 
               <div className="form-field-stack">
                 <Label htmlFor="vendor-contact">Contact person *</Label>
@@ -459,6 +496,10 @@ export function EventVendorSignupPage() {
                 Your business name and product description may be shown publicly to other
                 attendees. Your phone and email are visible only to KIGH organizers.
               </p>
+                </>
+              ) : error ? (
+                <p className="text-sm text-destructive">{error}</p>
+              ) : null}
             </form>
           )}
         </div>

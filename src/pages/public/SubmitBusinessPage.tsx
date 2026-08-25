@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, CheckCircle, ShieldCheck, Sparkles } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { PublicPageHero } from '@/components/public/PublicPageHero'
@@ -14,8 +14,11 @@ import { BUSINESS_CATEGORIES } from '@/lib/constants'
 import { generateSlug } from '@/lib/utils'
 import { sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
 import { toast } from 'sonner'
+import { eventApplicationReturnPath } from '@/lib/eventParticipation'
 
 export function SubmitBusinessPage() {
+  const [searchParams] = useSearchParams()
+  const returnTo = eventApplicationReturnPath(searchParams.get('from'))
   const [form, setForm] = useState({
     name: '',
     category: '',
@@ -72,9 +75,16 @@ export function SubmitBusinessPage() {
           title="Business Submitted!"
           subtitle="We'll review your listing and publish it within 1–3 business days. We'll reach out if we need clarification."
           primaryAction={
-            <Button asChild>
-              <Link to="/businesses">Back to directory</Link>
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              {returnTo ? (
+                <Button asChild>
+                  <Link to={returnTo}>Return to event application</Link>
+                </Button>
+              ) : null}
+              <Button asChild variant={returnTo ? 'outline' : 'default'}>
+                <Link to="/businesses">Back to directory</Link>
+              </Button>
+            </div>
           }
           tone="tint"
         />

@@ -1,4 +1,5 @@
 import type { Event, VolunteerSignupStatus } from '@/lib/types'
+import { customVolunteerRoleOptions } from '@/lib/eventParticipation'
 
 export const VOLUNTEER_SIGNUP_STATUSES: VolunteerSignupStatus[] = [
   'submitted',
@@ -147,9 +148,7 @@ export const VOLUNTEER_ROLE_OTHER_VALUE = '__other__'
 export function resolveVolunteerRoleGroups(
   event: Pick<Event, 'volunteer_role_options'> | null | undefined
 ): VolunteerRoleGroup[] {
-  const custom = (event?.volunteer_role_options ?? [])
-    .map((r) => (r ?? '').trim())
-    .filter((r) => r.length >= 2 && r.length <= 120)
+  const custom = customVolunteerRoleOptions(event?.volunteer_role_options)
   if (custom.length > 0) {
     return [{ heading: 'Roles for this event', options: custom }]
   }

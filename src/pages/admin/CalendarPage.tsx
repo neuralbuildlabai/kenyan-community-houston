@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -38,6 +39,14 @@ import {
   buildVolunteerWhatsAppShareUrl,
   generateVolunteerSignupSlug,
 } from '@/lib/eventVolunteerSignup'
+import {
+  PARTICIPATION_TYPES,
+  UNPAID_PARTICIPATION_TYPE_IDS,
+  acceptedUnpaidParticipationTypes,
+  customVolunteerRoleOptions,
+  mergeParticipationTypesIntoRoleOptions,
+  type ParticipationTypeId,
+} from '@/lib/eventParticipation'
 import {
   VENDOR_FEE_DEFAULTS_CENTS,
   buildVendorShareMessage,
@@ -106,6 +115,8 @@ const defaultForm = () => ({
   volunteer_signup_instructions: '',
   volunteer_slots_needed: '' as string,
   volunteer_signup_closes_at: '' as string,
+  accepted_participation_types: [...UNPAID_PARTICIPATION_TYPE_IDS] as ParticipationTypeId[],
+  preserved_volunteer_role_options: [] as string[],
   // Vendor signup (migration 050/051). Fees are USD strings in the
   // form for editor ergonomics, then converted to integer cents on
   // save. Blank values fall back to the community defaults.
@@ -269,6 +280,8 @@ export function AdminCalendarPage() {
       volunteer_signup_instructions: e.volunteer_signup_instructions ?? '',
       volunteer_slots_needed: e.volunteer_slots_needed != null ? String(e.volunteer_slots_needed) : '',
       volunteer_signup_closes_at: toDatetimeLocalValue(e.volunteer_signup_closes_at ?? undefined),
+      accepted_participation_types: acceptedUnpaidParticipationTypes(e),
+      preserved_volunteer_role_options: customVolunteerRoleOptions(e.volunteer_role_options),
       vendor_signup_enabled: !!e.vendor_signup_enabled,
       vendor_signup_instructions: e.vendor_signup_instructions ?? '',
       vendor_signup_closes_at: toDatetimeLocalValue(e.vendor_signup_closes_at ?? undefined),
@@ -378,6 +391,10 @@ export function AdminCalendarPage() {
       volunteer_signup_closes_at: form.volunteer_signup_closes_at.trim()
         ? new Date(form.volunteer_signup_closes_at).toISOString()
         : null,
+      volunteer_role_options: mergeParticipationTypesIntoRoleOptions(
+        form.preserved_volunteer_role_options,
+        form.volunteer_signup_enabled ? form.accepted_participation_types : []
+      ),
       vendor_signup_enabled: form.vendor_signup_enabled,
       vendor_signup_instructions: form.vendor_signup_instructions.trim() || null,
       vendor_signup_closes_at: form.vendor_signup_closes_at.trim()
@@ -750,12 +767,25 @@ export function AdminCalendarPage() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-sm font-semibold text-foreground">Volunteer signup</div>
-                  <p className="text-xs text-muted-foreground mt-0.5">Share this link with members who want to volunteer for this event.</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Unpaid applications for volunteers, speakers, businesses, nonprofits, support
+                    groups, and sponsors. Vendors use the separate paid signup below.
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Switch
                     checked={form.volunteer_signup_enabled}
-                    onCheckedChange={(v) => setForm((f) => ({ ...f, volunteer_signup_enabled: v }))}
+                    onCheckedChange={(v) =>
+                      setForm((f) => ({
+                        ...f,
+                        volunteer_signup_enabled: v,
+                        accepted_participation_types: v
+                          ? f.accepted_participation_types.length > 0
+                            ? f.accepted_participation_types
+                            : [...UNPAID_PARTICIPATION_TYPE_IDS]
+                          : f.accepted_participation_types,
+                      }))
+                    }
                     id="vol-en"
                   />
                   <Label htmlFor="vol-en" className="text-sm">Enable</Label>
@@ -763,6 +793,50 @@ export function AdminCalendarPage() {
               </div>
               {form.volunteer_signup_enabled ? (
                 <div className="grid gap-4 sm:grid-cols-2" data-testid="admin-event-volunteer-fields">
+                  <div className="sm:col-span-2 space-y-3">
+                    <Label>Accepted participation types</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Only selected types appear on the public signup page. These options are reused
+                      for every event — do not name a month. Vendors stay on the paid vendor signup.
+                    </p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {PARTICIPATION_TYPES.filter((t) => !t.usesVendorPayment).map((t) => {
+                        const checked = form.accepted_participation_types.includes(t.id)
+                        return (
+                          <label key={t.id} className="flex items-start gap-2 text-sm cursor-pointer">
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(v) => {
+                                const on = v === true
+                                setForm((f) => {
+                                  const next = on
+                                    ? [...new Set([...f.accepted_participation_types, t.id])]
+                                    : f.accepted_participation_types.filter((id) => id !== t.id)
+                                  return {
+                                    ...f,
+                                    accepted_participation_types: next,
+                                    volunteer_signup_enabled: next.length > 0,
+                                  }
+                                })
+                              }}
+                              className="mt-0.5"
+                            />
+                            <span>{t.adminLabel}</span>
+                          </label>
+                        )
+                      })}
+                      <label className="flex items-start gap-2 text-sm cursor-pointer">
+                        <Checkbox
+                          checked={form.vendor_signup_enabled}
+                          onCheckedChange={(v) =>
+                            setForm((f) => ({ ...f, vendor_signup_enabled: v === true }))
+                          }
+                          className="mt-0.5"
+                        />
+                        <span>Vendors</span>
+                      </label>
+                    </div>
+                  </div>
                   <div className="form-field-stack">
                     <Label>Slots needed</Label>
                     <Input

@@ -42,6 +42,6 @@ describe('communityGroupSubmission helpers', () => {
 
   it('maps purpose badges for admin', () => {
     expect(submissionPurposeBadge('directory_listing')).toBe('Directory Listing')
-    expect(submissionPurposeBadge('update_existing_and_july_participation')).toBe('Update + July')
+    expect(submissionPurposeBadge('update_existing_and_july_participation')).toBe('Update + Event')
   })
 })

@@ -310,13 +310,16 @@ export function EventDetailPage() {
                 !past &&
                 !(event.volunteer_signup_closes_at && new Date(event.volunteer_signup_closes_at) <= new Date()) && (
                 <div className="rounded-lg border border-primary/25 bg-primary/5 p-4 space-y-2">
-                  <div className="text-sm font-medium text-foreground">Volunteer for this event</div>
+                  <div className="text-sm font-medium text-foreground">Participate in this event</div>
                   {volunteerCount != null && volunteerCount > 0 ? (
                     <p className="text-xs text-muted-foreground">Volunteers signed up: {volunteerCount}</p>
                   ) : null}
+                  <p className="text-xs text-muted-foreground">
+                    Volunteers, speakers, businesses, nonprofits, support groups, and partners can apply here.
+                  </p>
                   <Button asChild className="w-full gap-2">
                     <Link to={volunteerSignupPath(event.slug)}>
-                      <HeartHandshake className="h-4 w-4" /> Volunteer signup
+                      <HeartHandshake className="h-4 w-4" /> Apply to participate
                     </Link>
                   </Button>
                 </div>
