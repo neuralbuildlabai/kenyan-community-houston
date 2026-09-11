@@ -45,6 +45,12 @@ describe('public gallery code paths — submitter PII guard', () => {
     expect(homePage).not.toMatch(/from\(\s*['"]gallery_images['"]\s*\)/)
   })
 
+  it('GalleryPage gates browsing behind sign-in (migration 076)', () => {
+    expect(galleryPage).toContain('useAuth()')
+    expect(galleryPage).toContain('data-testid="gallery-members-only"')
+    expect(galleryPage).toContain('loginNextFromLocation(location)')
+  })
+
   it('GalleryPage does not select submitter PII columns', () => {
     expect(galleryPage).not.toMatch(/submitted_by_email/)
     expect(galleryPage).not.toMatch(/submitted_by_name/)

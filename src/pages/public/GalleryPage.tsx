@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Image as ImageIcon } from 'lucide-react'
+import { Image as ImageIcon, Lock } from 'lucide-react'
 import { GallerySlideshowLightbox } from '@/components/gallery/GallerySlideshowLightbox'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '@/contexts/AuthContext'
+import { loginNextFromLocation } from '@/lib/loginNext'
 import { SEOHead } from '@/components/SEOHead'
 import { PublicPageHero } from '@/components/public/PublicPageHero'
 import { PublicSection } from '@/components/public/PublicSection'
@@ -31,8 +33,21 @@ export function GalleryPage() {
   const [loading, setLoading] = useState(true)
   const [selectedAlbum, setSelectedAlbum] = useState<string | null>(null)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const { user, loading: authLoading } = useAuth()
+  const location = useLocation()
+  const userId = user?.id ?? null
 
+  // Browsing is members-only (migration 076): anon RLS only exposes
+  // homepage-featured rows, so don't query until a user is signed in.
   useEffect(() => {
+    if (authLoading) return
+    if (!userId) {
+      setImages([])
+      setAlbums([])
+      setLoading(false)
+      return
+    }
+    setLoading(true)
     async function load() {
       const { data: imgRows, error: imgErr } = await supabase
         .from('gallery_images_public')
@@ -64,7 +79,7 @@ export function GalleryPage() {
       setLoading(false)
     }
     void load()
-  }, [])
+  }, [authLoading, userId])
 
   const filtered = selectedAlbum ? images.filter((i) => i.album_id === selectedAlbum) : images
 
@@ -103,8 +118,28 @@ export function GalleryPage() {
       />
 
       <PublicSection className="!py-10 sm:!py-12 lg:!py-14">
-        {loading ? (
+        {authLoading || loading ? (
           <PageLoader />
+        ) : !userId ? (
+          <div data-testid="gallery-members-only">
+            <EmptyState
+              icon={Lock}
+              title="Members only"
+              description="Sign in to browse community photos and event albums."
+              action={
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button asChild>
+                    <Link to={loginNextFromLocation(location)} data-testid="gallery-sign-in">
+                      Sign in to view gallery
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline">
+                    <Link to="/membership">Become a member</Link>
+                  </Button>
+                </div>
+              }
+            />
+          </div>
         ) : images.length === 0 ? (
           <EmptyState
             icon={ImageIcon}

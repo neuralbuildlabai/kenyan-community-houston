@@ -9,6 +9,16 @@ test.describe('gallery', () => {
     await expect(page.getByRole('heading', { name: 'Gallery' })).toBeVisible()
   })
 
+  test('logged-out visitor sees members-only prompt instead of photos', async ({ page }) => {
+    await page.goto('/gallery', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByTestId('gallery-members-only')).toBeVisible()
+    await expect(page.getByTestId('gallery-public-grid')).toHaveCount(0)
+    await expect(page.getByTestId('gallery-sign-in')).toHaveAttribute(
+      'href',
+      /\/login\?next=%2Fgallery/
+    )
+  })
+
   test('Community Park Event 2025 album control appears when seeded', async ({ page }) => {
     await page.goto('/gallery', { waitUntil: 'domcontentloaded' })
     const album = page.getByTestId('gallery-album-community-park-2025')
