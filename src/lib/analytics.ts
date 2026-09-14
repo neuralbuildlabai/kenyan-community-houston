@@ -16,6 +16,30 @@ function getSessionId(): string {
   }
 }
 
+/**
+ * Start a fresh analytics session. Called on sign-in so the admin sign-ins
+ * view can attribute a visit to one person even on a shared browser.
+ */
+function resetSessionId(): string {
+  const id = crypto.randomUUID()
+  try {
+    localStorage.setItem(SESSION_KEY, id)
+  } catch {
+    /* storage unavailable — the id still stamps this event */
+  }
+  return id
+}
+
+/** Signed-in user id, read from the cached session (no extra round trip). */
+async function currentUserId(): Promise<string | null> {
+  try {
+    const { data } = await supabase.auth.getSession()
+    return data.session?.user?.id ?? null
+  } catch {
+    return null
+  }
+}
+
 function clampMeta(meta?: Record<string, unknown>): Record<string, unknown> {
   if (!meta || typeof meta !== 'object') return {}
   try {
@@ -36,8 +60,12 @@ async function insertEvent(payload: {
   label?: string | null
   metadata?: Record<string, unknown>
   user_id?: string | null
+  session_id?: string | null
 }) {
   try {
+    // Every event carries the signed-in user when there is one, so admin
+    // reporting can say who did it and not just which browser session.
+    const userId = payload.user_id ?? (await currentUserId())
     const { error } = await supabase.from('analytics_events').insert([
       {
         event_name: payload.event_name,
@@ -47,8 +75,8 @@ async function insertEvent(payload: {
         entity_id: payload.entity_id ?? null,
         label: payload.label ?? null,
         metadata: clampMeta(payload.metadata),
-        user_id: payload.user_id ?? null,
-        session_id: getSessionId(),
+        user_id: userId,
+        session_id: payload.session_id ?? getSessionId(),
       },
     ])
     if (error) {
@@ -112,13 +140,21 @@ export async function trackEntityClick(
   })
 }
 
-/** Auth login success — call after session is established (no passwords). */
+/**
+ * Auth login success — call after the session is established (no passwords).
+ *
+ * Rotates the analytics session id first so the events that follow belong to
+ * this sign-in only; /admin/sign-ins reads that window back as "what they
+ * accessed".
+ */
 export async function trackLogin(kind: 'admin_login' | 'member_login', userId?: string | null) {
+  const sessionId = resetSessionId()
   await insertEvent({
     event_name: kind,
     event_type: 'login',
     path: typeof window !== 'undefined' ? window.location.pathname : null,
     user_id: userId ?? null,
+    session_id: sessionId,
     metadata: { kind },
   })
 }

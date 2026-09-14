@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase'
 import { resolveAuthCallbackPath, sanitizeNextParam } from '@/lib/authRedirect'
 import { claimOrCreateMemberForAuthUser } from '@/lib/memberSync'
 import type { Profile } from '@/lib/types'
+import { isElevatedAdminRole } from '@/lib/types'
+import { trackLogin } from '@/lib/analytics'
 import { requiresProfilePasswordRefresh } from '@/lib/profilePasswordGate'
 import { Button } from '@/components/ui/button'
 import { KighLogo } from '@/components/KighLogo'
@@ -60,6 +62,10 @@ export function AuthCallbackPage() {
         .maybeSingle()
       const profile = prof2 as Profile | null
       const role = profile?.role as string | undefined
+
+      // OAuth / email-confirmation sign-ins land here rather than on the
+      // password form, so record them too or /admin/sign-ins misses them.
+      await trackLogin(isElevatedAdminRole(role) ? 'admin_login' : 'member_login', userId)
 
       const dest = resolveAuthCallbackPath(next, role, '/membership')
       if (!cancelled && requiresProfilePasswordRefresh(profile, user)) {

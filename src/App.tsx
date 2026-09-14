@@ -72,6 +72,7 @@ import { AdminCommunityGroupsPage } from '@/pages/admin/AdminCommunityGroupsPage
 import { AdminServiceInterestsPage } from '@/pages/admin/AdminServiceInterestsPage'
 import { AdminMediaSubmissionsPage } from '@/pages/admin/AdminMediaSubmissionsPage'
 import { AdminAnalyticsPage } from '@/pages/admin/AdminAnalyticsPage'
+import { AdminSignInsPage } from '@/pages/admin/AdminSignInsPage'
 import { AdminSystemHealthPage } from '@/pages/admin/AdminSystemHealthPage'
 import { AdminChatPage } from '@/pages/admin/AdminChatPage'
 import { AdminEventCommentsPage } from '@/pages/admin/AdminEventCommentsPage'
@@ -213,6 +214,7 @@ export default function App() {
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<AdminDashboardPage />} />
               <Route path="analytics" element={<AdminAnalyticsPage />} />
+              <Route path="sign-ins" element={<AdminSignInsPage />} />
               <Route
                 path="system-health"
                 element={

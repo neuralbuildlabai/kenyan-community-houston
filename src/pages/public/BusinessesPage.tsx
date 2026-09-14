@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { supabase } from '@/lib/supabase'
 import { BUSINESS_CATEGORIES } from '@/lib/constants'
+import { partitionDirectoryListings } from '@/lib/businessDirectory'
 import type { Business } from '@/lib/types'
 
 export function BusinessesPage() {
@@ -39,12 +40,7 @@ export function BusinessesPage() {
     load()
   }, [search, category])
 
-  const { featured, rest } = useMemo(() => {
-    const featuredTiers: ReadonlyArray<string> = ['sponsor', 'featured', 'verified']
-    const featuredItems = items.filter((b) => featuredTiers.includes(b.tier))
-    const restItems = items.filter((b) => !featuredItems.includes(b))
-    return { featured: featuredItems.slice(0, 3), rest: restItems }
-  }, [items])
+  const { featured, rest } = useMemo(() => partitionDirectoryListings(items), [items])
 
   const filterIsActive = category !== '' || search.trim().length > 0
 

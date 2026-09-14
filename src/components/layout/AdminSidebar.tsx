@@ -23,6 +23,7 @@ import {
   LogOut,
   UserCircle,
   BarChart3,
+  LogIn,
   Activity,
   MessagesSquare,
   ListTree,
@@ -53,6 +54,7 @@ function buildNavGroups(profileRole: string | null | undefined): NavGroup[] {
       items: [
         { to: '/admin/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
         { to: '/admin/analytics', label: 'Analytics', Icon: BarChart3 },
+        { to: '/admin/sign-ins', label: 'Sign-ins', Icon: LogIn },
       ],
     },
     {
