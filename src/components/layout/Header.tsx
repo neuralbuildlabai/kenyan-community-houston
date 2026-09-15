@@ -208,8 +208,8 @@ export function Header() {
           </DropdownMenu>
 
           {PRIMARY_NAV.filter((p) => p.to !== '/events').map((link) => (
-            <NavLink key={link.to} to={link.to} className={navLinkClass}>
-              {link.label}
+            <NavLink key={link.to} to={link.to} className={navLinkClass} title={link.label}>
+              {link.shortLabel ?? link.label}
             </NavLink>
           ))}
 

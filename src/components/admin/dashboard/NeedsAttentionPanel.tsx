@@ -11,7 +11,7 @@ type AttentionItem = {
   testId: string
 }
 
-function buildAttentionItems(summary: AdminDashboardSummary | null): AttentionItem[] {
+function buildAttentionItems(summary: AdminDashboardSummary | null, joinRequestsNew: number): AttentionItem[] {
   if (!summary) return []
 
   const pendingContent =
@@ -28,6 +28,13 @@ function buildAttentionItems(summary: AdminDashboardSummary | null): AttentionIt
       href: '/admin/submissions?status=pending',
       emptyLabel: 'No pending submissions.',
       testId: 'attention-submissions',
+    },
+    {
+      label: 'New community group join requests',
+      value: joinRequestsNew,
+      href: '/admin/community-groups',
+      emptyLabel: 'No new join requests.',
+      testId: 'attention-group-join-requests',
     },
     {
       label: 'Pending membership applications',
@@ -84,6 +91,8 @@ function buildAttentionItems(summary: AdminDashboardSummary | null): AttentionIt
 type NeedsAttentionPanelProps = {
   summary: AdminDashboardSummary | null
   loading?: boolean
+  /** New rows in community_group_join_requests (migration 079); 0 when unavailable. */
+  joinRequestsNew?: number
 }
 
 function AttentionRow({ item }: { item: AttentionItem }) {
@@ -128,8 +137,8 @@ function AttentionRow({ item }: { item: AttentionItem }) {
   )
 }
 
-export function NeedsAttentionPanel({ summary, loading = false }: NeedsAttentionPanelProps) {
-  const items = buildAttentionItems(summary)
+export function NeedsAttentionPanel({ summary, loading = false, joinRequestsNew = 0 }: NeedsAttentionPanelProps) {
+  const items = buildAttentionItems(summary, joinRequestsNew)
 
   if (loading) {
     return (

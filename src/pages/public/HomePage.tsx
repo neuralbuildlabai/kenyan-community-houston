@@ -33,6 +33,7 @@ const HERO_QUICK_LINKS = [
   { to: '/events', label: 'View Events', testId: 'home-quick-events' },
   { to: '/chat', label: 'Community Chat', testId: 'home-quick-chat' },
   { to: '/businesses', label: 'Business Directory', testId: 'home-quick-businesses' },
+  { to: '/community-groups', label: 'Community Groups', testId: 'home-quick-groups' },
   { to: '/new-to-houston', label: 'New to Houston', testId: 'home-quick-new' },
   { to: '/gallery', label: 'Gallery', testId: 'home-quick-gallery' },
   { to: '/events/submit', label: 'Submit Event', testId: 'home-quick-submit' },

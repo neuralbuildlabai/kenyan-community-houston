@@ -71,6 +71,21 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 
 export function AdminDashboardPage() {
+  const [joinRequestsNew, setJoinRequestsNew] = useState(0)
+
+  const loadJoinRequestCount = useCallback(async () => {
+    const { count, error } = await supabase
+      .from('community_group_join_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'new')
+    // Before migration 079 the table is missing; leave the row at 0.
+    if (!error) setJoinRequestsNew(count ?? 0)
+  }, [])
+
+  useEffect(() => {
+    void loadJoinRequestCount()
+  }, [loadJoinRequestCount])
+
   const { role, loading: authLoading } = useAuth()
   const isSuperAdmin = isSuperAdminRole(role)
   const showSystemHealthLink = isSystemHealthAdminRole(role)
@@ -250,9 +265,10 @@ export function AdminDashboardPage() {
       loadOperationalData(),
       loadAnalytics(analyticsPeriod),
       loadInfrastructure(),
+      loadJoinRequestCount(),
     ])
     setRefreshing(false)
-  }, [analyticsPeriod, loadAnalytics, loadInfrastructure, loadOperationalData])
+  }, [analyticsPeriod, loadAnalytics, loadInfrastructure, loadJoinRequestCount, loadOperationalData])
 
   const periodLabel = analyticsPeriodLabel(analyticsPeriod)
   const dateRangeLabel = analyticsDateRangeLabel(analyticsPeriod)
@@ -549,7 +565,7 @@ export function AdminDashboardPage() {
             </span>
           }
         >
-          <NeedsAttentionPanel summary={summary} loading={loading} />
+          <NeedsAttentionPanel summary={summary} loading={loading} joinRequestsNew={joinRequestsNew} />
         </DashboardSectionCard>
 
         <div className="space-y-5">

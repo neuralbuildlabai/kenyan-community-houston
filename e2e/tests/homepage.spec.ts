@@ -29,6 +29,7 @@ test.describe('homepage', () => {
     await expect(page.getByTestId('home-quick-events')).toHaveAttribute('href', '/events')
     await expect(page.getByTestId('home-quick-chat')).toHaveAttribute('href', '/chat')
     await expect(page.getByTestId('home-quick-businesses')).toHaveAttribute('href', '/businesses')
+    await expect(page.getByTestId('home-quick-groups')).toHaveAttribute('href', '/community-groups')
     await expect(page.getByTestId('home-quick-new')).toHaveAttribute('href', '/new-to-houston')
     await expect(page.getByTestId('home-quick-gallery')).toHaveAttribute('href', '/gallery')
     await expect(page.getByTestId('home-quick-submit')).toHaveAttribute('href', '/events/submit')

@@ -16,6 +16,7 @@ import { normalizeExternalUrl } from '@/lib/externalUrl'
 import { sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
 import { toast } from 'sonner'
 import { isoNow } from '@/lib/publishLifecycle'
+import { CommunityGroupJoinRequests } from '@/components/admin/CommunityGroupJoinRequests'
 import type { CommunityGroup, CommunityGroupCategory, CommunityGroupStatus } from '@/lib/types'
 import {
   bestContactMethodLabel,
@@ -230,6 +231,10 @@ export function AdminCommunityGroupsPage() {
         <h1 className="text-2xl font-bold">Community groups</h1>
         <p className="text-muted-foreground text-sm">Review submissions, publish listings, and keep the non-commercial directory accurate.</p>
       </div>
+
+      <CommunityGroupJoinRequests />
+
+      <h2 className="text-lg font-semibold pt-2">Group listings</h2>
 
       <div className="flex flex-col lg:flex-row gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">

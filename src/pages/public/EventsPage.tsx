@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Calendar, Search } from 'lucide-react'
+import { Calendar } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { EditorialEventRow } from '@/components/public/EditorialEventRow'
 import { PublicPageHero } from '@/components/public/PublicPageHero'
+import { PublicFilterBar } from '@/components/public/PublicFilterBar'
 import { PublicSection } from '@/components/public/PublicSection'
 import { EmptyState } from '@/components/EmptyState'
 import { PageLoader } from '@/components/LoadingSpinner'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { supabase } from '@/lib/supabase'
 import { EVENT_CATEGORIES, categoryValuesMatchingCanonical } from '@/lib/constants'
 import type { Event } from '@/lib/types'
@@ -98,45 +98,15 @@ export function EventsPage() {
       />
 
       {/* Filter toolbar */}
-      <section className="sticky top-16 z-20 border-b border-border/50 bg-background/85 backdrop-blur">
-        <div className="public-container py-4 space-y-3">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search events by title…"
-              className="h-11 pl-9 bg-background"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              aria-label="Search events"
-            />
-          </div>
-          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter by category">
-            <Button
-              variant={category === '' ? 'default' : 'outline'}
-              size="sm"
-              className="rounded-full h-8 px-3.5"
-              onClick={() => setCategory('')}
-              role="tab"
-              aria-selected={category === ''}
-            >
-              All
-            </Button>
-            {EVENT_CATEGORIES.map((cat) => (
-              <Button
-                key={cat}
-                variant={category === cat ? 'default' : 'outline'}
-                size="sm"
-                className="rounded-full h-8 px-3.5"
-                onClick={() => setCategory(cat)}
-                role="tab"
-                aria-selected={category === cat}
-              >
-                {cat}
-              </Button>
-            ))}
-          </div>
-        </div>
-      </section>
+      <PublicFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search events by title…"
+        searchLabel="Search events"
+        category={category}
+        onCategoryChange={setCategory}
+        options={EVENT_CATEGORIES.map((c) => ({ value: c, label: c }))}
+      />
 
       <PublicSection className="!py-10 sm:!py-12 lg:!py-14">
         <p className="mb-6 text-sm text-muted-foreground">

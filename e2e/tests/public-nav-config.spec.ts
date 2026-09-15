@@ -37,8 +37,8 @@ const REQUIRED_DESTINATIONS = [
 ] as const
 
 test.describe('public nav config', () => {
-  test('PRIMARY_NAV lists direct bar links (Events, Business Directory, Gallery)', () => {
-    expect(PRIMARY_NAV.map((i) => i.to)).toEqual(['/events', '/businesses', '/gallery'])
+  test('PRIMARY_NAV lists direct bar links (Events, Business Directory, Community Groups, Gallery)', () => {
+    expect(PRIMARY_NAV.map((i) => i.to)).toEqual(['/events', '/businesses', '/community-groups', '/gallery'])
   })
 
   test('COMMUNITY_MENU and RESOURCES_MENU are unique except /chat (shared label)', () => {

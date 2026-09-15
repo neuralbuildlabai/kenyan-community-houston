@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   UsersRound,
-  Search,
   MapPin,
   Mail,
   Phone,
@@ -10,12 +9,14 @@ import {
   Share2,
   BadgeCheck,
   ArrowUpRight,
+  UserPlus,
+  CheckCircle2,
 } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { PublicPageHero } from '@/components/public/PublicPageHero'
+import { PublicFilterBar } from '@/components/public/PublicFilterBar'
 import { PublicSection } from '@/components/public/PublicSection'
 import { EmptyState } from '@/components/EmptyState'
 import { supabase } from '@/lib/supabase'
@@ -24,6 +25,15 @@ import { COMMUNITY_GROUP_CATEGORIES } from '@/lib/constants'
 import { PageLoader } from '@/components/LoadingSpinner'
 import { MapLink } from '@/components/MapLink'
 import { safeExternalHref, prettyExternalLabel } from '@/lib/externalUrl'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { useAuth } from '@/contexts/AuthContext'
+import { sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
+import { trackSubmissionCreated } from '@/lib/analytics'
+import { JOIN_MESSAGE_MAX, joinRequestErrorMessage, validateJoinRequestInput } from '@/lib/communityGroupJoin'
+import { toast } from 'sonner'
 
 const FILTER_ALL = 'all'
 
@@ -37,6 +47,7 @@ export function CommunityGroupsPage() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [category, setCategory] = useState<string>(FILTER_ALL)
+  const [joinGroup, setJoinGroup] = useState<CommunityGroupPublic | null>(null)
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim()), 320)
@@ -105,45 +116,16 @@ export function CommunityGroupsPage() {
       </section>
 
       {/* Toolbar */}
-      <section className="sticky top-16 z-20 border-b border-border/50 bg-background/85 backdrop-blur">
-        <div className="public-container py-4 space-y-3">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              className="pl-9 h-11 bg-background"
-              placeholder="Search by name, description, service area, or location…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              aria-label="Search community groups"
-            />
-          </div>
-          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter by category">
-            <Button
-              size="sm"
-              variant={category === FILTER_ALL ? 'default' : 'outline'}
-              onClick={() => setCategory(FILTER_ALL)}
-              className="rounded-full h-8 px-3.5"
-              role="tab"
-              aria-selected={category === FILTER_ALL}
-            >
-              All
-            </Button>
-            {COMMUNITY_GROUP_CATEGORIES.map((c) => (
-              <Button
-                key={c.value}
-                size="sm"
-                variant={category === c.value ? 'default' : 'outline'}
-                onClick={() => setCategory(c.value)}
-                className="rounded-full h-8 px-3.5"
-                role="tab"
-                aria-selected={category === c.value}
-              >
-                {c.label}
-              </Button>
-            ))}
-          </div>
-        </div>
-      </section>
+      <PublicFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by name, description, service area, or location…"
+        searchLabel="Search community groups"
+        allValue={FILTER_ALL}
+        category={category}
+        onCategoryChange={setCategory}
+        options={COMMUNITY_GROUP_CATEGORIES}
+      />
 
       <PublicSection className="!py-10 sm:!py-12 lg:!py-14">
         {loading ? (
@@ -182,7 +164,7 @@ export function CommunityGroupsPage() {
         ) : (
           <div className="space-y-3 sm:space-y-4">
             {groups.map((g) => (
-              <GroupRow key={g.id} group={g} />
+              <GroupRow key={g.id} group={g} onRequestJoin={setJoinGroup} />
             ))}
           </div>
         )}
@@ -197,11 +179,20 @@ export function CommunityGroupsPage() {
           </p>
         </div>
       </PublicSection>
+
+      <JoinGroupDialog group={joinGroup} onClose={() => setJoinGroup(null)} />
     </>
   )
 }
 
-function GroupRow({ group: g }: { group: CommunityGroupPublic }) {
+function GroupRow({
+  group: g,
+  onRequestJoin,
+}: {
+  group: CommunityGroupPublic
+  onRequestJoin: (group: CommunityGroupPublic) => void
+}) {
+  const [expanded, setExpanded] = useState(false)
   const websiteHref = safeExternalHref(g.website_url)
   const websiteLabel = g.website_url ? prettyExternalLabel(g.website_url) : null
   const socialHref = safeExternalHref(g.social_url)
@@ -253,9 +244,23 @@ function GroupRow({ group: g }: { group: CommunityGroupPublic }) {
         </header>
 
         {g.description ? (
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground line-clamp-3">
-            {g.description}
-          </p>
+          <div className="mt-3">
+            <p
+              className={`text-sm leading-relaxed text-muted-foreground whitespace-pre-line ${expanded ? '' : 'line-clamp-3'}`}
+            >
+              {g.description}
+            </p>
+            {g.description.length > 180 ? (
+              <button
+                type="button"
+                onClick={() => setExpanded((v) => !v)}
+                className="mt-1 text-xs font-medium text-primary hover:underline"
+                aria-expanded={expanded}
+              >
+                {expanded ? 'Show less' : 'Read more & how to join'}
+              </button>
+            ) : null}
+          </div>
         ) : null}
 
         {(g.meeting_location || g.service_area) ? (
@@ -283,6 +288,10 @@ function GroupRow({ group: g }: { group: CommunityGroupPublic }) {
         ) : null}
 
         <div className="mt-5 flex flex-wrap items-center gap-2">
+          <Button size="sm" className="gap-1.5" onClick={() => onRequestJoin(g)}>
+            <UserPlus className="h-3.5 w-3.5" />
+            Request to join
+          </Button>
           {websiteHref ? (
             <Button asChild size="sm" variant="outline" className="sm:hidden gap-1.5">
               <a href={websiteHref} target="_blank" rel="noopener noreferrer">
@@ -314,5 +323,137 @@ function GroupRow({ group: g }: { group: CommunityGroupPublic }) {
         </div>
       </div>
     </article>
+  )
+}
+
+type JoinForm = { name: string; email: string; phone: string; message: string }
+
+function JoinGroupDialog({ group, onClose }: { group: CommunityGroupPublic | null; onClose: () => void }) {
+  const { user, profile } = useAuth()
+  const [form, setForm] = useState<JoinForm>({ name: '', email: '', phone: '', message: '' })
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState<{ duplicate: boolean } | null>(null)
+
+  // Reset per group, prefilling from the signed-in account when there is one.
+  useEffect(() => {
+    if (!group) return
+    setSent(null)
+    setForm({
+      name: profile?.full_name ?? '',
+      email: profile?.email ?? user?.email ?? '',
+      phone: '',
+      message: '',
+    })
+  }, [group, profile, user])
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!group) return
+    const problem = validateJoinRequestInput(form)
+    if (problem) {
+      toast.error(problem)
+      return
+    }
+    const phoneRes = validatePhoneNumber(form.phone, { allowEmpty: true })
+    if (!phoneRes.ok) {
+      toast.error(phoneRes.reason)
+      return
+    }
+    setSending(true)
+    const { data, error } = await supabase.rpc('submit_community_group_join_request', {
+      p_group_id: group.id,
+      p_name: form.name.trim(),
+      p_email: form.email.trim(),
+      p_phone: form.phone.trim() || null,
+      p_message: form.message.trim() || null,
+    })
+    setSending(false)
+    if (error) {
+      toast.error(joinRequestErrorMessage(error.message))
+      return
+    }
+    const row = Array.isArray(data) ? data[0] : data
+    const duplicate = Boolean(row?.already_requested)
+    if (!duplicate) void trackSubmissionCreated('community_group_join')
+    setSent({ duplicate })
+  }
+
+  const socialHref = group ? safeExternalHref(group.social_url) : null
+
+  return (
+    <Dialog open={!!group} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>
+            {sent ? 'Request sent' : `Request to join ${group?.organization_name ?? ''}`}
+          </DialogTitle>
+        </DialogHeader>
+
+        {sent ? (
+          <div className="space-y-4 text-sm">
+            <p className="flex items-start gap-2 text-foreground">
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
+              <span>
+                {sent.duplicate
+                  ? `You already have an open request for ${group?.organization_name}. We'll make sure it reaches them.`
+                  : `Thanks! KIGH admins have been notified and will pass your details to ${group?.organization_name}'s contact person, who will reach out to you directly.`}
+              </span>
+            </p>
+            {socialHref ? (
+              <p className="text-muted-foreground">
+                Want to connect sooner?{' '}
+                <a href={socialHref} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">
+                  Visit the group's social page
+                </a>
+                .
+              </p>
+            ) : null}
+            <DialogFooter>
+              <Button onClick={onClose}>Done</Button>
+            </DialogFooter>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Share your details and KIGH will pass them to the group's contact person. Groups manage their own
+              membership, so they'll follow up with you directly.
+            </p>
+            <div className="space-y-1.5">
+              <Label htmlFor="join-name">Your name <span className="text-destructive">*</span></Label>
+              <Input id="join-name" autoComplete="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="join-email">Email <span className="text-destructive">*</span></Label>
+              <Input id="join-email" type="email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="join-phone">Phone <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input
+                id="join-phone"
+                type="tel"
+                autoComplete="tel"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: sanitizePhoneInput(e.target.value) })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="join-message">Message <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Textarea
+                id="join-message"
+                rows={4}
+                maxLength={JOIN_MESSAGE_MAX}
+                placeholder="A little about yourself or what draws you to this group"
+                value={form.message}
+                onChange={(e) => setForm({ ...form, message: e.target.value })}
+              />
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button type="button" variant="outline" onClick={onClose} disabled={sending}>Cancel</Button>
+              <Button type="submit" disabled={sending}>{sending ? 'Sending…' : 'Send request'}</Button>
+            </DialogFooter>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
   )
 }

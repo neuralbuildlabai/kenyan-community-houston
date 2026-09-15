@@ -12,6 +12,8 @@
 export interface NavItem {
   to: string
   label: string
+  /** Compact label for the desktop bar, where width is tight; menus use `label`. */
+  shortLabel?: string
 }
 
 export interface NavGroup {
@@ -22,7 +24,6 @@ export interface NavGroup {
 /** Community dropdown (per Pass 1 spec). */
 export const COMMUNITY_MENU: ReadonlyArray<NavItem> = [
   { to: '/chat', label: 'Community Chat' },
-  { to: '/community-groups', label: 'Community Groups' },
   { to: '/new-to-houston', label: 'New to Houston' },
   { to: '/serve/apply', label: 'Volunteer' },
   { to: '/membership', label: 'Membership' },
@@ -40,7 +41,8 @@ export const RESOURCES_MENU: ReadonlyArray<NavItem> = [
 /** Direct center-nav links (excluding dropdown triggers). */
 export const PRIMARY_NAV: ReadonlyArray<NavItem> = [
   { to: '/events', label: 'Events' },
-  { to: '/businesses', label: 'Business Directory' },
+  { to: '/businesses', label: 'Business Directory', shortLabel: 'Businesses' },
+  { to: '/community-groups', label: 'Community Groups', shortLabel: 'Groups' },
   { to: '/gallery', label: 'Gallery' },
 ]
 
