@@ -21,7 +21,7 @@ export function SportsDetailPage() {
         .select('*')
         .eq('slug', slug)
         .eq('status', 'published')
-        .single()
+        .maybeSingle()
       setItem(data as SportsPost)
       setLoading(false)
     }
@@ -31,6 +31,7 @@ export function SportsDetailPage() {
   if (loading) return <PageLoader />
   if (!item) return (
     <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+      <SEOHead title="Post Not Found" noIndex />
       <h1 className="text-2xl font-bold mb-3">Post Not Found</h1>
       <Button asChild><Link to="/sports-youth">Back to Sports & Youth</Link></Button>
     </div>

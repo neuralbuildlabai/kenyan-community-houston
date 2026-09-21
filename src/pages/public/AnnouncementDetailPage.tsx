@@ -24,7 +24,7 @@ export function AnnouncementDetailPage() {
         .select('*')
         .eq('slug', slug)
         .eq('status', 'published')
-        .single()
+        .maybeSingle()
       const row = data as Announcement | null
       setItem(row && isAnnouncementPubliclyActive(row) ? row : null)
       setLoading(false)
@@ -37,6 +37,7 @@ export function AnnouncementDetailPage() {
   if (!item) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+        <SEOHead title="Announcement Not Found" noIndex />
         <h1 className="text-2xl font-bold mb-3">Announcement Not Found</h1>
         <Button asChild><Link to="/announcements">Back to Announcements</Link></Button>
       </div>

@@ -26,7 +26,7 @@ export function BusinessDetailPage() {
         .select('*')
         .eq('slug', slug)
         .eq('status', 'published')
-        .single()
+        .maybeSingle()
       setItem(data as Business)
       setLoading(false)
     }
@@ -43,6 +43,7 @@ export function BusinessDetailPage() {
   if (!item) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+        <SEOHead title="Business Not Found" noIndex />
         <h1 className="text-2xl font-bold mb-3">Business Not Found</h1>
         <Button asChild><Link to="/businesses">Back to Directory</Link></Button>
       </div>

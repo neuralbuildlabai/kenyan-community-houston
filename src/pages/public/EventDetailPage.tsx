@@ -60,7 +60,7 @@ export function EventDetailPage() {
         .select('*')
         .eq('slug', slug)
         .eq('status', 'published')
-        .single()
+        .maybeSingle()
       const ev = data as Event | null
       setEvent(ev)
       if (ev?.id) {
@@ -123,6 +123,7 @@ export function EventDetailPage() {
   if (!event) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+        <SEOHead title="Event Not Found" noIndex />
         <h1 className="text-2xl font-bold mb-3">Event Not Found</h1>
         <p className="text-muted-foreground mb-6">This event may have been removed or is no longer available.</p>
         <Button asChild><Link to="/events">Browse Events</Link></Button>

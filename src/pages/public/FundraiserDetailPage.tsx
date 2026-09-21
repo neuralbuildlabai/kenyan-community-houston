@@ -29,7 +29,7 @@ export function FundraiserDetailPage() {
         .select('*')
         .eq('slug', slug)
         .eq('status', 'published')
-        .single()
+        .maybeSingle()
       setItem(data as Fundraiser)
       setLoading(false)
     }
@@ -46,6 +46,7 @@ export function FundraiserDetailPage() {
   if (!item) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+        <SEOHead title="Fundraiser Not Found" noIndex />
         <h1 className="text-2xl font-bold mb-3">Fundraiser Not Found</h1>
         <Button asChild><Link to="/community-support">Back to Community Support</Link></Button>
       </div>
