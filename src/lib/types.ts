@@ -498,34 +498,40 @@ export interface Announcement {
   updated_at: string
 }
 
+/**
+ * Mirrors the `businesses` table exactly — see `001_initial_schema.sql` (the
+ * table) and `014_multi_community_foundation.sql` (`community_id`); no other
+ * migration alters it.
+ *
+ * Keep it that way. This interface previously declared ten columns the table
+ * never had (subcategory, long_description, cover_url, tags, hours,
+ * social_links, is_featured, owner_email, submitted_by, approved_by) while
+ * omitting three it does. Nothing read them, so they were invisible until an
+ * admin edit form wrote two of them and PostgREST rejected the whole update.
+ */
 export interface Business {
   id: string
-  name: string
   slug: string
-  description: string
-  long_description: string | null
-  services?: string | null
+  name: string
   category: string
-  subcategory: string | null
-  tags: string[]
+  description: string | null
+  services: string | null
   logo_url: string | null
-  cover_url: string | null
-  website: string | null
-  phone: string | null
-  email: string | null
   address: string | null
   city: string
   state: string
   zip: string | null
-  hours: Record<string, string> | null
-  social_links: Record<string, string> | null
+  phone: string | null
+  email: string | null
+  website: string | null
+  instagram: string | null
+  facebook: string | null
+  owner_name: string | null
+  /** Private — how KIGH reaches the owner. Not shown on the public listing. */
+  owner_contact: string | null
   tier: BusinessTier
   status: ContentStatus
-  is_featured: boolean
-  owner_name: string
-  owner_email: string
-  submitted_by: string | null
-  approved_by: string | null
+  community_id: string | null
   published_at: string | null
   created_at: string
   updated_at: string

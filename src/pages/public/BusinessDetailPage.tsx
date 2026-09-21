@@ -51,7 +51,11 @@ export function BusinessDetailPage() {
 
   return (
     <>
-      <SEOHead title={item.name} description={item.description} image={item.logo_url ?? undefined} />
+      <SEOHead
+        title={item.name}
+        description={item.description ?? undefined}
+        image={item.logo_url ?? undefined}
+      />
 
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-10">
         <Button asChild variant="ghost" size="sm" className="mb-6 gap-1">
