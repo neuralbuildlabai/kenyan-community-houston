@@ -15,4 +15,24 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Split the dependencies that change on a different cadence to our own
+        // code, so a routine deploy does not force every visitor to re-download
+        // React and Supabase along with it. This does not shrink the first
+        // visit — it makes every visit after a deploy cheaper.
+        manualChunks(id: string) {
+          if (!id.includes('node_modules')) return
+          if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id)) {
+            return 'react-vendor'
+          }
+          if (id.includes('@supabase')) return 'supabase-vendor'
+          if (/[\\/]node_modules[\\/](react-hook-form|@hookform|zod)[\\/]/.test(id)) {
+            return 'forms-vendor'
+          }
+        },
+      },
+    },
+  },
 })

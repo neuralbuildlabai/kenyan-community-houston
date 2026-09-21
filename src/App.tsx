@@ -1,99 +1,105 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { Toaster } from 'sonner'
 
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { PageLoader } from '@/components/LoadingSpinner'
 
 import { PublicLayout } from '@/components/layout/PublicLayout'
 import { AdminLayout } from '@/components/layout/AdminLayout'
 
 import { HomePage } from '@/pages/public/HomePage'
-import { EventsPage } from '@/pages/public/EventsPage'
-import { EventDetailPage } from '@/pages/public/EventDetailPage'
-import { EventVolunteerSignupPage } from '@/pages/public/EventVolunteerSignupPage'
-import { EventVendorSignupPage } from '@/pages/public/EventVendorSignupPage'
-import { CalendarPage } from '@/pages/public/CalendarPage'
-import { AnnouncementsPage } from '@/pages/public/AnnouncementsPage'
-import { AnnouncementDetailPage } from '@/pages/public/AnnouncementDetailPage'
-import { BusinessesPage } from '@/pages/public/BusinessesPage'
-import { BusinessDetailPage } from '@/pages/public/BusinessDetailPage'
-import { CommunitySupportPage } from '@/pages/public/CommunitySupportPage'
-import { FundraiserDetailPage } from '@/pages/public/FundraiserDetailPage'
-import { SportsYouthPage } from '@/pages/public/SportsYouthPage'
-import { SportsDetailPage } from '@/pages/public/SportsDetailPage'
-import { GalleryPage } from '@/pages/public/GalleryPage'
-import { GallerySubmitPage } from '@/pages/public/GallerySubmitPage'
-import { NewToHoustonPage } from '@/pages/public/NewToHoustonPage'
-import { AboutPage } from '@/pages/public/AboutPage'
-import { ContactPage } from '@/pages/public/ContactPage'
-import { GovernancePage } from '@/pages/public/GovernancePage'
-import { LeadershipPage } from '@/pages/public/LeadershipPage'
-import { MembershipPage } from '@/pages/public/MembershipPage'
-import { MembershipSuccessPage } from '@/pages/public/MembershipSuccessPage'
-import { SupportPage } from '@/pages/public/SupportPage'
-import { ResourcesPage } from '@/pages/public/ResourcesPage'
-import { CommunityGroupsPage } from '@/pages/public/CommunityGroupsPage'
-import { CommunityGroupsSubmitPage } from '@/pages/public/CommunityGroupsSubmitPage'
-import { ServePage } from '@/pages/public/ServePage'
-import { ServeApplyPage } from '@/pages/public/ServeApplyPage'
-import { SubmitEventPage } from '@/pages/public/SubmitEventPage'
-import { SubmitAnnouncementPage } from '@/pages/public/SubmitAnnouncementPage'
-import { SubmitBusinessPage } from '@/pages/public/SubmitBusinessPage'
-import { SubmitFundraiserPage } from '@/pages/public/SubmitFundraiserPage'
-import { PrivacyPage } from '@/pages/public/PrivacyPage'
-import { TermsPage } from '@/pages/public/TermsPage'
-import { DisclaimerPage } from '@/pages/public/DisclaimerPage'
-import { CertificatesAndAcknowledgementsPage } from '@/pages/public/CertificatesAndAcknowledgementsPage'
-import { ChatPage } from '@/pages/public/ChatPage'
-import { CommunityFeedPage } from '@/pages/public/CommunityFeedPage'
-import { PollDetailPage } from '@/pages/public/PollDetailPage'
-import { PollsIndexPage } from '@/pages/public/PollsIndexPage'
 import { NotFoundPage } from '@/pages/public/NotFoundPage'
-import { MemorialsIndexPage } from '@/pages/public/MemorialsIndexPage'
-import { CollinsColloNamaswaMemorialPage } from '@/pages/public/CollinsColloNamaswaMemorialPage'
 
-import { AdminDashboardPage } from '@/pages/admin/DashboardPage'
-import { AdminCalendarPage } from '@/pages/admin/CalendarPage'
-import { AdminAnnouncementsPage } from '@/pages/admin/AnnouncementsPage'
-import { AdminBusinessesPage } from '@/pages/admin/BusinessesPage'
-import { AdminFundraisersPage } from '@/pages/admin/FundraisersPage'
-import { AdminGalleryPage } from '@/pages/admin/GalleryPage'
-import { AdminLeadershipPage } from '@/pages/admin/AdminLeadershipPage'
-import { AdminPollsPage } from '@/pages/admin/AdminPollsPage'
-import { AdminSubmissionsPage } from '@/pages/admin/SubmissionsPage'
-import { AdminContactsPage } from '@/pages/admin/ContactsPage'
-import { AdminSettingsPage } from '@/pages/admin/SettingsPage'
-import { AdminUsersPage } from '@/pages/admin/UsersPage'
-import { AdminChangePasswordPage } from '@/pages/admin/AdminChangePasswordPage'
-import { AdminResourcesPage } from '@/pages/admin/AdminResourcesPage'
-import { AdminMembersPage } from '@/pages/admin/AdminMembersPage'
-import { AdminCommunityGroupsPage } from '@/pages/admin/AdminCommunityGroupsPage'
-import { AdminServiceInterestsPage } from '@/pages/admin/AdminServiceInterestsPage'
-import { AdminMediaSubmissionsPage } from '@/pages/admin/AdminMediaSubmissionsPage'
-import { AdminAnalyticsPage } from '@/pages/admin/AdminAnalyticsPage'
-import { AdminSignInsPage } from '@/pages/admin/AdminSignInsPage'
-import { AdminSystemHealthPage } from '@/pages/admin/AdminSystemHealthPage'
-import { AdminChatPage } from '@/pages/admin/AdminChatPage'
-import { AdminEventCommentsPage } from '@/pages/admin/AdminEventCommentsPage'
-import { AdminInvitesPage } from '@/pages/admin/AdminInvitesPage'
-import { AdminFeedPage } from '@/pages/admin/AdminFeedPage'
-import { AdminVolunteersPage } from '@/pages/admin/AdminVolunteersPage'
-import { AdminVendorsPage } from '@/pages/admin/AdminVendorsPage'
-import { AdminVendorDirectoryPage } from '@/pages/admin/AdminVendorDirectoryPage'
-import { AdminCertificatesPage } from '@/pages/admin/AdminCertificatesPage'
-import { CertificatePreviewPage } from '@/pages/dev/CertificatePreviewPage'
-import { CertificateDevExportPage } from '@/pages/dev/CertificateDevExportPage'
 import { SYSTEM_HEALTH_ADMIN_ROLES } from '@/lib/platformAdmin'
 
 import { RequireAuth } from '@/components/RequireAuth'
 import { RequiresFreshPassword } from '@/components/RequiresFreshPassword'
 import { PasswordExpiryRouteGate } from '@/components/PasswordExpiryRouteGate'
 import { LoginPage } from '@/pages/auth/LoginPage'
-import { AuthCallbackPage } from '@/pages/auth/AuthCallbackPage'
-import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
-import { ProfilePage } from '@/pages/member/ProfilePage'
-import { ProfileMediaPage } from '@/pages/member/ProfileMediaPage'
-import { ChangePasswordPage } from '@/pages/member/ChangePasswordPage'
+
+// Route components load on demand: this keeps the 29 admin pages — and the
+// PDF libraries only the certificate pages use — out of the bundle a first-time
+// visitor downloads.
+const AboutPage = lazy(() => import('@/pages/public/AboutPage').then((m) => ({ default: m.AboutPage })))
+const AdminAnalyticsPage = lazy(() => import('@/pages/admin/AdminAnalyticsPage').then((m) => ({ default: m.AdminAnalyticsPage })))
+const AdminAnnouncementsPage = lazy(() => import('@/pages/admin/AnnouncementsPage').then((m) => ({ default: m.AdminAnnouncementsPage })))
+const AdminBusinessesPage = lazy(() => import('@/pages/admin/BusinessesPage').then((m) => ({ default: m.AdminBusinessesPage })))
+const AdminCalendarPage = lazy(() => import('@/pages/admin/CalendarPage').then((m) => ({ default: m.AdminCalendarPage })))
+const AdminCertificatesPage = lazy(() => import('@/pages/admin/AdminCertificatesPage').then((m) => ({ default: m.AdminCertificatesPage })))
+const AdminChangePasswordPage = lazy(() => import('@/pages/admin/AdminChangePasswordPage').then((m) => ({ default: m.AdminChangePasswordPage })))
+const AdminChatPage = lazy(() => import('@/pages/admin/AdminChatPage').then((m) => ({ default: m.AdminChatPage })))
+const AdminCommunityGroupsPage = lazy(() => import('@/pages/admin/AdminCommunityGroupsPage').then((m) => ({ default: m.AdminCommunityGroupsPage })))
+const AdminContactsPage = lazy(() => import('@/pages/admin/ContactsPage').then((m) => ({ default: m.AdminContactsPage })))
+const AdminDashboardPage = lazy(() => import('@/pages/admin/DashboardPage').then((m) => ({ default: m.AdminDashboardPage })))
+const AdminEventCommentsPage = lazy(() => import('@/pages/admin/AdminEventCommentsPage').then((m) => ({ default: m.AdminEventCommentsPage })))
+const AdminFeedPage = lazy(() => import('@/pages/admin/AdminFeedPage').then((m) => ({ default: m.AdminFeedPage })))
+const AdminFundraisersPage = lazy(() => import('@/pages/admin/FundraisersPage').then((m) => ({ default: m.AdminFundraisersPage })))
+const AdminGalleryPage = lazy(() => import('@/pages/admin/GalleryPage').then((m) => ({ default: m.AdminGalleryPage })))
+const AdminInvitesPage = lazy(() => import('@/pages/admin/AdminInvitesPage').then((m) => ({ default: m.AdminInvitesPage })))
+const AdminLeadershipPage = lazy(() => import('@/pages/admin/AdminLeadershipPage').then((m) => ({ default: m.AdminLeadershipPage })))
+const AdminMediaSubmissionsPage = lazy(() => import('@/pages/admin/AdminMediaSubmissionsPage').then((m) => ({ default: m.AdminMediaSubmissionsPage })))
+const AdminMembersPage = lazy(() => import('@/pages/admin/AdminMembersPage').then((m) => ({ default: m.AdminMembersPage })))
+const AdminPollsPage = lazy(() => import('@/pages/admin/AdminPollsPage').then((m) => ({ default: m.AdminPollsPage })))
+const AdminResourcesPage = lazy(() => import('@/pages/admin/AdminResourcesPage').then((m) => ({ default: m.AdminResourcesPage })))
+const AdminServiceInterestsPage = lazy(() => import('@/pages/admin/AdminServiceInterestsPage').then((m) => ({ default: m.AdminServiceInterestsPage })))
+const AdminSettingsPage = lazy(() => import('@/pages/admin/SettingsPage').then((m) => ({ default: m.AdminSettingsPage })))
+const AdminSignInsPage = lazy(() => import('@/pages/admin/AdminSignInsPage').then((m) => ({ default: m.AdminSignInsPage })))
+const AdminSubmissionsPage = lazy(() => import('@/pages/admin/SubmissionsPage').then((m) => ({ default: m.AdminSubmissionsPage })))
+const AdminSystemHealthPage = lazy(() => import('@/pages/admin/AdminSystemHealthPage').then((m) => ({ default: m.AdminSystemHealthPage })))
+const AdminUsersPage = lazy(() => import('@/pages/admin/UsersPage').then((m) => ({ default: m.AdminUsersPage })))
+const AdminVendorDirectoryPage = lazy(() => import('@/pages/admin/AdminVendorDirectoryPage').then((m) => ({ default: m.AdminVendorDirectoryPage })))
+const AdminVendorsPage = lazy(() => import('@/pages/admin/AdminVendorsPage').then((m) => ({ default: m.AdminVendorsPage })))
+const AdminVolunteersPage = lazy(() => import('@/pages/admin/AdminVolunteersPage').then((m) => ({ default: m.AdminVolunteersPage })))
+const AnnouncementDetailPage = lazy(() => import('@/pages/public/AnnouncementDetailPage').then((m) => ({ default: m.AnnouncementDetailPage })))
+const AnnouncementsPage = lazy(() => import('@/pages/public/AnnouncementsPage').then((m) => ({ default: m.AnnouncementsPage })))
+const AuthCallbackPage = lazy(() => import('@/pages/auth/AuthCallbackPage').then((m) => ({ default: m.AuthCallbackPage })))
+const BusinessDetailPage = lazy(() => import('@/pages/public/BusinessDetailPage').then((m) => ({ default: m.BusinessDetailPage })))
+const BusinessesPage = lazy(() => import('@/pages/public/BusinessesPage').then((m) => ({ default: m.BusinessesPage })))
+const CalendarPage = lazy(() => import('@/pages/public/CalendarPage').then((m) => ({ default: m.CalendarPage })))
+const CertificateDevExportPage = lazy(() => import('@/pages/dev/CertificateDevExportPage').then((m) => ({ default: m.CertificateDevExportPage })))
+const CertificatePreviewPage = lazy(() => import('@/pages/dev/CertificatePreviewPage').then((m) => ({ default: m.CertificatePreviewPage })))
+const CertificatesAndAcknowledgementsPage = lazy(() => import('@/pages/public/CertificatesAndAcknowledgementsPage').then((m) => ({ default: m.CertificatesAndAcknowledgementsPage })))
+const ChangePasswordPage = lazy(() => import('@/pages/member/ChangePasswordPage').then((m) => ({ default: m.ChangePasswordPage })))
+const ChatPage = lazy(() => import('@/pages/public/ChatPage').then((m) => ({ default: m.ChatPage })))
+const CollinsColloNamaswaMemorialPage = lazy(() => import('@/pages/public/CollinsColloNamaswaMemorialPage').then((m) => ({ default: m.CollinsColloNamaswaMemorialPage })))
+const CommunityFeedPage = lazy(() => import('@/pages/public/CommunityFeedPage').then((m) => ({ default: m.CommunityFeedPage })))
+const CommunityGroupsPage = lazy(() => import('@/pages/public/CommunityGroupsPage').then((m) => ({ default: m.CommunityGroupsPage })))
+const CommunityGroupsSubmitPage = lazy(() => import('@/pages/public/CommunityGroupsSubmitPage').then((m) => ({ default: m.CommunityGroupsSubmitPage })))
+const CommunitySupportPage = lazy(() => import('@/pages/public/CommunitySupportPage').then((m) => ({ default: m.CommunitySupportPage })))
+const ContactPage = lazy(() => import('@/pages/public/ContactPage').then((m) => ({ default: m.ContactPage })))
+const DisclaimerPage = lazy(() => import('@/pages/public/DisclaimerPage').then((m) => ({ default: m.DisclaimerPage })))
+const EventDetailPage = lazy(() => import('@/pages/public/EventDetailPage').then((m) => ({ default: m.EventDetailPage })))
+const EventVendorSignupPage = lazy(() => import('@/pages/public/EventVendorSignupPage').then((m) => ({ default: m.EventVendorSignupPage })))
+const EventVolunteerSignupPage = lazy(() => import('@/pages/public/EventVolunteerSignupPage').then((m) => ({ default: m.EventVolunteerSignupPage })))
+const EventsPage = lazy(() => import('@/pages/public/EventsPage').then((m) => ({ default: m.EventsPage })))
+const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage })))
+const FundraiserDetailPage = lazy(() => import('@/pages/public/FundraiserDetailPage').then((m) => ({ default: m.FundraiserDetailPage })))
+const GalleryPage = lazy(() => import('@/pages/public/GalleryPage').then((m) => ({ default: m.GalleryPage })))
+const GallerySubmitPage = lazy(() => import('@/pages/public/GallerySubmitPage').then((m) => ({ default: m.GallerySubmitPage })))
+const GovernancePage = lazy(() => import('@/pages/public/GovernancePage').then((m) => ({ default: m.GovernancePage })))
+const LeadershipPage = lazy(() => import('@/pages/public/LeadershipPage').then((m) => ({ default: m.LeadershipPage })))
+const MembershipPage = lazy(() => import('@/pages/public/MembershipPage').then((m) => ({ default: m.MembershipPage })))
+const MembershipSuccessPage = lazy(() => import('@/pages/public/MembershipSuccessPage').then((m) => ({ default: m.MembershipSuccessPage })))
+const MemorialsIndexPage = lazy(() => import('@/pages/public/MemorialsIndexPage').then((m) => ({ default: m.MemorialsIndexPage })))
+const NewToHoustonPage = lazy(() => import('@/pages/public/NewToHoustonPage').then((m) => ({ default: m.NewToHoustonPage })))
+const PollDetailPage = lazy(() => import('@/pages/public/PollDetailPage').then((m) => ({ default: m.PollDetailPage })))
+const PollsIndexPage = lazy(() => import('@/pages/public/PollsIndexPage').then((m) => ({ default: m.PollsIndexPage })))
+const PrivacyPage = lazy(() => import('@/pages/public/PrivacyPage').then((m) => ({ default: m.PrivacyPage })))
+const ProfileMediaPage = lazy(() => import('@/pages/member/ProfileMediaPage').then((m) => ({ default: m.ProfileMediaPage })))
+const ProfilePage = lazy(() => import('@/pages/member/ProfilePage').then((m) => ({ default: m.ProfilePage })))
+const ResourcesPage = lazy(() => import('@/pages/public/ResourcesPage').then((m) => ({ default: m.ResourcesPage })))
+const ServeApplyPage = lazy(() => import('@/pages/public/ServeApplyPage').then((m) => ({ default: m.ServeApplyPage })))
+const ServePage = lazy(() => import('@/pages/public/ServePage').then((m) => ({ default: m.ServePage })))
+const SportsDetailPage = lazy(() => import('@/pages/public/SportsDetailPage').then((m) => ({ default: m.SportsDetailPage })))
+const SportsYouthPage = lazy(() => import('@/pages/public/SportsYouthPage').then((m) => ({ default: m.SportsYouthPage })))
+const SubmitAnnouncementPage = lazy(() => import('@/pages/public/SubmitAnnouncementPage').then((m) => ({ default: m.SubmitAnnouncementPage })))
+const SubmitBusinessPage = lazy(() => import('@/pages/public/SubmitBusinessPage').then((m) => ({ default: m.SubmitBusinessPage })))
+const SubmitEventPage = lazy(() => import('@/pages/public/SubmitEventPage').then((m) => ({ default: m.SubmitEventPage })))
+const SubmitFundraiserPage = lazy(() => import('@/pages/public/SubmitFundraiserPage').then((m) => ({ default: m.SubmitFundraiserPage })))
+const SupportPage = lazy(() => import('@/pages/public/SupportPage').then((m) => ({ default: m.SupportPage })))
+const TermsPage = lazy(() => import('@/pages/public/TermsPage').then((m) => ({ default: m.TermsPage })))
 
 /** Carries a shared /directory/:slug link through to its /businesses/:slug listing. */
 function BusinessDirectorySlugRedirect() {
@@ -105,7 +111,8 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
           {/* ── Public Routes ── */}
           <Route element={<PublicLayout />}>
             <Route index element={<HomePage />} />
@@ -258,7 +265,8 @@ export default function App() {
             <Route path="settings" element={<AdminSettingsPage />} />
             <Route path="users" element={<AdminUsersPage />} />
           </Route>
-        </Routes>
+          </Routes>
+        </Suspense>
         <Toaster richColors position="top-right" />
       </BrowserRouter>
     </AuthProvider>
