@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { HelmetProvider } from 'react-helmet-async'
 
@@ -96,6 +96,12 @@ import { ProfilePage } from '@/pages/member/ProfilePage'
 import { ProfileMediaPage } from '@/pages/member/ProfileMediaPage'
 import { ChangePasswordPage } from '@/pages/member/ChangePasswordPage'
 
+/** Carries a shared /directory/:slug link through to its /businesses/:slug listing. */
+function BusinessDirectorySlugRedirect() {
+  const { slug } = useParams()
+  return <Navigate to={slug ? `/businesses/${slug}` : '/businesses'} replace />
+}
+
 export default function App() {
   return (
     <HelmetProvider>
@@ -120,6 +126,11 @@ export default function App() {
               <Route path="businesses" element={<BusinessesPage />} />
               <Route path="businesses/submit" element={<SubmitBusinessPage />} />
               <Route path="businesses/:slug" element={<BusinessDetailPage />} />
+              {/* The directory is called the "business directory" everywhere it is
+                  shared, so /directory gets typed and pasted even though the route
+                  is /businesses. Keep both resolving. */}
+              <Route path="directory" element={<Navigate to="/businesses" replace />} />
+              <Route path="directory/:slug" element={<BusinessDirectorySlugRedirect />} />
 
               <Route path="community-support" element={<CommunitySupportPage />} />
               <Route path="community-support/submit" element={<SubmitFundraiserPage />} />
