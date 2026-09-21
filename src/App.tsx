@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { Toaster } from 'sonner'
-import { HelmetProvider } from 'react-helmet-async'
 
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
@@ -104,166 +103,164 @@ function BusinessDirectorySlugRedirect() {
 
 export default function App() {
   return (
-    <HelmetProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* ── Public Routes ── */}
-            <Route element={<PublicLayout />}>
-              <Route index element={<HomePage />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* ── Public Routes ── */}
+          <Route element={<PublicLayout />}>
+            <Route index element={<HomePage />} />
 
-              <Route path="events" element={<EventsPage />} />
-              <Route path="events/submit" element={<SubmitEventPage />} />
-              <Route path="events/:slug/volunteer" element={<EventVolunteerSignupPage />} />
-              <Route path="events/:slug/vendor" element={<EventVendorSignupPage />} />
-              <Route path="events/:slug" element={<EventDetailPage />} />
-              <Route path="calendar" element={<CalendarPage />} />
+            <Route path="events" element={<EventsPage />} />
+            <Route path="events/submit" element={<SubmitEventPage />} />
+            <Route path="events/:slug/volunteer" element={<EventVolunteerSignupPage />} />
+            <Route path="events/:slug/vendor" element={<EventVendorSignupPage />} />
+            <Route path="events/:slug" element={<EventDetailPage />} />
+            <Route path="calendar" element={<CalendarPage />} />
 
-              <Route path="announcements" element={<AnnouncementsPage />} />
-              <Route path="announcements/submit" element={<SubmitAnnouncementPage />} />
-              <Route path="announcements/:slug" element={<AnnouncementDetailPage />} />
+            <Route path="announcements" element={<AnnouncementsPage />} />
+            <Route path="announcements/submit" element={<SubmitAnnouncementPage />} />
+            <Route path="announcements/:slug" element={<AnnouncementDetailPage />} />
 
-              <Route path="businesses" element={<BusinessesPage />} />
-              <Route path="businesses/submit" element={<SubmitBusinessPage />} />
-              <Route path="businesses/:slug" element={<BusinessDetailPage />} />
-              {/* The directory is called the "business directory" everywhere it is
-                  shared, so /directory gets typed and pasted even though the route
-                  is /businesses. Keep both resolving. */}
-              <Route path="directory" element={<Navigate to="/businesses" replace />} />
-              <Route path="directory/:slug" element={<BusinessDirectorySlugRedirect />} />
+            <Route path="businesses" element={<BusinessesPage />} />
+            <Route path="businesses/submit" element={<SubmitBusinessPage />} />
+            <Route path="businesses/:slug" element={<BusinessDetailPage />} />
+            {/* The directory is called the "business directory" everywhere it is
+                shared, so /directory gets typed and pasted even though the route
+                is /businesses. Keep both resolving. */}
+            <Route path="directory" element={<Navigate to="/businesses" replace />} />
+            <Route path="directory/:slug" element={<BusinessDirectorySlugRedirect />} />
 
-              <Route path="community-support" element={<CommunitySupportPage />} />
-              <Route path="community-support/submit" element={<SubmitFundraiserPage />} />
-              <Route path="community-support/:slug" element={<FundraiserDetailPage />} />
+            <Route path="community-support" element={<CommunitySupportPage />} />
+            <Route path="community-support/submit" element={<SubmitFundraiserPage />} />
+            <Route path="community-support/:slug" element={<FundraiserDetailPage />} />
 
-              {/* Permanent memorial URLs — do not rename (printed QR destinations). */}
-              <Route path="memorials" element={<MemorialsIndexPage />} />
-              <Route
-                path="memorials/collins-collo-namaswa"
-                element={<CollinsColloNamaswaMemorialPage />}
-              />
-
-              <Route path="sports-youth" element={<SportsYouthPage />} />
-              <Route path="sports-youth/:slug" element={<SportsDetailPage />} />
-
-              <Route path="gallery" element={<GalleryPage />} />
-              <Route path="gallery/submit" element={<GallerySubmitPage />} />
-              <Route path="new-to-houston" element={<NewToHoustonPage />} />
-              <Route path="about" element={<AboutPage />} />
-              <Route path="contact" element={<ContactPage />} />
-              <Route path="chat" element={<PasswordExpiryRouteGate><ChatPage /></PasswordExpiryRouteGate>} />
-              <Route path="community-feed" element={<PasswordExpiryRouteGate><CommunityFeedPage /></PasswordExpiryRouteGate>} />
-              <Route path="governance" element={<GovernancePage />} />
-              <Route path="leadership" element={<LeadershipPage />} />
-              <Route path="serve" element={<ServePage />} />
-              <Route path="serve/apply" element={<ServeApplyPage />} />
-              <Route path="membership" element={<MembershipPage />} />
-              <Route path="membership/success" element={<MembershipSuccessPage />} />
-              <Route path="support" element={<SupportPage />} />
-              <Route path="resources" element={<ResourcesPage />} />
-              <Route path="certificates-and-acknowledgements" element={<CertificatesAndAcknowledgementsPage />} />
-              {import.meta.env.DEV ? (
-                <>
-                  <Route path="dev/certificate-preview" element={<CertificatePreviewPage />} />
-                  <Route path="dev/certificate-export" element={<CertificateDevExportPage />} />
-                </>
-              ) : null}
-              <Route path="login" element={<LoginPage />} />
-              <Route path="admin/login" element={<LoginPage />} />
-              <Route path="forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="auth/callback" element={<AuthCallbackPage />} />
-              <Route
-                path="change-password"
-                element={
-                  <RequireAuth>
-                    <ChangePasswordPage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="profile"
-                element={
-                  <RequireAuth>
-                    <RequiresFreshPassword>
-                      <ProfilePage />
-                    </RequiresFreshPassword>
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="profile/media"
-                element={
-                  <RequireAuth>
-                    <RequiresFreshPassword>
-                      <ProfileMediaPage />
-                    </RequiresFreshPassword>
-                  </RequireAuth>
-                }
-              />
-              <Route path="community-groups" element={<CommunityGroupsPage />} />
-              <Route path="community-groups/submit" element={<CommunityGroupsSubmitPage />} />
-
-              <Route path="polls" element={<PollsIndexPage />} />
-              <Route path="polls/:slug" element={<PollDetailPage />} />
-
-              <Route path="privacy" element={<PrivacyPage />} />
-              <Route path="terms" element={<TermsPage />} />
-              <Route path="disclaimer" element={<DisclaimerPage />} />
-              <Route path="*" element={<NotFoundPage />} />
-            </Route>
-
-            {/* ── Admin Protected Routes ── */}
+            {/* Permanent memorial URLs — do not rename (printed QR destinations). */}
+            <Route path="memorials" element={<MemorialsIndexPage />} />
             <Route
-              path="admin"
+              path="memorials/collins-collo-namaswa"
+              element={<CollinsColloNamaswaMemorialPage />}
+            />
+
+            <Route path="sports-youth" element={<SportsYouthPage />} />
+            <Route path="sports-youth/:slug" element={<SportsDetailPage />} />
+
+            <Route path="gallery" element={<GalleryPage />} />
+            <Route path="gallery/submit" element={<GallerySubmitPage />} />
+            <Route path="new-to-houston" element={<NewToHoustonPage />} />
+            <Route path="about" element={<AboutPage />} />
+            <Route path="contact" element={<ContactPage />} />
+            <Route path="chat" element={<PasswordExpiryRouteGate><ChatPage /></PasswordExpiryRouteGate>} />
+            <Route path="community-feed" element={<PasswordExpiryRouteGate><CommunityFeedPage /></PasswordExpiryRouteGate>} />
+            <Route path="governance" element={<GovernancePage />} />
+            <Route path="leadership" element={<LeadershipPage />} />
+            <Route path="serve" element={<ServePage />} />
+            <Route path="serve/apply" element={<ServeApplyPage />} />
+            <Route path="membership" element={<MembershipPage />} />
+            <Route path="membership/success" element={<MembershipSuccessPage />} />
+            <Route path="support" element={<SupportPage />} />
+            <Route path="resources" element={<ResourcesPage />} />
+            <Route path="certificates-and-acknowledgements" element={<CertificatesAndAcknowledgementsPage />} />
+            {import.meta.env.DEV ? (
+              <>
+                <Route path="dev/certificate-preview" element={<CertificatePreviewPage />} />
+                <Route path="dev/certificate-export" element={<CertificateDevExportPage />} />
+              </>
+            ) : null}
+            <Route path="login" element={<LoginPage />} />
+            <Route path="admin/login" element={<LoginPage />} />
+            <Route path="forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="auth/callback" element={<AuthCallbackPage />} />
+            <Route
+              path="change-password"
               element={
-                <ProtectedRoute>
-                  <AdminLayout />
+                <RequireAuth>
+                  <ChangePasswordPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="profile"
+              element={
+                <RequireAuth>
+                  <RequiresFreshPassword>
+                    <ProfilePage />
+                  </RequiresFreshPassword>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="profile/media"
+              element={
+                <RequireAuth>
+                  <RequiresFreshPassword>
+                    <ProfileMediaPage />
+                  </RequiresFreshPassword>
+                </RequireAuth>
+              }
+            />
+            <Route path="community-groups" element={<CommunityGroupsPage />} />
+            <Route path="community-groups/submit" element={<CommunityGroupsSubmitPage />} />
+
+            <Route path="polls" element={<PollsIndexPage />} />
+            <Route path="polls/:slug" element={<PollDetailPage />} />
+
+            <Route path="privacy" element={<PrivacyPage />} />
+            <Route path="terms" element={<TermsPage />} />
+            <Route path="disclaimer" element={<DisclaimerPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+
+          {/* ── Admin Protected Routes ── */}
+          <Route
+            path="admin"
+            element={
+              <ProtectedRoute>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="change-password" element={<AdminChangePasswordPage />} />
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboardPage />} />
+            <Route path="analytics" element={<AdminAnalyticsPage />} />
+            <Route path="sign-ins" element={<AdminSignInsPage />} />
+            <Route
+              path="system-health"
+              element={
+                <ProtectedRoute requiredRoles={SYSTEM_HEALTH_ADMIN_ROLES}>
+                  <AdminSystemHealthPage />
                 </ProtectedRoute>
               }
-            >
-              <Route path="change-password" element={<AdminChangePasswordPage />} />
-              <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<AdminDashboardPage />} />
-              <Route path="analytics" element={<AdminAnalyticsPage />} />
-              <Route path="sign-ins" element={<AdminSignInsPage />} />
-              <Route
-                path="system-health"
-                element={
-                  <ProtectedRoute requiredRoles={SYSTEM_HEALTH_ADMIN_ROLES}>
-                    <AdminSystemHealthPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="events" element={<Navigate to="/admin/calendar" replace />} />
-              <Route path="calendar" element={<AdminCalendarPage />} />
-              <Route path="resources" element={<AdminResourcesPage />} />
-              <Route path="members" element={<AdminMembersPage />} />
-              <Route path="community-groups" element={<AdminCommunityGroupsPage />} />
-              <Route path="announcements" element={<AdminAnnouncementsPage />} />
-              <Route path="businesses" element={<AdminBusinessesPage />} />
-              <Route path="fundraisers" element={<AdminFundraisersPage />} />
-              <Route path="gallery" element={<AdminGalleryPage />} />
-              <Route path="leadership" element={<AdminLeadershipPage />} />
-              <Route path="polls" element={<AdminPollsPage />} />
-              <Route path="submissions" element={<AdminSubmissionsPage />} />
-              <Route path="contacts" element={<AdminContactsPage />} />
-              <Route path="chat" element={<AdminChatPage />} />
-              <Route path="event-comments" element={<AdminEventCommentsPage />} />
-              <Route path="volunteers" element={<AdminVolunteersPage />} />
-              <Route path="vendors" element={<AdminVendorsPage />} />
-              <Route path="vendors-directory" element={<AdminVendorDirectoryPage />} />
-              <Route path="invites" element={<AdminInvitesPage />} />
-              <Route path="feed" element={<AdminFeedPage />} />
-              <Route path="service-interests" element={<AdminServiceInterestsPage />} />
-              <Route path="media-submissions" element={<AdminMediaSubmissionsPage />} />
-              <Route path="certificates" element={<AdminCertificatesPage />} />
-              <Route path="settings" element={<AdminSettingsPage />} />
-              <Route path="users" element={<AdminUsersPage />} />
-            </Route>
-          </Routes>
-          <Toaster richColors position="top-right" />
-        </BrowserRouter>
-      </AuthProvider>
-    </HelmetProvider>
+            />
+            <Route path="events" element={<Navigate to="/admin/calendar" replace />} />
+            <Route path="calendar" element={<AdminCalendarPage />} />
+            <Route path="resources" element={<AdminResourcesPage />} />
+            <Route path="members" element={<AdminMembersPage />} />
+            <Route path="community-groups" element={<AdminCommunityGroupsPage />} />
+            <Route path="announcements" element={<AdminAnnouncementsPage />} />
+            <Route path="businesses" element={<AdminBusinessesPage />} />
+            <Route path="fundraisers" element={<AdminFundraisersPage />} />
+            <Route path="gallery" element={<AdminGalleryPage />} />
+            <Route path="leadership" element={<AdminLeadershipPage />} />
+            <Route path="polls" element={<AdminPollsPage />} />
+            <Route path="submissions" element={<AdminSubmissionsPage />} />
+            <Route path="contacts" element={<AdminContactsPage />} />
+            <Route path="chat" element={<AdminChatPage />} />
+            <Route path="event-comments" element={<AdminEventCommentsPage />} />
+            <Route path="volunteers" element={<AdminVolunteersPage />} />
+            <Route path="vendors" element={<AdminVendorsPage />} />
+            <Route path="vendors-directory" element={<AdminVendorDirectoryPage />} />
+            <Route path="invites" element={<AdminInvitesPage />} />
+            <Route path="feed" element={<AdminFeedPage />} />
+            <Route path="service-interests" element={<AdminServiceInterestsPage />} />
+            <Route path="media-submissions" element={<AdminMediaSubmissionsPage />} />
+            <Route path="certificates" element={<AdminCertificatesPage />} />
+            <Route path="settings" element={<AdminSettingsPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+          </Route>
+        </Routes>
+        <Toaster richColors position="top-right" />
+      </BrowserRouter>
+    </AuthProvider>
   )
 }
