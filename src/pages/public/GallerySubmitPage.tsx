@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { ArrowLeft, ImagePlus, Loader2, ShieldCheck, Sparkles, Trash2 } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { PublicPageHero } from '@/components/public/PublicPageHero'
@@ -12,12 +12,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/contexts/AuthContext'
 import {
+  createdGalleryAlbumFromRpc,
+  GALLERY_NEW_ALBUM_ID,
+  galleryAlbumDescriptionError,
+  galleryAlbumNameError,
+  galleryAlbumOptionsFromRpc,
+  mergeGalleryAlbumOptions,
+} from '@/lib/galleryAlbumCreate'
+import {
   GALLERY_MAX_INPUT_BYTES,
   GALLERY_PUBLIC_BUCKET,
   GALLERY_SUBMISSIONS_BUCKET,
   gallerySubmissionThumbPath,
   gallerySubmissionWebPath,
 } from '@/lib/galleryConstants'
+import { loginNextFromLocation } from '@/lib/loginNext'
 import { buildGalleryWebAndThumb, GalleryImageProcessingError } from '@/lib/galleryImageProcessing'
 import { isHeicFile, isLikelyImageFile } from '@/lib/imageOptimization'
 import { supabase } from '@/lib/supabase'
@@ -42,9 +51,12 @@ function mimeToExt(mime: 'image/webp' | 'image/jpeg'): 'webp' | 'jpg' {
 }
 
 export function GallerySubmitPage() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
+  const location = useLocation()
   const [albums, setAlbums] = useState<Pick<GalleryAlbum, 'id' | 'name' | 'slug'>[]>([])
   const [albumId, setAlbumId] = useState<string>('')
+  const [newAlbumName, setNewAlbumName] = useState('')
+  const [newAlbumDescription, setNewAlbumDescription] = useState('')
   const [queued, setQueued] = useState<QueuedFile[]>([])
   const [consent, setConsent] = useState(false)
   const [guestName, setGuestName] = useState('')
@@ -54,37 +66,75 @@ export function GallerySubmitPage() {
 
   const anonBatchId = useMemo(() => newId(), [])
 
+  const creatingAlbum = albumId === GALLERY_NEW_ALBUM_ID
+
   const canSubmit = useMemo(() => {
-    if (!albumId || !consent || queued.length === 0 || albums.length === 0) return false
+    if (!consent || queued.length === 0) return false
+    if (creatingAlbum) {
+      if (!user) return false
+      if (galleryAlbumNameError(newAlbumName) || galleryAlbumDescriptionError(newAlbumDescription)) return false
+    } else if (!albumId || albums.length === 0) {
+      return false
+    }
     if (user) return true
     return guestName.trim().length >= 2 && guestEmail.trim().includes('@')
-  }, [albumId, consent, queued.length, albums.length, user, guestName, guestEmail])
+  }, [
+    albumId,
+    albums.length,
+    consent,
+    creatingAlbum,
+    guestEmail,
+    guestName,
+    newAlbumDescription,
+    newAlbumName,
+    queued.length,
+    user,
+  ])
 
   useEffect(() => {
+    if (authLoading) return
+    let cancelled = false
     void (async () => {
       const { data, error } = await supabase
         .from('gallery_albums_public')
         .select('id, name, slug')
         .eq('open_for_submissions', true)
         .order('name')
+      if (cancelled) return
       if (error) {
         console.warn('[gallery-submit] albums:', error.message)
         toast.error('Could not load albums for submission. Try again later.')
         return
       }
-      const rows = (data ?? []) as Pick<GalleryAlbum, 'id' | 'name' | 'slug'>[]
+      const openRows = (data ?? []) as Pick<GalleryAlbum, 'id' | 'name' | 'slug'>[]
+      let mine: Pick<GalleryAlbum, 'id' | 'name' | 'slug'>[] = []
+      if (user) {
+        const mineRes = await supabase.rpc('kigh_list_my_gallery_albums')
+        if (cancelled) return
+        if (mineRes.error) {
+          console.warn('[gallery-submit] my albums:', mineRes.error.message)
+        } else {
+          mine = galleryAlbumOptionsFromRpc(mineRes.data)
+        }
+      }
+      const rows = mergeGalleryAlbumOptions(openRows, mine)
       setAlbums(rows)
-      if (rows.length === 0) {
+      if (rows.length === 0 && !user) {
         toast.message('No albums are open for submissions right now.', {
-          description: 'Check back later or contact KIGH via the Contact page.',
+          description: 'Sign in to create an album, or check back later.',
         })
       }
     })()
-  }, [])
+    return () => {
+      cancelled = true
+    }
+  }, [authLoading, user])
 
   useEffect(() => {
-    if (albums.length > 0 && !albumId) setAlbumId(albums[0].id)
-  }, [albums, albumId])
+    if (albumId) return
+    if (albums.length > 0) setAlbumId(albums[0].id)
+    else if (user) setAlbumId(GALLERY_NEW_ALBUM_ID)
+  }, [albums, albumId, user])
 
   function onPickFiles(list: FileList | null) {
     if (!list?.length) return
@@ -119,7 +169,22 @@ export function GallerySubmitPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!albumId) {
+    if (creatingAlbum) {
+      if (!user) {
+        toast.error('Sign in to create a new album.')
+        return
+      }
+      const nameError = galleryAlbumNameError(newAlbumName)
+      if (nameError) {
+        toast.error(nameError)
+        return
+      }
+      const descriptionError = galleryAlbumDescriptionError(newAlbumDescription)
+      if (descriptionError) {
+        toast.error(descriptionError)
+        return
+      }
+    } else if (!albumId) {
       toast.error('Choose an album.')
       return
     }
@@ -140,6 +205,25 @@ export function GallerySubmitPage() {
 
     setSubmitting(true)
     setProgressPct(0)
+
+    let targetAlbumId = albumId
+    if (creatingAlbum && user) {
+      const { data, error } = await supabase.rpc('kigh_create_member_gallery_album', {
+        p_name: newAlbumName.trim(),
+        p_description: newAlbumDescription.trim() || null,
+      })
+      const created = createdGalleryAlbumFromRpc(data)
+      if (error || !created) {
+        toast.error(error?.message ?? 'Could not create the album.')
+        setSubmitting(false)
+        return
+      }
+      targetAlbumId = created.id
+      setAlbumId(created.id)
+      setAlbums((prev) => mergeGalleryAlbumOptions(prev, [created]))
+      setNewAlbumName('')
+      setNewAlbumDescription('')
+    }
 
     const owner =
       user != null
@@ -212,7 +296,7 @@ export function GallerySubmitPage() {
 
       const { error: ins } = await supabase.from('gallery_images').insert([
         {
-          album_id: albumId,
+          album_id: targetAlbumId,
           status: 'pending',
           caption: row.caption.trim() || null,
           alt_text: null,
@@ -287,13 +371,26 @@ export function GallerySubmitPage() {
                 <legend className="text-base font-semibold text-foreground">Album &amp; uploader</legend>
                 <div className="space-y-2">
                   <Label htmlFor="album">Album / event</Label>
-                  <Select value={albumId} onValueChange={setAlbumId} disabled={!albums.length}>
+                  <Select
+                    value={albumId}
+                    onValueChange={setAlbumId}
+                    disabled={!user && albums.length === 0}
+                  >
                     <SelectTrigger id="album" data-testid="gallery-submit-album">
                       <SelectValue
-                        placeholder={albums.length ? 'Select album' : 'No albums available'}
+                        placeholder={
+                          albums.length
+                            ? 'Select album'
+                            : user
+                              ? 'Create a new album'
+                              : 'No albums available'
+                        }
                       />
                     </SelectTrigger>
                     <SelectContent>
+                      {user ? (
+                        <SelectItem value={GALLERY_NEW_ALBUM_ID}>Create a new album</SelectItem>
+                      ) : null}
                       {albums.map((a) => (
                         <SelectItem key={a.id} value={a.id}>
                           {a.name}
@@ -301,6 +398,50 @@ export function GallerySubmitPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {creatingAlbum ? (
+                    <div className="space-y-4 pt-2" data-testid="gallery-submit-new-album">
+                      <div className="space-y-2">
+                        <Label htmlFor="new-album-name">New album name *</Label>
+                        <Input
+                          id="new-album-name"
+                          required
+                          value={newAlbumName}
+                          onChange={(e) => setNewAlbumName(e.target.value)}
+                          placeholder="e.g. Madaraka Day 2026"
+                          maxLength={80}
+                          data-testid="gallery-submit-new-album-name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-album-description">Description</Label>
+                        <Textarea
+                          id="new-album-description"
+                          rows={3}
+                          value={newAlbumDescription}
+                          onChange={(e) => setNewAlbumDescription(e.target.value)}
+                          placeholder="Optional. Shown with the album after photos are approved."
+                          maxLength={500}
+                          data-testid="gallery-submit-new-album-description"
+                        />
+                      </div>
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        Photos in a new album are reviewed before they appear in the gallery. An
+                        admin publishes them.
+                      </p>
+                    </div>
+                  ) : null}
+                  {!user ? (
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      <Link
+                        to={loginNextFromLocation(location)}
+                        className="link-editorial"
+                        data-testid="gallery-submit-create-album-sign-in"
+                      >
+                        Sign in
+                      </Link>{' '}
+                      to create a new album, then add photos to it.
+                    </p>
+                  ) : null}
                 </div>
 
                 {!user && (

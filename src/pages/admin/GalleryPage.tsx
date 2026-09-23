@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -31,7 +32,18 @@ import {
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
-import { GALLERY_PUBLIC_BUCKET } from '@/lib/galleryConstants'
+import {
+  GALLERY_NEW_ALBUM_ID,
+  galleryAlbumDescriptionError,
+  galleryAlbumNameError,
+  uniqueGalleryAlbumSlug,
+} from '@/lib/galleryAlbumCreate'
+import {
+  GALLERY_PUBLIC_BUCKET,
+  GALLERY_SUBMISSIONS_BUCKET,
+  gallerySubmissionThumbPath,
+  gallerySubmissionWebPath,
+} from '@/lib/galleryConstants'
 import {
   approveGalleryPendingImage,
   approveGalleryPendingImagesBulk,
@@ -130,7 +142,11 @@ export function AdminGalleryPage() {
   const [images, setImages] = useState<GalleryImageRow[]>([])
   const [albumFilter, setAlbumFilter] = useState('all')
   const [newAlbumName, setNewAlbumName] = useState('')
+  const [newAlbumDescription, setNewAlbumDescription] = useState('')
   const [newAlbumOpenSubs, setNewAlbumOpenSubs] = useState(true)
+  const [uploadAlbumName, setUploadAlbumName] = useState('')
+  const [uploadAlbumDescription, setUploadAlbumDescription] = useState('')
+  const [uploadPublishNow, setUploadPublishNow] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [caption, setCaption] = useState('')
@@ -236,21 +252,68 @@ export function AdminGalleryPage() {
     })()
   }, [pendingRows])
 
-  async function createAlbum() {
-    if (!newAlbumName.trim()) return
-    const slug = newAlbumName
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^\w-]/g, '')
-    const { error } = await supabase
-      .from('gallery_albums')
-      .insert([{ name: newAlbumName.trim(), slug, open_for_submissions: newAlbumOpenSubs }])
-    if (error) toast.error('Album creation failed')
-    else {
-      toast.success('Album created')
-      setNewAlbumName('')
-      void loadAlbums()
+  async function insertAlbum(input: {
+    name: string
+    description: string
+    openForSubmissions: boolean
+  }): Promise<string | null> {
+    const nameError = galleryAlbumNameError(input.name)
+    if (nameError) {
+      toast.error(nameError)
+      return null
     }
+    const descriptionError = galleryAlbumDescriptionError(input.description)
+    if (descriptionError) {
+      toast.error(descriptionError)
+      return null
+    }
+    const name = input.name.trim()
+    const description = input.description.trim() || null
+    const slug = uniqueGalleryAlbumSlug(
+      name,
+      albums.map((album) => album.slug),
+    )
+    const { data, error } = await supabase
+      .from('gallery_albums')
+      .insert({
+        name,
+        slug,
+        description,
+        open_for_submissions: input.openForSubmissions,
+        created_by: user?.id ?? null,
+      })
+      .select('id, name, slug, cover_url, description, open_for_submissions')
+      .single()
+    if (error || !data) {
+      toast.error(error?.message ?? 'Album creation failed')
+      return null
+    }
+    const created: Album = {
+      id: data.id,
+      name: data.name,
+      slug: data.slug,
+      cover_url: data.cover_url ?? null,
+      description: data.description ?? null,
+      open_for_submissions: !!data.open_for_submissions,
+    }
+    setAlbums((prev) => {
+      if (prev.some((album) => album.id === created.id)) return prev
+      return [...prev, created].sort((a, b) => a.name.localeCompare(b.name))
+    })
+    return created.id
+  }
+
+  async function createAlbum() {
+    const id = await insertAlbum({
+      name: newAlbumName,
+      description: newAlbumDescription,
+      openForSubmissions: newAlbumOpenSubs,
+    })
+    if (!id) return
+    toast.success('Album created')
+    setNewAlbumName('')
+    setNewAlbumDescription('')
+    void loadAlbums()
   }
 
   /**
@@ -288,7 +351,7 @@ export function AdminGalleryPage() {
       if (albumUploadFileRef.current) albumUploadFileRef.current.value = ''
       return
     }
-    await uploadMany(files, { albumId: targetId, caption: null })
+    await uploadMany(files, { albumId: targetId, caption: null, publish: uploadPublishNow })
     setAlbumUploadTargetId(null)
     if (albumUploadFileRef.current) albumUploadFileRef.current.value = ''
   }
@@ -333,7 +396,7 @@ export function AdminGalleryPage() {
   }
 
   type UploadImageResult =
-    | { ok: true; thumbUrl: string; webUrl: string; wasOptimized: boolean }
+    | { ok: true; thumbUrl: string | null; webUrl: string | null; wasOptimized: boolean }
     | { ok: false; reason: string }
 
   /**
@@ -342,15 +405,56 @@ export function AdminGalleryPage() {
    */
   async function uploadOneImage(
     file: File,
-    options: { albumId: string | null; caption: string | null }
+    options: { albumId: string | null; caption: string | null; publish: boolean }
   ): Promise<UploadImageResult> {
     try {
       const built = await buildGalleryWebAndThumb(file)
       const ext = built.mime === 'image/webp' ? 'webp' : 'jpg'
+      const ct = contentTypeForExt(ext)
+
+      if (!options.publish) {
+        if (!user) {
+          return { ok: false, reason: 'Sign in to hold images for review.' }
+        }
+        const fileId = crypto.randomUUID()
+        const webPath = gallerySubmissionWebPath({ kind: 'user', userId: user.id }, fileId, ext)
+        const thumbPath = gallerySubmissionThumbPath({ kind: 'user', userId: user.id }, fileId, ext)
+        const { error: upWeb } = await supabase.storage.from(GALLERY_SUBMISSIONS_BUCKET).upload(webPath, built.web, {
+          contentType: ct,
+          upsert: false,
+        })
+        if (upWeb) {
+          return { ok: false, reason: `${file.name} failed to upload. Please try again.` }
+        }
+        const { error: upTh } = await supabase.storage.from(GALLERY_SUBMISSIONS_BUCKET).upload(thumbPath, built.thumb, {
+          contentType: ct,
+          upsert: false,
+        })
+        if (upTh) {
+          return { ok: false, reason: `${file.name} failed to upload thumbnail. Please try again.` }
+        }
+        const { error: dbError } = await supabase.from('gallery_images').insert([
+          {
+            image_url: null,
+            thumbnail_url: null,
+            caption: options.caption,
+            album_id: options.albumId,
+            status: 'pending',
+            submission_storage_bucket: GALLERY_SUBMISSIONS_BUCKET,
+            submission_storage_path: webPath,
+            submission_thumb_path: thumbPath,
+            submitted_by_user_id: user.id,
+          },
+        ])
+        if (dbError) {
+          return { ok: false, reason: `${file.name} failed to save image record.` }
+        }
+        return { ok: true, thumbUrl: null, webUrl: null, wasOptimized: built.wasOptimized }
+      }
+
       const base = crypto.randomUUID()
       const webPath = `admin/${base}-web.${ext}`
       const thumbPath = `admin/${base}-thumb.${ext}`
-      const ct = contentTypeForExt(ext)
 
       const { error: upWeb } = await supabase.storage.from(GALLERY_PUBLIC_BUCKET).upload(webPath, built.web, {
         contentType: ct,
@@ -405,7 +509,7 @@ export function AdminGalleryPage() {
    */
   async function uploadMany(
     files: FileList | File[] | null,
-    target: { albumId: string | null; caption: string | null }
+    target: { albumId: string | null; caption: string | null; publish: boolean }
   ): Promise<void> {
     const list = files ? Array.from(files) : []
     if (list.length === 0) return
@@ -415,8 +519,9 @@ export function AdminGalleryPage() {
     let optimizedCount = 0
     const failures: { name: string; reason: string }[] = []
     const targetAlbum = target.albumId ? albums.find((a) => a.id === target.albumId) : null
-    const needsCover = !!targetAlbum && !targetAlbum.cover_url
+    const needsCover = !!target.albumId && target.publish && (!targetAlbum || !targetAlbum.cover_url)
     let coverSet = false
+    const noun = (count: number) => `image${count === 1 ? '' : 's'}`
 
     try {
       for (const file of list) {
@@ -424,7 +529,7 @@ export function AdminGalleryPage() {
         if (result.ok) {
           ok += 1
           if (result.wasOptimized) optimizedCount += 1
-          if (needsCover && target.albumId && !coverSet) {
+          if (needsCover && target.albumId && result.thumbUrl && !coverSet) {
             await setAlbumCover(target.albumId, result.thumbUrl, result.webUrl, { silent: true })
             coverSet = true
           }
@@ -441,18 +546,18 @@ export function AdminGalleryPage() {
         void loadAlbums()
       }
 
+      const doneLabel = target.publish
+        ? `Uploaded ${ok} ${noun(ok)}`
+        : `Submitted ${ok} ${noun(ok)} for review`
+
       if (ok > 0 && failed === 0) {
         if (optimizedCount > 0) {
-          toast.success(
-            `Uploaded ${ok} image${ok === 1 ? '' : 's'}. Some large photos were optimized before upload.`
-          )
+          toast.success(`${doneLabel}. Some large photos were optimized before upload.`)
         } else {
-          toast.success(`Uploaded ${ok} image${ok === 1 ? '' : 's'}`)
+          toast.success(doneLabel)
         }
       } else if (ok > 0 && failed > 0) {
-        toast.warning(
-          `${ok} image${ok === 1 ? '' : 's'} uploaded successfully. ${failed} could not be uploaded.`
-        )
+        toast.warning(`${doneLabel}. ${failed} could not be uploaded.`)
         if (optimizedCount > 0) {
           toast.message('Some large photos were optimized before upload.')
         }
@@ -460,7 +565,7 @@ export function AdminGalleryPage() {
           console.warn(`${failure.name}: ${failure.reason}`)
         }
       } else if (failed > 0) {
-        toast.error(`${failed} image${failed === 1 ? '' : 's'} could not be uploaded. See console for details.`)
+        toast.error(`${failed} ${noun(failed)} could not be uploaded. See console for details.`)
         for (const failure of failures) {
           console.warn(`${failure.name}: ${failure.reason}`)
         }
@@ -470,12 +575,46 @@ export function AdminGalleryPage() {
     }
   }
 
+  function beginDirectUpload() {
+    if (selectedAlbum === GALLERY_NEW_ALBUM_ID) {
+      const nameError = galleryAlbumNameError(uploadAlbumName)
+      if (nameError) {
+        toast.error(nameError)
+        return
+      }
+      const descriptionError = galleryAlbumDescriptionError(uploadAlbumDescription)
+      if (descriptionError) {
+        toast.error(descriptionError)
+        return
+      }
+    }
+    fileRef.current?.click()
+  }
+
   async function uploadImage(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files
     if (!files || files.length === 0) return
+    let albumId = albumIdForDb(selectedAlbum)
+    if (selectedAlbum === GALLERY_NEW_ALBUM_ID) {
+      const createdId = await insertAlbum({
+        name: uploadAlbumName,
+        description: uploadAlbumDescription,
+        openForSubmissions: true,
+      })
+      if (!createdId) {
+        if (fileRef.current) fileRef.current.value = ''
+        return
+      }
+      albumId = createdId
+      setSelectedAlbum(createdId)
+      setUploadAlbumName('')
+      setUploadAlbumDescription('')
+      toast.success('Album created')
+    }
     await uploadMany(files, {
-      albumId: albumIdForDb(selectedAlbum),
+      albumId,
       caption: caption || null,
+      publish: uploadPublishNow,
     })
     if (fileRef.current) fileRef.current.value = ''
   }
@@ -936,19 +1075,20 @@ export function AdminGalleryPage() {
         <TabsContent value="library" className="space-y-6 pt-4">
           <div className="rounded-xl border p-5 space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <h2 className="font-semibold">Direct upload (published)</h2>
+              <h2 className="font-semibold">Upload images</h2>
               <p className="text-xs text-muted-foreground">
-                Tip: pick multiple files at once — they upload in sequence.
+                Publish them now, or hold them so another admin can review. Multiple files upload in sequence.
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>Album (optional)</Label>
+                <Label>Album</Label>
                 <Select value={selectedAlbum} onValueChange={setSelectedAlbum}>
-                  <SelectTrigger>
+                  <SelectTrigger data-testid="gallery-upload-album">
                     <SelectValue placeholder="No album" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value={GALLERY_NEW_ALBUM_ID}>Create a new album</SelectItem>
                     <SelectItem value={NO_ALBUM}>No album</SelectItem>
                     {albums.map((a) => (
                       <SelectItem key={a.id} value={a.id}>
@@ -959,6 +1099,48 @@ export function AdminGalleryPage() {
                 </Select>
               </div>
               <div className="space-y-1.5">
+                <Label htmlFor="gallery-upload-publish-mode">After upload</Label>
+                <Select
+                  value={uploadPublishNow ? 'publish' : 'review'}
+                  onValueChange={(value) => setUploadPublishNow(value === 'publish')}
+                >
+                  <SelectTrigger id="gallery-upload-publish-mode" data-testid="gallery-upload-publish-mode">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="publish">Publish immediately</SelectItem>
+                    <SelectItem value="review">Hold for another admin to review</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {selectedAlbum === GALLERY_NEW_ALBUM_ID ? (
+                <>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="gallery-upload-album-name">New album name</Label>
+                    <Input
+                      id="gallery-upload-album-name"
+                      value={uploadAlbumName}
+                      onChange={(e) => setUploadAlbumName(e.target.value)}
+                      placeholder="e.g. Madaraka Day 2026"
+                      maxLength={80}
+                      data-testid="gallery-upload-album-name"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="gallery-upload-album-description">Description</Label>
+                    <Textarea
+                      id="gallery-upload-album-description"
+                      rows={2}
+                      value={uploadAlbumDescription}
+                      onChange={(e) => setUploadAlbumDescription(e.target.value)}
+                      placeholder="Optional"
+                      maxLength={500}
+                      data-testid="gallery-upload-album-description"
+                    />
+                  </div>
+                </>
+              ) : null}
+              <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="caption">Caption</Label>
                 <Input
                   id="caption"
@@ -969,9 +1151,9 @@ export function AdminGalleryPage() {
               </div>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
-              <Button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              <Button type="button" onClick={beginDirectUpload} disabled={uploading}>
                 <Upload className="h-4 w-4 mr-2" />
-                {uploading ? 'Uploading…' : 'Choose images & upload'}
+                {uploading ? 'Uploading…' : uploadPublishNow ? 'Choose images & publish' : 'Choose images & submit for review'}
               </Button>
               {albums.length === 0 ? (
                 <Button
@@ -1181,7 +1363,8 @@ export function AdminGalleryPage() {
                 value={newAlbumName}
                 onChange={(e) => setNewAlbumName(e.target.value)}
                 placeholder="New album name (e.g. Madaraka Day 2026)"
-                onKeyDown={(e) => e.key === 'Enter' && createAlbum()}
+                onKeyDown={(e) => e.key === 'Enter' && void createAlbum()}
+                maxLength={80}
                 data-testid="gallery-album-name-input"
               />
               <Button
@@ -1192,6 +1375,29 @@ export function AdminGalleryPage() {
               >
                 Add album
               </Button>
+            </div>
+            <Textarea
+              value={newAlbumDescription}
+              onChange={(e) => setNewAlbumDescription(e.target.value)}
+              placeholder="Optional description"
+              rows={2}
+              maxLength={500}
+              data-testid="gallery-album-description-input"
+            />
+            <div className="space-y-1.5">
+              <Label htmlFor="gallery-album-upload-publish-mode">When uploading into an album</Label>
+              <Select
+                value={uploadPublishNow ? 'publish' : 'review'}
+                onValueChange={(value) => setUploadPublishNow(value === 'publish')}
+              >
+                <SelectTrigger id="gallery-album-upload-publish-mode" data-testid="gallery-album-upload-publish-mode">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="publish">Publish immediately</SelectItem>
+                  <SelectItem value="review">Hold for another admin to review</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <label className="flex items-center gap-2 text-sm">
               <input
@@ -1273,7 +1479,11 @@ export function AdminGalleryPage() {
                           data-testid={`gallery-album-upload-${a.id}`}
                         >
                           <Upload className="h-3.5 w-3.5" />
-                          {uploading && albumUploadTargetId === a.id ? 'Uploading…' : 'Upload images'}
+                          {uploading && albumUploadTargetId === a.id
+                            ? 'Uploading…'
+                            : uploadPublishNow
+                              ? 'Upload & publish'
+                              : 'Upload for review'}
                         </Button>
                         <Button
                           type="button"
