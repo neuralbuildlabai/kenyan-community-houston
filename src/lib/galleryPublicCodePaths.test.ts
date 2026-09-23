@@ -36,6 +36,13 @@ describe('public gallery code paths — submitter PII guard', () => {
     expect(gallerySubmitPage).not.toMatch(/from\(\s*['"]gallery_albums['"]\s*\)/)
   })
 
+  it('signed-in members create albums through the member rpc, not the albums table', () => {
+    expect(gallerySubmitPage).toContain("rpc('kigh_create_member_gallery_album'")
+    expect(gallerySubmitPage).toContain("rpc('kigh_list_my_gallery_albums'")
+    expect(gallerySubmitPage).toContain('gallery-submit-new-album-name')
+    expect(gallerySubmitPage).toContain('gallery-submit-create-album-sign-in')
+  })
+
   it('GallerySubmitPage file input allows multiple images', () => {
     expect(gallerySubmitPage).toMatch(/multiple[\s\S]*gallery-submit-file-input|gallery-submit-file-input[\s\S]*multiple/)
   })
