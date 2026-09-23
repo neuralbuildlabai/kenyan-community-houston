@@ -25,10 +25,10 @@ create index if not exists gallery_albums_created_by_idx
   on public.gallery_albums (created_by)
   where created_by is not null;
 
--- Hide the creator id from API roles. RLS and security-definer
--- functions still see the column. Table-level SELECT already
--- exists for anon and authenticated (migration 043).
-revoke select (created_by) on public.gallery_albums from anon, authenticated;
+-- created_by is only written by the security-definer RPC (and
+-- admin inserts). Table-level SELECT grants already exist, so a
+-- column revoke would not hide it; row access stays on RLS.
+-- The public album view does not project this column.
 
 -- ─── 2. Create an album as the signed-in member ─────────────
 create or replace function public.kigh_create_member_gallery_album(

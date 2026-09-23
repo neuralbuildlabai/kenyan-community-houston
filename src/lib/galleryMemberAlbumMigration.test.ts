@@ -8,9 +8,9 @@ describe('migration 080 member gallery album create', () => {
     'utf8',
   )
 
-  it('records who created the album and hides that column from API roles', () => {
+  it('records who created the album without opening it for public submissions', () => {
     expect(sql).toContain('add column if not exists created_by uuid references auth.users (id) on delete set null')
-    expect(sql).toContain('revoke select (created_by) on public.gallery_albums from anon, authenticated')
+    expect(sql).toContain('gallery_albums_created_by_idx')
   })
 
   it('creates albums only for a signed-in user, closed to public submissions', () => {
