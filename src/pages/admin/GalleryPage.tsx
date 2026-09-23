@@ -1354,8 +1354,8 @@ export function AdminGalleryPage() {
             <div>
               <h2 className="font-semibold">Create an album</h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Albums group photos on the public gallery page and gate
-                what members can submit through the public form.
+                Albums group photos. Logged-out visitors see only each album’s cover.
+                Signed-in members see the full album. Use Cover on a published photo to choose that image.
               </p>
             </div>
             <div className="flex gap-2">

@@ -9,7 +9,7 @@ test.describe('gallery', () => {
     await expect(page.getByRole('heading', { name: 'Gallery' })).toBeVisible()
   })
 
-  test('logged-out visitor sees members-only prompt instead of photos', async ({ page }) => {
+  test('logged-out visitor sees album covers, not the full photo grid', async ({ page }) => {
     await page.goto('/gallery', { waitUntil: 'domcontentloaded' })
     await expect(page.getByTestId('gallery-members-only')).toBeVisible()
     await expect(page.getByTestId('gallery-public-grid')).toHaveCount(0)
@@ -17,6 +17,10 @@ test.describe('gallery', () => {
       'href',
       /\/login\?next=%2Fgallery/
     )
+    const covers = page.getByTestId('gallery-cover-card')
+    if ((await covers.count()) > 0) {
+      await expect(covers.first().locator('img')).toHaveCount(1)
+    }
   })
 
   test('Community Park Event 2025 album control appears when seeded', async ({ page }) => {

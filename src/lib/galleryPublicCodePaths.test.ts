@@ -52,10 +52,19 @@ describe('public gallery code paths — submitter PII guard', () => {
     expect(homePage).not.toMatch(/from\(\s*['"]gallery_images['"]\s*\)/)
   })
 
-  it('GalleryPage gates browsing behind sign-in (migration 076)', () => {
+  it('shows one public cover per album and keeps the full album behind sign-in', () => {
     expect(galleryPage).toContain('useAuth()')
     expect(galleryPage).toContain('data-testid="gallery-members-only"')
+    expect(galleryPage).toContain('data-testid="gallery-cover-grid"')
+    expect(galleryPage).toContain('data-testid="gallery-cover-card"')
     expect(galleryPage).toContain('loginNextFromLocation(location)')
+    expect(galleryPage).toContain('buildLoginNextUrl(')
+    const signedOutBranch = galleryPage.slice(
+      galleryPage.indexOf('if (!userId)'),
+      galleryPage.indexOf("from('gallery_images_public')"),
+    )
+    expect(signedOutBranch).toContain('setImages([])')
+    expect(signedOutBranch).not.toContain("from('gallery_images_public')")
   })
 
   it('GalleryPage does not select submitter PII columns', () => {

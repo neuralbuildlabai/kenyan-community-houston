@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Image as ImageIcon, Lock } from 'lucide-react'
 import { GallerySlideshowLightbox } from '@/components/gallery/GallerySlideshowLightbox'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { loginNextFromLocation } from '@/lib/loginNext'
+import { buildLoginNextUrl, loginNextFromLocation } from '@/lib/loginNext'
 import { SEOHead } from '@/components/SEOHead'
 import { PublicPageHero } from '@/components/public/PublicPageHero'
 import { PublicSection } from '@/components/public/PublicSection'
@@ -35,20 +35,33 @@ export function GalleryPage() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const { user, loading: authLoading } = useAuth()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
   const userId = user?.id ?? null
 
-  // Browsing is members-only (migration 076): anon RLS only exposes
-  // homepage-featured rows, so don't query until a user is signed in.
+  // Logged-out visitors see one cover per album (migration 082).
+  // The full photo list stays members-only (migration 076).
   useEffect(() => {
     if (authLoading) return
-    if (!userId) {
-      setImages([])
-      setAlbums([])
-      setLoading(false)
-      return
-    }
     setLoading(true)
     async function load() {
+      const { data: albRows, error: albErr } = await supabase
+        .from('gallery_albums_public')
+        .select('id, name, slug, description, cover_url, created_at')
+        .order('created_at', { ascending: false })
+
+      if (albErr) {
+        console.warn('[gallery] could not load albums:', albErr.message)
+      }
+
+      const albs = (albRows ?? []) as GalleryAlbum[]
+
+      if (!userId) {
+        setImages([])
+        setAlbums(albs.filter((a) => a.cover_url?.trim()))
+        setLoading(false)
+        return
+      }
+
       const { data: imgRows, error: imgErr } = await supabase
         .from('gallery_images_public')
         .select('id, album_id, image_url, thumbnail_url, caption, alt_text, created_at, status')
@@ -61,25 +74,22 @@ export function GalleryPage() {
 
       const imgs = (imgRows ?? []) as GalleryImageRow[]
       const withUrl = imgs.filter((i) => (i.thumbnail_url ?? i.image_url)?.trim())
-
-      const { data: albRows, error: albErr } = await supabase
-        .from('gallery_albums_public')
-        .select('id, name, slug, description, cover_url, created_at')
-        .order('created_at', { ascending: false })
-
-      if (albErr) {
-        console.warn('[gallery] could not load albums:', albErr.message)
-      }
-
       const albumIds = new Set(withUrl.map((i) => i.album_id).filter((id): id is string => !!id))
-      const albs = ((albRows ?? []) as GalleryAlbum[]).filter((a) => albumIds.has(a.id))
 
       setImages(withUrl)
-      setAlbums(albs)
+      setAlbums(albs.filter((a) => albumIds.has(a.id)))
       setLoading(false)
     }
     void load()
   }, [authLoading, userId])
+
+  useEffect(() => {
+    if (!userId) return
+    const slug = searchParams.get('album')
+    if (!slug) return
+    const match = albums.find((a) => a.slug === slug)
+    if (match) setSelectedAlbum(match.id)
+  }, [albums, searchParams, userId])
 
   const filtered = selectedAlbum ? images.filter((i) => i.album_id === selectedAlbum) : images
 
@@ -121,24 +131,76 @@ export function GalleryPage() {
         {authLoading || loading ? (
           <PageLoader />
         ) : !userId ? (
-          <div data-testid="gallery-members-only">
-            <EmptyState
-              icon={Lock}
-              title="Members only"
-              description="Sign in to browse community photos and event albums."
-              action={
-                <div className="flex flex-wrap justify-center gap-2">
-                  <Button asChild>
-                    <Link to={loginNextFromLocation(location)} data-testid="gallery-sign-in">
-                      Sign in to view gallery
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline">
-                    <Link to="/membership">Become a member</Link>
-                  </Button>
-                </div>
-              }
-            />
+          <div className="space-y-8" data-testid="gallery-members-only">
+            <div className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card p-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
+                  Album covers
+                </p>
+                <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                  Sign in to open an album
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  Each album shows one cover photo here. The rest of the album is for signed-in members.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild>
+                  <Link to={loginNextFromLocation(location)} data-testid="gallery-sign-in">
+                    Sign in to view gallery
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/membership">Become a member</Link>
+                </Button>
+              </div>
+            </div>
+            {albums.length === 0 ? (
+              <EmptyState
+                icon={ImageIcon}
+                title="No album covers yet"
+                description="Check back for community photos, or sign in once albums are published."
+              />
+            ) : (
+              <div
+                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                data-testid="gallery-cover-grid"
+              >
+                {albums.map((album) => (
+                  <article
+                    key={album.id}
+                    className="overflow-hidden rounded-2xl border border-border/60 bg-card"
+                    data-testid="gallery-cover-card"
+                  >
+                    <img
+                      src={album.cover_url ?? ''}
+                      alt={album.name}
+                      loading="lazy"
+                      decoding="async"
+                      className="aspect-[4/3] w-full object-cover"
+                    />
+                    <div className="space-y-3 p-4">
+                      <div>
+                        <h3 className="font-semibold tracking-tight text-foreground">{album.name}</h3>
+                        {album.description?.trim() ? (
+                          <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                            {album.description}
+                          </p>
+                        ) : null}
+                      </div>
+                      <Button asChild variant="outline" size="sm">
+                        <Link
+                          to={buildLoginNextUrl('/gallery', `?album=${encodeURIComponent(album.slug)}`)}
+                        >
+                          <Lock className="h-3.5 w-3.5" />
+                          Sign in to view album
+                        </Link>
+                      </Button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
         ) : images.length === 0 ? (
           <EmptyState
