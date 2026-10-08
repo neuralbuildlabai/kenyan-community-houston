@@ -205,6 +205,8 @@ export interface Database {
           category: string
           tags: string[]
           image_url: string | null
+          donation_url: string | null
+          funding_mode: string
           goal_amount: number | null
           raised_amount: number
           currency: string

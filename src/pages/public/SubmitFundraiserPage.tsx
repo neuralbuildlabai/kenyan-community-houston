@@ -4,14 +4,26 @@ import { ArrowLeft, CheckCircle, AlertTriangle, ShieldCheck, Eye } from 'lucide-
 import { SEOHead } from '@/components/SEOHead'
 import { PublicPageHero } from '@/components/public/PublicPageHero'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { KighSupportHandles } from '@/components/support/KighSupportHandles'
 import { supabase } from '@/lib/supabase'
 import { trackSubmissionCreated } from '@/lib/analytics'
 import { FUNDRAISER_CATEGORIES, FUNDRAISER_DISCLAIMER } from '@/lib/constants'
+import {
+  buildFundraiserFundingPayload,
+  validateFundraiserFunding,
+  INTERNAL_FUNDRAISER_HELPER_TEXT,
+  INTERNAL_FUNDRAISER_LABEL,
+  KIGH_ORGANIZED_LABEL,
+  KIGH_SUPPORT_UNAVAILABLE_MESSAGE,
+} from '@/lib/fundraiserFunding'
+import { hasActiveKighSupportOptions } from '@/lib/kighSupportOptions'
 import { generateSlug } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -28,13 +40,21 @@ export function SubmitFundraiserPage() {
     donation_url: '',
     deadline: '',
   })
+  const [isInternal, setIsInternal] = useState(false)
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const supportMethodsAvailable = hasActiveKighSupportOptions()
+  const fundingMode = isInternal ? 'internal' : 'external'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.title || !form.category || !form.beneficiary_name) {
       toast.error('Please fill in all required fields')
+      return
+    }
+    const fundingError = validateFundraiserFunding({ fundingMode, supportMethodsAvailable })
+    if (fundingError) {
+      toast.error(fundingError)
       return
     }
     setLoading(true)
@@ -50,7 +70,7 @@ export function SubmitFundraiserPage() {
         organizer_contact: form.organizer_contact || null,
         goal_amount: form.goal_amount ? parseFloat(form.goal_amount) : null,
         raised_amount: 0,
-        donation_url: form.donation_url || null,
+        ...buildFundraiserFundingPayload({ fundingMode, donationUrl: form.donation_url }),
         deadline: form.deadline || null,
         status: 'pending',
         verification_status: 'unverified',
@@ -214,16 +234,66 @@ export function SubmitFundraiserPage() {
                       onChange={(e) => setForm({ ...form, deadline: e.target.value })}
                     />
                   </div>
-                  <div className="sm:col-span-2 form-field-stack">
-                    <Label htmlFor="donation_url">Donation / GoFundMe Link</Label>
-                    <Input
-                      id="donation_url"
-                      type="url"
-                      value={form.donation_url}
-                      onChange={(e) => setForm({ ...form, donation_url: e.target.value })}
-                      placeholder="https://gofundme.com/…"
-                    />
+                  <div className="sm:col-span-2 space-y-4 rounded-xl border border-primary/15 bg-secondary/30 p-4">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id="internal_fundraiser"
+                        checked={isInternal}
+                        onCheckedChange={(v) => setIsInternal(v === true)}
+                        className="mt-0.5"
+                      />
+                      <div className="min-w-0 space-y-1">
+                        <Label
+                          htmlFor="internal_fundraiser"
+                          className="cursor-pointer text-sm font-semibold leading-snug"
+                        >
+                          {INTERNAL_FUNDRAISER_LABEL}
+                        </Label>
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                          {isInternal
+                            ? INTERNAL_FUNDRAISER_HELPER_TEXT
+                            : 'Check this if KIGH is organizing the fundraiser and collecting donations through its official handles.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {isInternal && (
+                      <div className="space-y-3 border-t border-border/45 pt-4">
+                        <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
+                          {KIGH_ORGANIZED_LABEL}
+                        </Badge>
+                        {supportMethodsAvailable ? (
+                          <>
+                            <KighSupportHandles variant="compact" />
+                            <p className="text-[11px] leading-relaxed text-muted-foreground">
+                              These are the official handles from{' '}
+                              <Link to="/support" className="link-editorial">
+                                Ways to Support
+                              </Link>
+                              . They stay in sync — nothing is copied into this fundraiser.
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-sm leading-relaxed text-destructive">
+                            {KIGH_SUPPORT_UNAVAILABLE_MESSAGE}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
+
+                  {!isInternal && (
+                    <div className="sm:col-span-2 form-field-stack">
+                      <Label htmlFor="donation_url">Donation / GoFundMe Link</Label>
+                      <Input
+                        id="donation_url"
+                        type="url"
+                        value={form.donation_url}
+                        onChange={(e) => setForm({ ...form, donation_url: e.target.value })}
+                        placeholder="https://gofundme.com/…"
+                      />
+                    </div>
+                  )}
                 </div>
               </fieldset>
 
@@ -257,7 +327,7 @@ export function SubmitFundraiserPage() {
                   type="submit"
                   size="lg"
                   className="w-full min-w-[12rem] sm:w-auto"
-                  disabled={loading}
+                  disabled={loading || (isInternal && !supportMethodsAvailable)}
                 >
                   {loading ? 'Submitting…' : 'Submit for Review'}
                 </Button>

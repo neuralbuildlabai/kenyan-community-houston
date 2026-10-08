@@ -83,6 +83,8 @@ export type FundraiserVerificationStatus =
   | 'verified'
   | 'flagged'
 
+export type FundraiserFundingMode = import('@/lib/fundraiserFunding').FundraiserFundingMode
+
 /** Row in `admin_user_profiles` (password policy / board metadata). */
 export interface AdminUserSecurity {
   user_id: string
@@ -547,6 +549,8 @@ export interface Fundraiser {
   tags: string[]
   image_url: string | null
   donation_url?: string | null
+  /** Migration 083. Absent on rows written before it — read via `normalizeFundraiserFundingMode`. */
+  funding_mode?: FundraiserFundingMode | null
   goal_amount: number | null
   raised_amount: number
   currency: string

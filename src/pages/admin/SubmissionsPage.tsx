@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle, XCircle, CalendarDays, ExternalLink } from 'lucide-react'
+import { CheckCircle, XCircle, CalendarDays, ExternalLink, HeartHandshake } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -10,6 +10,7 @@ import {
   type AnnouncementCalendarRow,
 } from '@/lib/announcementCalendarPublish'
 import { pendingQueuePublishPayload, pendingQueueRejectPayload } from '@/lib/publishLifecycle'
+import { isInternalFundraiser, KIGH_ORGANIZED_LABEL } from '@/lib/fundraiserFunding'
 import { formatCategoryLabel } from '@/lib/communityCategories'
 import { formatDateShort } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -31,6 +32,7 @@ interface PendingItem {
   flyer_url?: string | null
   image_url?: string | null
   calendar_flyer_url?: string | null
+  funding_mode?: string | null
 }
 
 function getTitle(item: PendingItem) {
@@ -120,7 +122,9 @@ export function AdminSubmissionsPage() {
         ? `id, ${col}, category, created_at, status, include_in_calendar, calendar_start_date, calendar_start_time, calendar_location, calendar_flyer_url, image_url`
         : type === 'events'
           ? `id, ${col}, category, created_at, status, flyer_url, image_url`
-          : `id, ${col}, category, created_at, status`
+          : type === 'fundraisers'
+            ? `id, ${col}, category, created_at, status, funding_mode`
+            : `id, ${col}, category, created_at, status`
     const { data, error } = await supabase.from(type).select(sel).eq('status', 'pending').order('created_at', { ascending: true })
     if (error) {
       toast.error(error.message)
@@ -252,6 +256,12 @@ export function AdminSubmissionsPage() {
                             )}
                             {type === 'announcements' && item.image_url?.trim() && (
                               <SubmissionFlyerPreview url={item.image_url.trim()} label="Announcement image" />
+                            )}
+                            {type === 'fundraisers' && isInternalFundraiser(item.funding_mode) && (
+                              <Badge variant="outline" className="text-[10px] gap-1">
+                                <HeartHandshake className="h-3 w-3" />
+                                {KIGH_ORGANIZED_LABEL}
+                              </Badge>
                             )}
                             {type === 'announcements' && item.include_in_calendar && (
                               <Badge variant="outline" className="text-[10px] gap-1 lg:hidden">

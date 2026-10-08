@@ -8,8 +8,15 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { PageLoader } from '@/components/LoadingSpinner'
+import { KighSupportHandles } from '@/components/support/KighSupportHandles'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { FUNDRAISER_DISCLAIMER } from '@/lib/constants'
+import {
+  isInternalFundraiser,
+  INTERNAL_FUNDRAISER_HELPER_TEXT,
+  KIGH_ORGANIZED_LABEL,
+} from '@/lib/fundraiserFunding'
+import { hasActiveKighSupportOptions } from '@/lib/kighSupportOptions'
 import { supabase } from '@/lib/supabase'
 import type { Fundraiser } from '@/lib/types'
 import { trackClick, trackEntityView } from '@/lib/analytics'
@@ -54,6 +61,10 @@ export function FundraiserDetailPage() {
   }
 
   const progress = item.goal_amount ? Math.min((item.raised_amount / item.goal_amount) * 100, 100) : null
+  // Internal fundraisers store no payment details — the handles are resolved
+  // from the shared support config on every render, so retiring one on
+  // "Ways to Support" removes it from these pages too.
+  const internal = isInternalFundraiser(item.funding_mode)
 
   return (
     <>
@@ -113,25 +124,46 @@ export function FundraiserDetailPage() {
                 </div>
               )}
 
-              {item.organizer_name && (
+              {(internal || item.organizer_name) && (
                 <div>
                   <div className="text-sm text-muted-foreground">Organized by</div>
-                  <div className="text-sm font-medium">{item.organizer_name}</div>
+                  <div className="text-sm font-medium">
+                    {internal ? 'Kenyans in Greater Houston (KIGH)' : item.organizer_name}
+                  </div>
                 </div>
               )}
             </div>
 
-            {safeExternalHref(item.donation_url) && (
-              <Button asChild className="w-full gap-2">
-                <a
-                  href={safeExternalHref(item.donation_url)!}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => void trackClick('fundraiser_donate', `/community-support/${item.slug}`, { fundraiser_id: item.id })}
-                >
-                  <ExternalLink className="h-4 w-4" /> Donate / Support
-                </a>
-              </Button>
+            {internal ? (
+              hasActiveKighSupportOptions() && (
+                <div className="rounded-xl border p-5 space-y-3">
+                  <div className="space-y-1.5">
+                    <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
+                      {KIGH_ORGANIZED_LABEL}
+                    </Badge>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {INTERNAL_FUNDRAISER_HELPER_TEXT}
+                    </p>
+                  </div>
+                  <KighSupportHandles variant="compact" />
+                  <Link to="/support" className="inline-block text-xs link-editorial">
+                    Verify these handles on Ways to Support
+                  </Link>
+                </div>
+              )
+            ) : (
+              safeExternalHref(item.donation_url) && (
+                <Button asChild className="w-full gap-2">
+                  <a
+                    href={safeExternalHref(item.donation_url)!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => void trackClick('fundraiser_donate', `/community-support/${item.slug}`, { fundraiser_id: item.id })}
+                  >
+                    <ExternalLink className="h-4 w-4" /> Donate / Support
+                  </a>
+                </Button>
+              )
             )}
           </aside>
         </div>

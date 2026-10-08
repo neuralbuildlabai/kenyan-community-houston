@@ -7,6 +7,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { supabase } from '@/lib/supabase'
 import { moderationStatusPatch } from '@/lib/publishLifecycle'
+import {
+  FUNDRAISER_FUNDING_MODES,
+  fundraiserFundingModeLabel,
+  fundraiserFundingModePatch,
+  normalizeFundraiserFundingMode,
+} from '@/lib/fundraiserFunding'
 import { formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -16,6 +22,7 @@ interface Fundraiser {
   category: string
   status: string
   verification_status: string
+  funding_mode: string | null
   goal_amount: number | null
   raised_amount: number
   beneficiary_name: string
@@ -34,7 +41,7 @@ export function AdminFundraisersPage() {
 
   async function load() {
     setLoading(true)
-    let q = supabase.from('fundraisers').select('id, title, category, status, verification_status, goal_amount, raised_amount, beneficiary_name, created_at').order('created_at', { ascending: false })
+    let q = supabase.from('fundraisers').select('id, title, category, status, verification_status, funding_mode, goal_amount, raised_amount, beneficiary_name, created_at').order('created_at', { ascending: false })
     if (statusFilter !== 'all') q = q.eq('status', statusFilter)
     const { data } = await q
     setItems(data ?? [])
@@ -59,6 +66,17 @@ export function AdminFundraisersPage() {
     const { error } = await supabase.from('fundraisers').update({ verification_status }).eq('id', id)
     if (error) toast.error('Update failed')
     else { toast.success('Verification updated'); load() }
+  }
+
+  /**
+   * Switching a row to internal clears the external link in the same patch —
+   * `fundraisers_internal_no_donation_url_chk` (migration 083) rejects a row
+   * that carries both.
+   */
+  async function updateFundingMode(id: string, mode: string) {
+    const { error } = await supabase.from('fundraisers').update(fundraiserFundingModePatch(mode)).eq('id', id)
+    if (error) toast.error(error.message || 'Update failed')
+    else { toast.success('Donation source updated'); load() }
   }
 
   async function deleteItem() {
@@ -96,6 +114,7 @@ export function AdminFundraisersPage() {
               <TableHead>Title</TableHead>
               <TableHead className="hidden md:table-cell">Beneficiary</TableHead>
               <TableHead className="hidden lg:table-cell">Goal</TableHead>
+              <TableHead className="hidden md:table-cell">Donations</TableHead>
               <TableHead>Verification</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -104,16 +123,29 @@ export function AdminFundraisersPage() {
           <TableBody>
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}><TableCell colSpan={6}><div className="h-8 bg-muted animate-pulse rounded" /></TableCell></TableRow>
+                <TableRow key={i}><TableCell colSpan={7}><div className="h-8 bg-muted animate-pulse rounded" /></TableCell></TableRow>
               ))
             ) : displayed.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-10 text-muted-foreground">No fundraisers found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">No fundraisers found</TableCell></TableRow>
             ) : displayed.map((item) => (
               <TableRow key={item.id}>
                 <TableCell className="font-medium max-w-[180px] truncate">{item.title}</TableCell>
                 <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{item.beneficiary_name}</TableCell>
                 <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
                   {item.goal_amount ? formatCurrency(item.goal_amount) : '—'}
+                </TableCell>
+                <TableCell className="hidden md:table-cell">
+                  <Select
+                    value={normalizeFundraiserFundingMode(item.funding_mode)}
+                    onValueChange={(v) => updateFundingMode(item.id, v)}
+                  >
+                    <SelectTrigger className="h-7 text-xs w-32"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {FUNDRAISER_FUNDING_MODES.map((m) => (
+                        <SelectItem key={m} value={m}>{fundraiserFundingModeLabel(m)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell>
                   <Select value={item.verification_status} onValueChange={(v) => updateVerification(item.id, v)}>
