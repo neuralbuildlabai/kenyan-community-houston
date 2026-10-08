@@ -32,6 +32,7 @@ import {
   Users2,
   Vote,
   Award,
+  Flower2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -75,6 +76,7 @@ function buildNavGroups(profileRole: string | null | undefined): NavGroup[] {
         { to: '/admin/fundraisers', label: 'Fundraisers', Icon: Heart },
         { to: '/admin/gallery', label: 'Gallery', Icon: Image },
         { to: '/admin/leadership', label: 'Leadership', Icon: Users2 },
+        { to: '/admin/memorials', label: 'Memorials', Icon: Flower2 },
         { to: '/admin/polls', label: 'Polls', Icon: Vote },
       ],
     },

@@ -1,9 +1,16 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Download, ExternalLink, FileText } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
 import { PublicSection } from '@/components/public/PublicSection'
 import { COLLINS_COLLO_NAMASWA, MEMORIAL_SITE_ORIGIN } from '@/lib/memorials'
+import {
+  ARCHIVED_MEMORIAL_NOTICE,
+  memorialStatusFor,
+  type MemorialStatusMap,
+} from '@/lib/memorialLifecycle'
+import { fetchMemorialStatuses } from '@/lib/memorialStatesApi'
 import { APP_NAME } from '@/lib/constants'
 
 const memorial = COLLINS_COLLO_NAMASWA
@@ -13,6 +20,25 @@ const PAGE_DESCRIPTION =
   'A respectful memorial page honoring the life and memory of Collins “Collo” Namaswa.'
 
 export function CollinsColloNamaswaMemorialPage() {
+  // Archiving is presentational only. This page always renders — printed QR
+  // codes point here permanently — and an archived service simply gains a
+  // quiet line of context for anyone scanning a flyer later.
+  const [statuses, setStatuses] = useState<MemorialStatusMap>({})
+
+  useEffect(() => {
+    let active = true
+    fetchMemorialStatuses()
+      .then(({ statuses: next }) => {
+        if (active) setStatuses(next)
+      })
+      .catch(() => undefined)
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const archived = memorialStatusFor(memorial.slug, statuses) === 'archived'
+
   return (
     <>
       <SEOHead
@@ -58,6 +84,11 @@ export function CollinsColloNamaswaMemorialPage() {
               </>
             ) : null}
           </p>
+          {archived ? (
+            <p className="mt-6 max-w-xl text-sm leading-relaxed text-muted-foreground">
+              {ARCHIVED_MEMORIAL_NOTICE}
+            </p>
+          ) : null}
         </div>
       </section>
 

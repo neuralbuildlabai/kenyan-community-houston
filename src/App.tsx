@@ -41,6 +41,7 @@ const AdminInvitesPage = lazy(() => import('@/pages/admin/AdminInvitesPage').the
 const AdminLeadershipPage = lazy(() => import('@/pages/admin/AdminLeadershipPage').then((m) => ({ default: m.AdminLeadershipPage })))
 const AdminMediaSubmissionsPage = lazy(() => import('@/pages/admin/AdminMediaSubmissionsPage').then((m) => ({ default: m.AdminMediaSubmissionsPage })))
 const AdminMembersPage = lazy(() => import('@/pages/admin/AdminMembersPage').then((m) => ({ default: m.AdminMembersPage })))
+const AdminMemorialsPage = lazy(() => import('@/pages/admin/AdminMemorialsPage').then((m) => ({ default: m.AdminMemorialsPage })))
 const AdminPollsPage = lazy(() => import('@/pages/admin/AdminPollsPage').then((m) => ({ default: m.AdminPollsPage })))
 const AdminResourcesPage = lazy(() => import('@/pages/admin/AdminResourcesPage').then((m) => ({ default: m.AdminResourcesPage })))
 const AdminServiceInterestsPage = lazy(() => import('@/pages/admin/AdminServiceInterestsPage').then((m) => ({ default: m.AdminServiceInterestsPage })))
@@ -249,6 +250,7 @@ export default function App() {
             <Route path="fundraisers" element={<AdminFundraisersPage />} />
             <Route path="gallery" element={<AdminGalleryPage />} />
             <Route path="leadership" element={<AdminLeadershipPage />} />
+            <Route path="memorials" element={<AdminMemorialsPage />} />
             <Route path="polls" element={<AdminPollsPage />} />
             <Route path="submissions" element={<AdminSubmissionsPage />} />
             <Route path="contacts" element={<AdminContactsPage />} />
