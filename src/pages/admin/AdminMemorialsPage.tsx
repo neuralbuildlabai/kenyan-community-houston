@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ExternalLink, QrCode } from 'lucide-react'
+import { Eye, ExternalLink, QrCode } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -15,6 +15,7 @@ import {
   type MemorialStateRow,
 } from '@/lib/memorialLifecycle'
 import { fetchMemorialStateRows, setMemorialStatus } from '@/lib/memorialStatesApi'
+import { grantMemorialPreview } from '@/lib/memorialPreview'
 import { formatDateShort } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -22,12 +23,14 @@ import { toast } from 'sonner'
  * Memorial content is defined in code (src/lib/memorials.ts) because the
  * funeral program, QR assets, and permanent URL are print-coupled. This page
  * manages the one thing admins need to change without a deploy: whether a
- * memorial is still promoted on /memorials, or archived after the service.
+ * memorial is published on /memorials, or archived after the service.
  *
- * Archiving never takes a page offline — the printed QR codes keep working.
+ * Archiving takes the page and its funeral program offline immediately. A
+ * scanned QR code then shows a short archive notice, and admins can still
+ * open the page here via Preview.
  */
 export function AdminMemorialsPage() {
-  const { user } = useAuth()
+  const { user, session } = useAuth()
   const [rows, setRows] = useState<MemorialStateRow[]>([])
   const [loading, setLoading] = useState(true)
   const [savingSlug, setSavingSlug] = useState<string | null>(null)
@@ -62,8 +65,8 @@ export function AdminMemorialsPage() {
       })
       toast.success(
         normalizeMemorialStatus(next) === 'archived'
-          ? 'Memorial archived — the page stays online'
-          : 'Memorial promoted on /memorials'
+          ? 'Memorial archived — the page is now offline'
+          : 'Memorial published on /memorials'
       )
       await load()
     } catch (err) {
@@ -72,14 +75,23 @@ export function AdminMemorialsPage() {
     setSavingSlug(null)
   }
 
+  /** Archived pages are blocked at the edge; this hands it the preview cookie. */
+  function openArchivedPreview(slug: string) {
+    if (!grantMemorialPreview(session?.access_token)) {
+      toast.error('Session expired — sign in again to preview')
+      return
+    }
+    window.open(memorialPath(slug), '_blank', 'noopener,noreferrer')
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Memorials</h1>
         <p className="text-muted-foreground text-sm">
           {MEMORIALS.length} {MEMORIALS.length === 1 ? 'memorial' : 'memorials'} · archive a
-          memorial after the service to take it off the promoted list. The page and its printed QR
-          codes keep working.
+          memorial after the service to take the page and its funeral program offline. Anyone
+          scanning a printed QR code then sees a short archive notice.
         </p>
       </div>
 
@@ -120,7 +132,7 @@ export function AdminMemorialsPage() {
                         <span className="line-clamp-2">{memorial.fullName}</span>
                         {status === 'archived' && (
                           <Badge variant="outline" className="text-[10px]">
-                            Page still online
+                            Offline to the public
                           </Badge>
                         )}
                       </div>
@@ -152,15 +164,26 @@ export function AdminMemorialsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-3">
-                        <a
-                          href={memorialPath(memorial.slug)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                        >
-                          <ExternalLink className="h-3 w-3 shrink-0" />
-                          Page
-                        </a>
+                        {status === 'archived' ? (
+                          <button
+                            type="button"
+                            onClick={() => openArchivedPreview(memorial.slug)}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 rounded-sm"
+                          >
+                            <Eye className="h-3 w-3 shrink-0" />
+                            Preview
+                          </button>
+                        ) : (
+                          <a
+                            href={memorialPath(memorial.slug)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                          >
+                            <ExternalLink className="h-3 w-3 shrink-0" />
+                            Page
+                          </a>
+                        )}
                         <a
                           href={memorial.qrPrintPngPath}
                           target="_blank"

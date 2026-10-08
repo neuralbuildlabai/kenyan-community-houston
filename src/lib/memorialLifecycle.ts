@@ -1,6 +1,6 @@
 /**
- * Memorial lifecycle — whether a memorial is still promoted on /memorials
- * or has been archived after the funeral service.
+ * Memorial lifecycle — whether a memorial is published on /memorials or has
+ * been archived after the funeral service.
  *
  * Content lives in the code registry (`memorials.ts`); only this lifecycle
  * state lives in the database (`memorial_states`, migration 084), so admins
@@ -9,11 +9,16 @@
  * Two rules everything here exists to protect:
  *
  *  - Fail open. An unknown, missing, or unreadable state resolves to
- *    'active'. A database hiccup must never quietly remove someone's
- *    memorial from the site.
- *  - Archiving is presentation only. It changes where a memorial appears
- *    on the index, never whether /memorials/<slug> resolves — printed QR
- *    codes point at those URLs permanently.
+ *    'active'. A database hiccup must never quietly take someone's
+ *    memorial offline.
+ *  - Archiving takes the memorial offline, gently. It disappears from the
+ *    index, and `/memorials/<slug>` plus every asset beneath it answers
+ *    with the notice below instead of the page (see `middleware.ts`).
+ *    Printed QR codes stay in circulation long after a service, so a
+ *    scan must land on an explanation rather than a raw 404.
+ *
+ * Elevated admins can still open an archived memorial — see
+ * `memorialPreview.ts`.
  */
 import type { MemorialEntry } from '@/lib/memorials'
 
@@ -30,10 +35,14 @@ export interface MemorialStateRow {
 
 export type MemorialStatusMap = Record<string, MemorialLifecycleStatus>
 
-export const ARCHIVED_MEMORIAL_NOTICE =
-  'The funeral service has taken place. This page remains online in remembrance.'
+export const ARCHIVED_MEMORIAL_HEADING = 'This memorial has been archived'
 
-export const ARCHIVED_MEMORIALS_HEADING = 'Earlier memorials'
+export const ARCHIVED_MEMORIAL_NOTICE =
+  'The funeral service has taken place and this page is no longer published. Our thoughts remain with the family.'
+
+/** Shown to an admin previewing a memorial the public can no longer reach. */
+export const ARCHIVED_MEMORIAL_ADMIN_BANNER =
+  'Archived — this page is offline to the public. You are viewing it as an admin.'
 
 export function normalizeMemorialStatus(value: unknown): MemorialLifecycleStatus {
   return value === 'archived' ? 'archived' : 'active'
@@ -44,7 +53,7 @@ export function isArchivedMemorial(value: unknown): boolean {
 }
 
 export function memorialStatusLabel(value: unknown): string {
-  return isArchivedMemorial(value) ? 'Archived' : 'Promoted'
+  return isArchivedMemorial(value) ? 'Archived' : 'Published'
 }
 
 export function memorialStatusMap(rows: readonly MemorialStateRow[] | null | undefined): MemorialStatusMap {
@@ -64,8 +73,9 @@ export function memorialStatusFor(
 }
 
 /**
- * Split the registry for the index page, preserving registry order within
- * each list. Memorials with no stored state stay in `promoted`.
+ * Split the registry, preserving registry order within each list. Memorials
+ * with no stored state stay in `promoted`. The public index renders only
+ * `promoted`; `archived` is for admin views, which still list everything.
  */
 export function partitionMemorials(
   entries: readonly MemorialEntry[],

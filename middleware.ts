@@ -1,5 +1,15 @@
 /**
- * Serves real link previews for individual listings.
+ * Two jobs, both of which have to happen before the app loads.
+ *
+ * 1. Real link previews for individual listings (the bulk of this file).
+ * 2. Taking archived memorials offline. An archived memorial must stop
+ *    serving its page *and* its funeral program, and those files are static
+ *    assets under /public that the app cannot gate. Only the edge sees both.
+ *
+ * Nothing here is imported from src/ on purpose: this file is bundled
+ * separately for the edge runtime and has no access to Vite's path aliases.
+ * The few strings duplicated from src/lib are pinned by
+ * memorialArchiveMiddleware.test.ts.
  *
  * WhatsApp, Facebook and X fetch a URL and read the HTML; none of them run
  * JavaScript. This is a Vite SPA, so every path returns the same index.html
@@ -22,6 +32,9 @@ export const config = {
     '/announcements/:slug',
     '/community-support/:slug',
     '/sports-youth/:slug',
+    // Memorial pages and everything beneath them (funeral program, QR files).
+    '/memorials/:slug',
+    '/memorials/:slug/:asset*',
   ],
 }
 
@@ -129,12 +142,161 @@ function renderPreview(opts: {
 </html>`
 }
 
+/* ---------------------------------------------------------------------- *
+ * Archived memorials
+ * ---------------------------------------------------------------------- */
+
+/** Keep in sync with MEMORIAL_PREVIEW_COOKIE in src/lib/memorialPreview.ts. */
+const MEMORIAL_PREVIEW_COOKIE = 'kigh_memorial_preview'
+
+/** Keep in sync with ARCHIVED_MEMORIAL_* in src/lib/memorialLifecycle.ts. */
+const ARCHIVED_MEMORIAL_HEADING = 'This memorial has been archived'
+const ARCHIVED_MEMORIAL_NOTICE =
+  'The funeral service has taken place and this page is no longer published. Our thoughts remain with the family.'
+
+const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
+
+function readCookie(request: Request, name: string): string | undefined {
+  const header = request.headers.get('cookie')
+  if (!header) return undefined
+  for (const part of header.split(';')) {
+    const eq = part.indexOf('=')
+    if (eq === -1) continue
+    if (part.slice(0, eq).trim() !== name) continue
+    return part.slice(eq + 1).trim()
+  }
+  return undefined
+}
+
+/**
+ * Fails open: a slow or broken lookup reports "not archived", because
+ * wrongly hiding a memorial is far worse than briefly serving one.
+ */
+async function memorialIsArchived(
+  slug: string,
+  supabaseUrl: string,
+  supabaseKey: string,
+): Promise<boolean> {
+  try {
+    const endpoint =
+      `${supabaseUrl.replace(/\/$/, '')}/rest/v1/memorial_states` +
+      `?slug=eq.${encodeURIComponent(slug)}&select=status&limit=1`
+    const response = await fetch(endpoint, {
+      headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+      signal: AbortSignal.timeout(2500),
+    })
+    if (!response.ok) return false
+    const rows = (await response.json()) as Array<{ status?: string | null }>
+    return rows[0]?.status === 'archived'
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Fails closed: only a token the database itself confirms as an elevated
+ * admin unlocks an archived memorial.
+ */
+async function isElevatedAdmin(
+  token: string,
+  supabaseUrl: string,
+  supabaseKey: string,
+): Promise<boolean> {
+  try {
+    const response = await fetch(
+      `${supabaseUrl.replace(/\/$/, '')}/rest/v1/rpc/kigh_is_elevated_admin`,
+      {
+        method: 'POST',
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${token}`,
+          'content-type': 'application/json',
+        },
+        body: '{}',
+        signal: AbortSignal.timeout(2500),
+      },
+    )
+    if (!response.ok) return false
+    return (await response.json()) === true
+  } catch {
+    return false
+  }
+}
+
+function renderArchivedMemorial(): string {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>${escapeHtml(ARCHIVED_MEMORIAL_HEADING)} — ${escapeHtml(SITE_NAME)}</title>
+<meta name="robots" content="noindex, nofollow" />
+<style>
+  :root { color-scheme: light }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center;
+         background: #fdfbf7; color: #2b2724; padding: 2rem 1.5rem;
+         font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif }
+  main { max-width: 32rem; text-align: center }
+  h1 { margin: 0 0 1rem; font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em;
+       font-family: "Cormorant Garamond", Georgia, serif }
+  p { margin: 0 0 1.75rem; font-size: 0.975rem; line-height: 1.7; color: #5d564f }
+  a { color: #8a6a1f; font-weight: 500; text-decoration: underline;
+      text-underline-offset: 5px }
+</style>
+</head>
+<body>
+<main>
+<h1>${escapeHtml(ARCHIVED_MEMORIAL_HEADING)}</h1>
+<p>${escapeHtml(ARCHIVED_MEMORIAL_NOTICE)}</p>
+<p><a href="${SITE_URL}/memorials">View all memorials</a></p>
+</main>
+</body>
+</html>`
+}
+
+/**
+ * Returns a notice for an archived memorial, or nothing at all — which lets
+ * the page, the funeral program, and the QR files through as usual.
+ */
+async function archivedMemorialGate(
+  request: Request,
+  slug: string,
+): Promise<Response | undefined> {
+  if (!SLUG_PATTERN.test(slug)) return
+
+  const supabaseUrl = process.env.VITE_SUPABASE_URL
+  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY
+  if (!supabaseUrl || !supabaseKey) return
+
+  if (!(await memorialIsArchived(slug, supabaseUrl, supabaseKey))) return
+
+  const token = readCookie(request, MEMORIAL_PREVIEW_COOKIE)
+  if (token && (await isElevatedAdmin(token, supabaseUrl, supabaseKey))) return
+
+  return new Response(renderArchivedMemorial(), {
+    // Gone, not Not Found: this page existed and was withdrawn on purpose.
+    status: 410,
+    headers: {
+      'content-type': 'text/html; charset=utf-8',
+      // An admin and a visitor must never share a cached answer, and the
+      // state can change the moment an admin restores the memorial.
+      'cache-control': 'no-store',
+      vary: 'cookie',
+      'x-robots-tag': 'noindex, nofollow',
+    },
+  })
+}
+
 export default async function middleware(request: Request) {
+  const url = new URL(request.url)
+  const [, section, slug] = url.pathname.split('/')
+
+  // Runs for every visitor, crawlers included — unlike the preview below.
+  if (section === 'memorials' && slug) return archivedMemorialGate(request, slug)
+
   const userAgent = request.headers.get('user-agent') || ''
   if (!CRAWLER_UA.test(userAgent)) return
 
-  const url = new URL(request.url)
-  const [, section, slug] = url.pathname.split('/')
   const route = ROUTES[section]
   if (!route || !slug) return
 

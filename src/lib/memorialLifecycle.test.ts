@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ARCHIVED_MEMORIAL_ADMIN_BANNER,
+  ARCHIVED_MEMORIAL_HEADING,
   ARCHIVED_MEMORIAL_NOTICE,
   MEMORIAL_LIFECYCLE_STATUSES,
   isArchivedMemorial,
@@ -36,8 +38,8 @@ describe('memorial lifecycle status', () => {
 
   it('labels the listing state for admins', () => {
     expect(memorialStatusLabel('archived')).toBe('Archived')
-    expect(memorialStatusLabel('active')).toBe('Promoted')
-    expect(memorialStatusLabel(null)).toBe('Promoted')
+    expect(memorialStatusLabel('active')).toBe('Published')
+    expect(memorialStatusLabel(null)).toBe('Published')
   })
 })
 
@@ -125,8 +127,15 @@ describe('memorialStatePatch', () => {
 })
 
 describe('archived memorial copy', () => {
-  it('explains the page is still online, without presuming on the family', () => {
-    expect(ARCHIVED_MEMORIAL_NOTICE).toContain('remains online in remembrance')
-    expect(ARCHIVED_MEMORIAL_NOTICE).not.toMatch(/closed|expired|removed|deleted/i)
+  it('explains the page is unpublished without sounding like an error', () => {
+    expect(ARCHIVED_MEMORIAL_HEADING).toBe('This memorial has been archived')
+    expect(ARCHIVED_MEMORIAL_NOTICE).toContain('no longer published')
+    expect(ARCHIVED_MEMORIAL_NOTICE).toMatch(/thoughts remain with the family/i)
+    // Someone scanning a funeral program must not meet cold system wording.
+    expect(ARCHIVED_MEMORIAL_NOTICE).not.toMatch(/not found|error|denied|forbidden|deleted/i)
+  })
+
+  it('tells a previewing admin the public cannot see the page', () => {
+    expect(ARCHIVED_MEMORIAL_ADMIN_BANNER).toMatch(/offline to the public/i)
   })
 })

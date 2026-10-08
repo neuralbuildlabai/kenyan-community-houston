@@ -1,75 +1,76 @@
 import { test, expect } from '@playwright/test'
 
 /**
- * Memorial pages are printed QR destinations, so the permanent URL must
- * resolve whatever the lifecycle state says. These tests cover both the
- * promoted list and the archived presentation by stubbing the
+ * Archiving a memorial takes it offline. In production the edge refuses the
+ * request outright (middleware.ts, covered by unit tests); these tests cover
+ * the other way in — navigating inside the app — by stubbing the
  * memorial_states lookup, since the real state is admin-controlled.
  */
 const INDEX_PATH = '/memorials'
 const COLLO_PATH = '/memorials/collins-collo-namaswa'
 const STATES_URL = /memorial_states/
 
+const MEMORIAL_HEADING = 'Forever in Our Hearts'
+const ARCHIVE_NOTICE = /no longer published/
+
+async function stubState(
+  page: import('@playwright/test').Page,
+  rows: Array<{ slug: string; status: string }>
+) {
+  await page.route(STATES_URL, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(rows),
+    })
+  )
+}
+
 test.describe('memorial lifecycle', () => {
-  test('index lists the memorial when nothing is archived', async ({ page }) => {
-    await page.route(STATES_URL, (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
-    )
+  test('index lists the memorial while it is published', async ({ page }) => {
+    await stubState(page, [])
     await page.goto(INDEX_PATH)
 
     await expect(page.getByRole('heading', { name: 'Memorials', exact: true })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Collins “Collo” Namaswa' })).toBeVisible()
-    await expect(page.getByText('Earlier memorials')).toHaveCount(0)
   })
 
-  test('archiving moves the memorial to the quiet list but keeps the link', async ({ page }) => {
-    await page.route(STATES_URL, (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([{ slug: 'collins-collo-namaswa', status: 'archived' }]),
-      })
-    )
+  test('index stops listing an archived memorial', async ({ page }) => {
+    await stubState(page, [{ slug: 'collins-collo-namaswa', status: 'archived' }])
     await page.goto(INDEX_PATH)
 
-    await expect(page.getByText('Earlier memorials')).toBeVisible()
-    const link = page.getByRole('link', { name: /Collins “Collo” Namaswa/ })
-    await expect(link).toBeVisible()
-    await expect(link).toHaveAttribute('href', COLLO_PATH)
+    await expect(page.getByText('There are no memorials published at this time.')).toBeVisible()
+    await expect(page.getByRole('link', { name: /Collins “Collo” Namaswa/ })).toHaveCount(0)
   })
 
-  test('the permanent URL resolves and keeps the program when archived', async ({ page }) => {
-    await page.route(STATES_URL, (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([{ slug: 'collins-collo-namaswa', status: 'archived' }]),
-      })
-    )
+  test('an archived memorial shows the notice instead of the page', async ({ page }) => {
+    await stubState(page, [{ slug: 'collins-collo-namaswa', status: 'archived' }])
     await page.goto(COLLO_PATH)
 
-    await expect(page.getByRole('heading', { name: 'Forever in Our Hearts' })).toBeVisible()
-    await expect(page.getByText('remains online in remembrance')).toBeVisible()
-    // The funeral program and QR assets stay available.
-    await expect(page.getByRole('link', { name: /program/i }).first()).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'This memorial has been archived' })
+    ).toBeVisible()
+    await expect(page.getByText(ARCHIVE_NOTICE)).toBeVisible()
+    await expect(page.getByRole('link', { name: /View all memorials/ })).toBeVisible()
+    // None of the memorial itself leaks into the notice.
+    await expect(page.getByRole('heading', { name: MEMORIAL_HEADING })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: /funeral program/i })).toHaveCount(0)
   })
 
-  test('shows no archive notice while the memorial is promoted', async ({ page }) => {
-    await page.route(STATES_URL, (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
-    )
+  test('a published memorial renders in full with no notice', async ({ page }) => {
+    await stubState(page, [])
     await page.goto(COLLO_PATH)
 
-    await expect(page.getByRole('heading', { name: 'Forever in Our Hearts' })).toBeVisible()
-    await expect(page.getByText('remains online in remembrance')).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: MEMORIAL_HEADING })).toBeVisible()
+    await expect(page.getByText(ARCHIVE_NOTICE)).toHaveCount(0)
   })
 
-  test('renders the memorial even when the state lookup fails', async ({ page }) => {
+  test('a failed state lookup keeps the memorial visible', async ({ page }) => {
     await page.route(STATES_URL, (route) => route.abort('failed'))
-    await page.goto(COLLO_PATH)
 
-    await expect(page.getByRole('heading', { name: 'Forever in Our Hearts' })).toBeVisible()
-    await expect(page.getByText('remains online in remembrance')).toHaveCount(0)
+    await page.goto(COLLO_PATH)
+    await expect(page.getByRole('heading', { name: MEMORIAL_HEADING })).toBeVisible()
+    await expect(page.getByText(ARCHIVE_NOTICE)).toHaveCount(0)
 
     await page.goto(INDEX_PATH)
     await expect(page.getByRole('heading', { name: 'Collins “Collo” Namaswa' })).toBeVisible()

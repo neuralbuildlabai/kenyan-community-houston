@@ -6,11 +6,14 @@ import { Button } from '@/components/ui/button'
 import { PublicSection } from '@/components/public/PublicSection'
 import { COLLINS_COLLO_NAMASWA, MEMORIAL_SITE_ORIGIN } from '@/lib/memorials'
 import {
+  ARCHIVED_MEMORIAL_ADMIN_BANNER,
+  ARCHIVED_MEMORIAL_HEADING,
   ARCHIVED_MEMORIAL_NOTICE,
   memorialStatusFor,
   type MemorialStatusMap,
 } from '@/lib/memorialLifecycle'
 import { fetchMemorialStatuses } from '@/lib/memorialStatesApi'
+import { useAuth } from '@/contexts/AuthContext'
 import { APP_NAME } from '@/lib/constants'
 
 const memorial = COLLINS_COLLO_NAMASWA
@@ -20,10 +23,12 @@ const PAGE_DESCRIPTION =
   'A respectful memorial page honoring the life and memory of Collins “Collo” Namaswa.'
 
 export function CollinsColloNamaswaMemorialPage() {
-  // Archiving is presentational only. This page always renders — printed QR
-  // codes point here permanently — and an archived service simply gains a
-  // quiet line of context for anyone scanning a flyer later.
+  // An archived memorial is already refused at the edge (middleware.ts), so
+  // a scanned QR code never reaches this component. This covers the other
+  // way in — navigating inside the app, where no request leaves the browser.
+  // The state defaults to active, so a failed lookup shows the memorial.
   const [statuses, setStatuses] = useState<MemorialStatusMap>({})
+  const { isAdmin } = useAuth()
 
   useEffect(() => {
     let active = true
@@ -39,6 +44,39 @@ export function CollinsColloNamaswaMemorialPage() {
 
   const archived = memorialStatusFor(memorial.slug, statuses) === 'archived'
 
+  if (archived && !isAdmin) {
+    return (
+      <>
+        <SEOHead
+          documentTitle={`${ARCHIVED_MEMORIAL_HEADING} — ${APP_NAME}`}
+          description={ARCHIVED_MEMORIAL_NOTICE}
+          canonicalUrl={memorial.permanentUrl}
+          noIndex
+        />
+        <section className="flex min-h-[60vh] items-center justify-center border-b border-border/50 bg-gradient-to-b from-secondary/40 via-background to-background">
+          <div className="public-container max-w-xl py-16 text-center">
+            <h1
+              className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
+              style={{ fontFamily: '"Cormorant Garamond", Georgia, serif' }}
+            >
+              {ARCHIVED_MEMORIAL_HEADING}
+            </h1>
+            <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
+              {ARCHIVED_MEMORIAL_NOTICE}
+            </p>
+            <Link
+              to="/memorials"
+              className="mt-8 inline-flex items-center gap-2 rounded-sm text-sm font-medium text-primary underline decoration-primary/25 underline-offset-[5px] hover:decoration-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden />
+              View all memorials
+            </Link>
+          </div>
+        </section>
+      </>
+    )
+  }
+
   return (
     <>
       <SEOHead
@@ -47,6 +85,7 @@ export function CollinsColloNamaswaMemorialPage() {
         canonicalUrl={memorial.permanentUrl}
         image={`${MEMORIAL_SITE_ORIGIN}/kigh-logo.jpg`}
         type="article"
+        noIndex={archived}
       />
 
       {/* Restrained, text-led memorial hero — no photo substitute */}
@@ -85,8 +124,11 @@ export function CollinsColloNamaswaMemorialPage() {
             ) : null}
           </p>
           {archived ? (
-            <p className="mt-6 max-w-xl text-sm leading-relaxed text-muted-foreground">
-              {ARCHIVED_MEMORIAL_NOTICE}
+            <p
+              role="status"
+              className="mt-6 max-w-xl rounded-lg border border-primary/20 bg-secondary/40 px-4 py-3 text-sm leading-relaxed text-muted-foreground"
+            >
+              {ARCHIVED_MEMORIAL_ADMIN_BANNER}
             </p>
           ) : null}
         </div>
