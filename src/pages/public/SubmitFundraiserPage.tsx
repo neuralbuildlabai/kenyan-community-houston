@@ -24,8 +24,11 @@ import {
   KIGH_SUPPORT_UNAVAILABLE_MESSAGE,
 } from '@/lib/fundraiserFunding'
 import { hasActiveKighSupportOptions } from '@/lib/kighSupportOptions'
-import { generateSlug } from '@/lib/utils'
+import { generateSlug, statusLabel } from '@/lib/utils'
 import { toast } from 'sonner'
+
+/** Pinned by the insert RLS policy and a CHECK constraint (migration 083). */
+const SUBMITTED_FUNDRAISER_STATUS = 'pending'
 
 export function SubmitFundraiserPage() {
   const [form, setForm] = useState({
@@ -42,7 +45,11 @@ export function SubmitFundraiserPage() {
   })
   const [isInternal, setIsInternal] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  // The status the row was actually saved with. The insert policy and a
+  // CHECK constraint both pin it to 'pending' (migration 083), so a
+  // submission that returns without an error is a pending submission —
+  // never a published one, whatever the confirmation screen might imply.
+  const [submittedStatus, setSubmittedStatus] = useState<string | null>(null)
   const supportMethodsAvailable = hasActiveKighSupportOptions()
   const fundingMode = isInternal ? 'internal' : 'external'
 
@@ -72,7 +79,7 @@ export function SubmitFundraiserPage() {
         raised_amount: 0,
         ...buildFundraiserFundingPayload({ fundingMode, donationUrl: form.donation_url }),
         deadline: form.deadline || null,
-        status: 'pending',
+        status: SUBMITTED_FUNDRAISER_STATUS,
         verification_status: 'unverified',
       },
     ])
@@ -80,18 +87,18 @@ export function SubmitFundraiserPage() {
     if (error) toast.error('Submission failed. Please try again.')
     else {
       void trackSubmissionCreated('fundraiser')
-      setSubmitted(true)
+      setSubmittedStatus(SUBMITTED_FUNDRAISER_STATUS)
     }
   }
 
-  if (submitted) {
+  if (submittedStatus) {
     return (
       <>
-        <SEOHead title="Fundraiser submitted" description="Your community support listing was submitted for review." />
+        <SEOHead title="Fundraiser submitted" description="Your community support listing was submitted for review." noIndex />
         <PublicPageHero
           eyebrow="Submission received"
-          title="Fundraiser Submitted!"
-          subtitle="We'll review your submission. Verification may take additional time — we may reach out for documentation."
+          title="Fundraiser submitted"
+          subtitle="Thanks — it is saved and waiting for a KIGH admin to review it."
           primaryAction={
             <Button asChild>
               <Link to="/community-support">Back to Community Support</Link>
@@ -99,8 +106,46 @@ export function SubmitFundraiserPage() {
           }
           tone="tint"
         />
-        <div className="public-container py-12 text-center">
-          <CheckCircle className="mx-auto h-14 w-14 text-primary/80" />
+        <div className="public-container py-12">
+          <div className="mx-auto max-w-xl rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="mt-0.5 h-6 w-6 shrink-0 text-primary/80" aria-hidden />
+              <div className="min-w-0 space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold text-foreground">Status</span>
+                  <Badge variant="outline" data-testid="fundraiser-submission-status">
+                    {statusLabel(submittedStatus)}
+                  </Badge>
+                </div>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Your fundraiser is <span className="font-medium text-foreground">not published yet</span>.
+                  It will not appear on Community Support and has no shareable link until an admin
+                  approves it.
+                </p>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">What happens next</p>
+                  <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-muted-foreground">
+                    <li>A KIGH admin reviews the details, and may contact you for documentation.</li>
+                    <li>
+                      Once approved, it is published on{' '}
+                      <Link to="/community-support" className="link-editorial">
+                        Community Support
+                      </Link>{' '}
+                      with its own permanent page you can share on WhatsApp.
+                    </li>
+                    <li>If anything needs changing first, we will reach out before publishing.</li>
+                  </ol>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Questions in the meantime?{' '}
+                  <Link to="/contact" className="link-editorial">
+                    Contact community leadership
+                  </Link>
+                  .
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </>
     )

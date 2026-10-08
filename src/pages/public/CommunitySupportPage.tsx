@@ -18,37 +18,32 @@ import { PageLoader } from '@/components/LoadingSpinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { supabase } from '@/lib/supabase'
 import {
   FUNDRAISER_CATEGORIES,
   FUNDRAISER_DISCLAIMER,
   PUBLIC_CONTACT_EMAIL,
 } from '@/lib/constants'
-import type { Fundraiser } from '@/lib/types'
+import { fetchPublishedFundraisers, type PublicFundraiser } from '@/lib/fundraisersPublic'
 
 export function CommunitySupportPage() {
-  const [items, setItems] = useState<Fundraiser[]>([])
+  const [items, setItems] = useState<PublicFundraiser[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
 
   useEffect(() => {
+    let cancelled = false
     async function load() {
       setLoading(true)
-      let query = supabase
-        .from('fundraisers')
-        .select('*')
-        .eq('status', 'published')
-        .order('published_at', { ascending: false })
-
-      if (category) query = query.eq('category', category)
-      if (search) query = query.ilike('title', `%${search}%`)
-
-      const { data } = await query
-      setItems((data as Fundraiser[]) ?? [])
+      const rows = await fetchPublishedFundraisers({ category, search })
+      if (cancelled) return
+      setItems(rows)
       setLoading(false)
     }
-    load()
+    void load()
+    return () => {
+      cancelled = true
+    }
   }, [search, category])
 
   const filterIsActive = category !== '' || search.trim().length > 0

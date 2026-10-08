@@ -15,11 +15,12 @@ const sharedComponent = read('src/components/support/KighSupportHandles.tsx')
 const supportPage = read('src/pages/public/SupportPage.tsx')
 const submitPage = read('src/pages/public/SubmitFundraiserPage.tsx')
 const detailPage = read('src/pages/public/FundraiserDetailPage.tsx')
+const donationOptions = read('src/components/fundraisers/FundraiserDonationOptions.tsx')
 
 describe('KIGH support handle code paths', () => {
   it('only the shared config declares the handles', () => {
     const handles = KIGH_SUPPORT_OPTIONS.flatMap((o) => [o.handle, o.href])
-    for (const page of [sharedComponent, supportPage, submitPage, detailPage]) {
+    for (const page of [sharedComponent, supportPage, submitPage, detailPage, donationOptions]) {
       for (const handle of handles) {
         expect(page).not.toContain(handle)
       }
@@ -56,9 +57,14 @@ describe('KIGH support handle code paths', () => {
   })
 
   it('internal fundraiser pages resolve handles instead of stored payment details', () => {
-    expect(detailPage).toContain("from '@/components/support/KighSupportHandles'")
-    expect(detailPage).toContain('isInternalFundraiser(item.funding_mode)')
-    expect(detailPage).toContain('KIGH_ORGANIZED_LABEL')
-    expect(detailPage).toContain('<KighSupportHandles variant="compact" />')
+    expect(donationOptions).toContain("from '@/components/support/KighSupportHandles'")
+    expect(donationOptions).toContain('isInternalFundraiser(fundraiser.funding_mode)')
+    expect(donationOptions).toContain('KIGH_ORGANIZED_LABEL')
+    expect(donationOptions).toContain('<KighSupportHandles variant="compact" />')
+  })
+
+  it('the public fundraiser page renders donation options exactly once', () => {
+    expect(detailPage).toContain('<FundraiserDonationOptions fundraiser={item} />')
+    expect(detailPage.match(/<FundraiserDonationOptions/g)).toHaveLength(1)
   })
 })

@@ -1,171 +1,205 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, AlertTriangle, ExternalLink } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, Eye } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { VerificationBadge } from '@/components/StatusBadge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { PageLoader } from '@/components/LoadingSpinner'
-import { KighSupportHandles } from '@/components/support/KighSupportHandles'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { FundraiserProgressPanel } from '@/components/fundraisers/FundraiserProgressPanel'
+import { FundraiserDonationOptions } from '@/components/fundraisers/FundraiserDonationOptions'
+import { FundraiserShareActions } from '@/components/fundraisers/FundraiserShareActions'
+import { FundraiserCollectionsTable } from '@/components/fundraisers/FundraiserCollectionsTable'
+import { formatDate, statusLabel } from '@/lib/utils'
 import { FUNDRAISER_DISCLAIMER } from '@/lib/constants'
+import { isInternalFundraiser } from '@/lib/fundraiserFunding'
+import { summarizeFundraiserCollections, type PublicCollectionRow } from '@/lib/fundraiserCollections'
+import { fundraiserPublicUrl } from '@/lib/fundraiserShare'
 import {
-  isInternalFundraiser,
-  INTERNAL_FUNDRAISER_HELPER_TEXT,
-  KIGH_ORGANIZED_LABEL,
-} from '@/lib/fundraiserFunding'
-import { hasActiveKighSupportOptions } from '@/lib/kighSupportOptions'
-import { supabase } from '@/lib/supabase'
-import type { Fundraiser } from '@/lib/types'
-import { trackClick, trackEntityView } from '@/lib/analytics'
-import { safeExternalHref } from '@/lib/externalUrl'
+  fetchFundraiserPreviewBySlug,
+  fetchPublicCollections,
+  fetchPublishedFundraiserBySlug,
+  type PublicFundraiser,
+} from '@/lib/fundraisersPublic'
+import { trackEntityView } from '@/lib/analytics'
+import { useAuth } from '@/contexts/AuthContext'
 
+const KIGH_ORGANIZER_NAME = 'Kenyans in Greater Houston (KIGH)'
+
+/**
+ * The permanent public page for one fundraiser — the thing a WhatsApp link
+ * lands on. Reachable by anyone: no account, no sign-in, nothing between
+ * arriving and donating.
+ *
+ * Only published fundraisers resolve. A draft, pending or rejected
+ * submission falls through to the not-found panel below, and the RLS policy
+ * on `fundraisers` refuses the row regardless of what this page asks for.
+ *
+ * Page order follows the reading order a donor needs: who and what, then
+ * how far along, then how to give, then how to pass it on, then the detail
+ * and the receipts. Donation options appear exactly once.
+ */
 export function FundraiserDetailPage() {
   const { slug } = useParams<{ slug: string }>()
-  const [item, setItem] = useState<Fundraiser | null>(null)
+  const { isAdmin, loading: authLoading } = useAuth()
+  const [item, setItem] = useState<PublicFundraiser | null>(null)
+  const [collections, setCollections] = useState<PublicCollectionRow[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (authLoading) return
+    let cancelled = false
     async function load() {
       setLoading(true)
       setItem(null)
-      const { data } = await supabase
-        .from('fundraisers')
-        .select('*')
-        .eq('slug', slug)
-        .eq('status', 'published')
-        .maybeSingle()
-      setItem(data as Fundraiser)
-      setLoading(false)
+      setCollections([])
+      // Admins get the unfiltered read so they can check a submission
+      // before approving it. For everyone else the second call does not
+      // exist, and RLS would refuse it anyway.
+      let fundraiser = slug ? await fetchPublishedFundraiserBySlug(slug) : null
+      if (!fundraiser && slug && isAdmin) {
+        fundraiser = await fetchFundraiserPreviewBySlug(slug)
+      }
+      if (cancelled) return
+      setItem(fundraiser)
+      if (fundraiser) {
+        const rows = await fetchPublicCollections(fundraiser.id)
+        if (!cancelled) setCollections(rows)
+      }
+      if (!cancelled) setLoading(false)
     }
-    load()
-  }, [slug])
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [slug, isAdmin, authLoading])
 
   useEffect(() => {
     if (!item?.id) return
     void trackEntityView('fundraisers', item.id, item.title, `/community-support/${item.slug}`)
   }, [item?.id, item?.slug, item?.title])
 
-  if (loading) return <PageLoader />
+  if (loading || authLoading) return <PageLoader />
 
   if (!item) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20 text-center">
         <SEOHead title="Fundraiser Not Found" noIndex />
         <h1 className="text-2xl font-bold mb-3">Fundraiser Not Found</h1>
-        <Button asChild><Link to="/community-support">Back to Community Support</Link></Button>
+        <Button asChild>
+          <Link to="/community-support">Back to Community Support</Link>
+        </Button>
       </div>
     )
   }
 
-  const progress = item.goal_amount ? Math.min((item.raised_amount / item.goal_amount) * 100, 100) : null
-  // Internal fundraisers store no payment details — the handles are resolved
-  // from the shared support config on every render, so retiring one on
-  // "Ways to Support" removes it from these pages too.
   const internal = isInternalFundraiser(item.funding_mode)
+  const organizer = internal ? KIGH_ORGANIZER_NAME : item.organizer_name
+  const summary = summarizeFundraiserCollections(collections, item.goal_amount)
+  const publicUrl = fundraiserPublicUrl(item.slug)
+  const published = item.status === 'published'
 
   return (
     <>
-      <SEOHead title={item.title} description={item.summary} image={item.image_url ?? undefined} type="article" />
+      <SEOHead
+        title={item.title}
+        description={item.summary ?? undefined}
+        image={item.image_url ?? undefined}
+        canonicalUrl={published ? publicUrl : undefined}
+        noIndex={!published}
+        type="article"
+      />
 
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-10">
+      <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
         <Button asChild variant="ghost" size="sm" className="mb-6 gap-1">
-          <Link to="/community-support"><ArrowLeft className="h-4 w-4" /> Community Support</Link>
+          <Link to="/community-support">
+            <ArrowLeft className="h-4 w-4" aria-hidden /> Community Support
+          </Link>
         </Button>
 
+        {!published ? (
+          <Alert className="mb-6 border-sky-200 bg-sky-50" data-testid="fundraiser-admin-preview">
+            <Eye className="h-4 w-4 text-sky-600" aria-hidden />
+            <AlertDescription className="text-sm text-sky-900">
+              Admin preview — this fundraiser is <strong>{statusLabel(item.status)}</strong> and the
+              public cannot reach this page. Approve it to publish and get a shareable link.
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
         <Alert className="mb-6 border-amber-200 bg-amber-50">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-800 text-sm">{FUNDRAISER_DISCLAIMER}</AlertDescription>
+          <AlertTriangle className="h-4 w-4 text-amber-600" aria-hidden />
+          <AlertDescription className="text-amber-800 text-sm">
+            {FUNDRAISER_DISCLAIMER}
+          </AlertDescription>
         </Alert>
 
         {item.image_url && (
-          <div className="mb-8 rounded-2xl overflow-hidden max-h-80 bg-muted">
-            <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
+          <div className="mb-8 max-h-80 overflow-hidden rounded-2xl bg-muted">
+            <img src={item.image_url} alt={item.title} className="h-full w-full object-cover" />
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">{item.category}</Badge>
-              <VerificationBadge status={item.verification_status} />
-            </div>
-            <h1 className="text-3xl font-bold mb-4">{item.title}</h1>
-            {item.summary && <p className="text-lg text-muted-foreground mb-4">{item.summary}</p>}
-            <div className="prose prose-sm max-w-none text-foreground/90 leading-relaxed whitespace-pre-wrap">
-              {item.body}
-            </div>
+        {/* 1 — title and organizer */}
+        <header>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">{item.category}</Badge>
+            <VerificationBadge status={item.verification_status} />
           </div>
+          <h1 className="text-3xl font-bold tracking-tight">{item.title}</h1>
+          {organizer ? (
+            <p data-testid="fundraiser-organizer" className="mt-2 text-sm text-muted-foreground">
+              Organized by {internal ? 'KIGH' : organizer}
+            </p>
+          ) : null}
+          {/* 2 — short summary */}
+          {item.summary ? (
+            <p className="mt-4 text-lg leading-relaxed text-muted-foreground">{item.summary}</p>
+          ) : null}
+        </header>
 
-          <aside className="space-y-4">
-            <div className="rounded-xl border p-5 bg-muted/30 space-y-4">
-              <div>
-                <div className="text-sm text-muted-foreground">For</div>
-                <div className="font-semibold">{item.beneficiary_name}</div>
-              </div>
+        <div className="mt-8 space-y-6">
+          {/* 3 — progress and goal status */}
+          <FundraiserProgressPanel summary={summary} />
 
-              {item.goal_amount && (
-                <div>
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="font-medium">{formatCurrency(item.raised_amount)} raised</span>
-                    <span className="text-muted-foreground">of {formatCurrency(item.goal_amount)}</span>
-                  </div>
-                  <Progress value={progress ?? 0} className="h-2.5" />
-                  <div className="text-xs text-muted-foreground mt-1">{Math.round(progress ?? 0)}% of goal</div>
-                </div>
-              )}
+          {/* 4 — donation options */}
+          <FundraiserDonationOptions fundraiser={item} />
 
-              {item.deadline && (
-                <div>
-                  <div className="text-sm text-muted-foreground">Deadline</div>
-                  <div className="text-sm font-medium">{formatDate(item.deadline, 'MMMM d, yyyy')}</div>
-                </div>
-              )}
+          {/* 5 — share. Withheld until publication: the link would 404 for
+              everyone the admin sent it to. */}
+          {published ? (
+            <FundraiserShareActions
+              title={item.title}
+              goalAmount={item.goal_amount}
+              publicUrl={publicUrl}
+            />
+          ) : null}
+        </div>
 
-              {(internal || item.organizer_name) && (
-                <div>
-                  <div className="text-sm text-muted-foreground">Organized by</div>
-                  <div className="text-sm font-medium">
-                    {internal ? 'Kenyans in Greater Houston (KIGH)' : item.organizer_name}
-                  </div>
-                </div>
-              )}
+        {/* 6 — full details */}
+        {item.body ? (
+          <div className="prose prose-sm mt-10 max-w-none whitespace-pre-wrap leading-relaxed text-foreground/90">
+            {item.body}
+          </div>
+        ) : null}
+
+        <dl className="mt-8 grid grid-cols-1 gap-4 border-t border-border/60 pt-6 text-sm sm:grid-cols-2">
+          <div>
+            <dt className="text-muted-foreground">For</dt>
+            <dd className="font-medium">{item.beneficiary_name}</dd>
+          </div>
+          {item.deadline ? (
+            <div>
+              <dt className="text-muted-foreground">Deadline</dt>
+              <dd className="font-medium">{formatDate(item.deadline, 'MMMM d, yyyy')}</dd>
             </div>
+          ) : null}
+        </dl>
 
-            {internal ? (
-              hasActiveKighSupportOptions() && (
-                <div className="rounded-xl border p-5 space-y-3">
-                  <div className="space-y-1.5">
-                    <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
-                      {KIGH_ORGANIZED_LABEL}
-                    </Badge>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {INTERNAL_FUNDRAISER_HELPER_TEXT}
-                    </p>
-                  </div>
-                  <KighSupportHandles variant="compact" />
-                  <Link to="/support" className="inline-block text-xs link-editorial">
-                    Verify these handles on Ways to Support
-                  </Link>
-                </div>
-              )
-            ) : (
-              safeExternalHref(item.donation_url) && (
-                <Button asChild className="w-full gap-2">
-                  <a
-                    href={safeExternalHref(item.donation_url)!}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => void trackClick('fundraiser_donate', `/community-support/${item.slug}`, { fundraiser_id: item.id })}
-                  >
-                    <ExternalLink className="h-4 w-4" /> Donate / Support
-                  </a>
-                </Button>
-              )
-            )}
-          </aside>
+        {/* 7 — collections and last updated */}
+        <div className="mt-10">
+          <FundraiserCollectionsTable summary={summary} />
         </div>
       </div>
     </>

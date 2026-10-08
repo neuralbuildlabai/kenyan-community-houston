@@ -209,6 +209,10 @@ export interface Database {
           funding_mode: string
           goal_amount: number | null
           raised_amount: number
+          donations_closed: boolean
+          is_homepage_featured: boolean
+          payment_reference: string | null
+          collections_updated_at: string | null
           currency: string
           beneficiary_name: string
           beneficiary_relationship: string | null
@@ -238,6 +242,36 @@ export interface Database {
           organizer_email: string
         }
         Update: Partial<Database['public']['Tables']['fundraisers']['Row']>
+      }
+      fundraiser_collections: {
+        Row: {
+          id: string
+          fundraiser_id: string
+          received_on: string
+          amount: number
+          description: string
+          entry_type: string
+          donor_name: string | null
+          show_donor_name: boolean
+          /** Generated: the donor name only when it is published. */
+          public_donor_name: string | null
+          private_note: string | null
+          created_by: string | null
+          updated_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          fundraiser_id: string
+          received_on: string
+          amount: number
+          description: string
+          entry_type?: string
+          donor_name?: string | null
+          show_donor_name?: boolean
+          private_note?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['fundraiser_collections']['Insert']>
       }
       sports_posts: {
         Row: {

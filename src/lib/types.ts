@@ -552,7 +552,14 @@ export interface Fundraiser {
   /** Migration 083. Absent on rows written before it — read via `normalizeFundraiserFundingMode`. */
   funding_mode?: FundraiserFundingMode | null
   goal_amount: number | null
+  /** Migration 085: mirror of the collection ledger sum, maintained by trigger. */
   raised_amount: number
+  /** Migration 085. Admin stopped accepting donations; unrelated to goal status. */
+  donations_closed?: boolean | null
+  is_homepage_featured?: boolean | null
+  /** Token donors put in their payment note; falls back to the title. */
+  payment_reference?: string | null
+  collections_updated_at?: string | null
   currency: string
   beneficiary_name: string
   beneficiary_relationship: string | null

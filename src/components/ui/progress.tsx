@@ -6,8 +6,12 @@ const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>
 >(({ className, value, ...props }, ref) => (
+  // `value` reaches the root as well as the indicator: without it Radix
+  // renders every bar as indeterminate, so assistive technology hears a
+  // progress bar with no progress in it.
   <ProgressPrimitive.Root
     ref={ref}
+    value={value}
     className={cn('relative h-4 w-full overflow-hidden rounded-full bg-secondary', className)}
     {...props}
   >

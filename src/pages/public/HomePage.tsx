@@ -11,6 +11,7 @@ import { buildHomepageAnnouncementsList } from '@/lib/announcementsPublic'
 import { trackClick } from '@/lib/analytics'
 import { FeaturedPoll } from '@/components/landing/FeaturedPoll'
 import { HomeAnnouncementCard } from '@/components/landing/HomeAnnouncementCard'
+import { HomeFeaturedFundraiser } from '@/components/landing/HomeFeaturedFundraiser'
 
 /** Optimized hero (see `public/kigh-media/houstonmainimage-hero.jpg`). */
 const HOME_HERO_IMAGE_JPEG = '/kigh-media/houstonmainimage-hero.jpg'
@@ -228,6 +229,10 @@ export function HomePage() {
 
       {/* Featured community poll — prominent CTA right after hero */}
       <FeaturedPoll />
+
+      {/* Featured fundraiser — renders nothing unless an admin pinned a
+          published one. */}
+      <HomeFeaturedFundraiser />
 
       {/* What's happening — elevated editorial panel that breathes below the hero */}
       <section
