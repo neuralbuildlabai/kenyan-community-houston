@@ -16,9 +16,21 @@ const SLUG = 'e2e-community-festival-fundraiser'
 const TITLE = 'Community festival fundraiser'
 const GOAL = 2000
 
-/** `PUBLIC_SITE_URL`'s fallback: what a share link must use, never the test host. */
-const PRODUCTION_ORIGIN = 'https://www.kenyansingreaterhouston.org'
-const PUBLIC_URL = `${PRODUCTION_ORIGIN}/community-support/${SLUG}`
+/**
+ * A share link must carry the configured public origin, never whatever host
+ * is serving the page. Which of the two production hosts that is depends on
+ * VITE_PUBLIC_SITE_URL per environment, so the host is matched rather than
+ * hardcoded; `fundraiserShare.test.ts` pins the exact composition.
+ */
+const PRODUCTION_ORIGIN = /^https:\/\/(www\.)?kenyansingreaterhouston\.org$/
+
+async function sharedUrl(page: Page) {
+  const url = (await page.getByTestId('fundraiser-share-url').innerText()).trim()
+  const { origin, pathname } = new URL(url)
+  expect(origin).toMatch(PRODUCTION_ORIGIN)
+  expect(pathname).toBe(`/community-support/${SLUG}`)
+  return url
+}
 
 const PRIVATE_NOTE = 'Deposited 2026-10-02, ref CA-5512'
 const HIDDEN_DONOR = 'Anonymous Giver Who Asked To Stay Private'
@@ -298,19 +310,19 @@ test.describe('sharing', () => {
 
   test('shares the permanent production URL with an encoded message', async ({ page }) => {
     await openFundraiser(page, [])
-
-    await expect(page.getByTestId('fundraiser-share-url')).toHaveText(PUBLIC_URL)
+    const publicUrl = await sharedUrl(page)
 
     const href = await page.getByTestId('fundraiser-share-whatsapp').getAttribute('href')
     expect(href).not.toBeNull()
     expect(href!.startsWith('https://wa.me/?text=')).toBe(true)
 
     const message = decodeURIComponent(href!.slice('https://wa.me/?text='.length))
-    expect(message).toBe(`Support ${TITLE}. Our goal is $2,000. Read more and donate: ${PUBLIC_URL}`)
+    expect(message).toBe(`Support ${TITLE}. Our goal is $2,000. Read more and donate: ${publicUrl}`)
 
-    // Nothing from the machine running the test leaks into the share link.
+    // Nothing from the machine or host serving the page leaks into the link.
     expect(href).not.toContain('127.0.0.1')
     expect(href).not.toContain('localhost')
+    expect(href).not.toContain('vercel.app')
     expect(href).not.toContain('/admin')
     // Spaces and the query separator must be escaped or WhatsApp truncates.
     expect(href).not.toMatch(/text=.*\s/)
@@ -318,13 +330,14 @@ test.describe('sharing', () => {
 
   test('confirms visibly when the link is copied', async ({ page }) => {
     await openFundraiser(page, [])
+    const publicUrl = await sharedUrl(page)
 
     const copyButton = page.getByTestId('fundraiser-copy-link')
     await expect(copyButton).toHaveText('Copy link')
     await copyButton.click()
 
     await expect(copyButton).toHaveText('Copied')
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(PUBLIC_URL)
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(publicUrl)
   })
 
   test('copies from the keyboard with a visible focus state', async ({ page }) => {
@@ -342,9 +355,10 @@ test.describe('sharing', () => {
 
   test('sets link-preview metadata pointing at the permanent URL', async ({ page }) => {
     await openFundraiser(page, [])
+    const publicUrl = await sharedUrl(page)
 
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', PUBLIC_URL)
-    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', PUBLIC_URL)
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', publicUrl)
+    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', publicUrl)
     await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
       'content',
       new RegExp(`^${TITLE}`)
