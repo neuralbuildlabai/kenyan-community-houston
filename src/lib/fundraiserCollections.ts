@@ -177,13 +177,11 @@ export interface CollectionDraft {
  * "Other" as free text — the stored description is still plain text.
  */
 export const COLLECTION_SOURCES = [
-  'Cash App',
   'Zelle',
   'PayPal',
   'Venmo',
+  'Cash App',
   'Cash',
-  'Check',
-  'Card',
 ] as const
 
 export function isPresetCollectionSource(description: string): boolean {
