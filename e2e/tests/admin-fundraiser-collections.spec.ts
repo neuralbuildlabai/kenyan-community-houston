@@ -33,6 +33,9 @@ async function openFirstLedger(page: Page) {
 async function fillDraft(page: Page, { amount, description }: { amount: string; description: string }) {
   await page.getByLabel('Date received').fill('2026-10-05')
   await page.getByLabel('Amount (USD)').fill(amount)
+  // Custom text goes through "Other"; the presets cover the usual apps.
+  await page.getByLabel('Source (public)').click()
+  await page.getByRole('option', { name: 'Other (type it in)' }).click()
   await page.getByLabel('Source / description (public)').fill(description)
 }
 
@@ -81,14 +84,14 @@ test.describe('admin collection ledger', () => {
     await expect(manager(page)).toBeVisible()
   })
 
-  test('keeps a donor anonymous unless the name is explicitly published', async ({ page }) => {
+  test('credits the donor by default and lets the admin opt them out', async ({ page }) => {
     await openFirstLedger(page)
     const showDonor = page.getByRole('checkbox', {
       name: /Show this donor's name on the public page/,
     })
-    await expect(showDonor).not.toBeChecked()
+    await expect(showDonor).toBeChecked()
     await expect(
-      manager(page).getByText('Donors stay anonymous unless you tick this.')
+      manager(page).getByText(/Untick for anyone who asked to stay anonymous/)
     ).toBeVisible()
     await expect(page.getByLabel('Private reconciliation note (never public)')).toBeVisible()
   })
@@ -146,6 +149,7 @@ test.describe('admin collection ledger round trip', () => {
     // ── Add ──
     await fillDraft(page, { amount: '125', description: DESCRIPTION })
     await page.getByLabel('Donor name (optional)').fill(DONOR)
+    await page.getByRole('checkbox', { name: /Show this donor's name/ }).uncheck()
     await page.getByLabel('Private reconciliation note (never public)').fill(PRIVATE_NOTE)
     await page.getByTestId('admin-collection-save').click()
 

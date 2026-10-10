@@ -18,11 +18,13 @@ import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { formatDateShort } from '@/lib/utils'
 import {
   COLLECTION_ENTRY_TYPES,
+  COLLECTION_SOURCES,
   collectionDraftFromRow,
   emptyCollectionDraft,
   entryTypeLabel,
   formatCents,
   formatPercent,
+  isPresetCollectionSource,
   previewCollectedCents,
   summarizeFundraiserCollections,
   toCents,
@@ -72,6 +74,8 @@ export function FundraiserCollectionsManager({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState<CollectionDraft>(() => emptyCollectionDraft())
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  /** "Other" picked from the source dropdown — show the free-text field. */
+  const [customSource, setCustomSource] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -88,6 +92,7 @@ export function FundraiserCollectionsManager({
     if (!open) return
     setEditingId(null)
     setDraft(emptyCollectionDraft())
+    setCustomSource(false)
     void load()
   }, [open, load])
 
@@ -100,11 +105,13 @@ export function FundraiserCollectionsManager({
   function startEdit(row: AdminCollectionRow) {
     setEditingId(row.id)
     setDraft(collectionDraftFromRow(row))
+    setCustomSource(!isPresetCollectionSource(row.description))
   }
 
   function cancelEdit() {
     setEditingId(null)
     setDraft(emptyCollectionDraft())
+    setCustomSource(false)
   }
 
   async function save() {
@@ -144,9 +151,13 @@ export function FundraiserCollectionsManager({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
+        {/* Closes only from the X or Escape. A stray click outside, or the
+            browser handing focus back after a tab switch, must not throw
+            away a half-entered record. */}
         <DialogContent
           className="max-h-[90vh] overflow-y-auto sm:max-w-3xl"
           data-testid="fundraiser-collections-manager"
+          onInteractOutside={(e) => e.preventDefault()}
         >
           <DialogHeader>
             <DialogTitle>Collections — {fundraiserTitle}</DialogTitle>
@@ -212,15 +223,45 @@ export function FundraiserCollectionsManager({
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="collection-description">Source / description (public)</Label>
-                <Input
-                  id="collection-description"
-                  value={draft.description}
-                  placeholder="Cash App collections"
-                  maxLength={160}
-                  onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-                />
+                <Label htmlFor="collection-source">Source (public)</Label>
+                <Select
+                  value={customSource ? 'other' : draft.description || undefined}
+                  onValueChange={(v) => {
+                    if (v === 'other') {
+                      setCustomSource(true)
+                      setDraft({ ...draft, description: '' })
+                    } else {
+                      setCustomSource(false)
+                      setDraft({ ...draft, description: v })
+                    }
+                  }}
+                >
+                  <SelectTrigger id="collection-source">
+                    <SelectValue placeholder="Choose where the money came from" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COLLECTION_SOURCES.map((source) => (
+                      <SelectItem key={source} value={source}>
+                        {source}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="other">Other (type it in)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+              {customSource ? (
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label htmlFor="collection-description">Source / description (public)</Label>
+                  <Input
+                    id="collection-description"
+                    value={draft.description}
+                    placeholder="Business contribution"
+                    maxLength={160}
+                    autoFocus
+                    onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                  />
+                </div>
+              ) : null}
               <div className="space-y-1.5">
                 <Label htmlFor="collection-entry-type">Record type</Label>
                 <Select
@@ -265,7 +306,8 @@ export function FundraiserCollectionsManager({
                   >
                     Show this donor&apos;s name on the public page.{' '}
                     <span className="text-muted-foreground">
-                      Donors stay anonymous unless you tick this.
+                      Untick for anyone who asked to stay anonymous. With no name entered, the
+                      record shows as anonymous.
                     </span>
                   </Label>
                 </div>

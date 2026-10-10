@@ -171,6 +171,25 @@ export interface CollectionDraft {
   private_note: string
 }
 
+/**
+ * The usual ways money reaches a fundraiser, offered as a dropdown so admins
+ * are not retyping "Cash App" for every record. Anything else goes through
+ * "Other" as free text — the stored description is still plain text.
+ */
+export const COLLECTION_SOURCES = [
+  'Cash App',
+  'Zelle',
+  'PayPal',
+  'Venmo',
+  'Cash',
+  'Check',
+  'Card',
+] as const
+
+export function isPresetCollectionSource(description: string): boolean {
+  return (COLLECTION_SOURCES as readonly string[]).includes(description.trim())
+}
+
 export function emptyCollectionDraft(today = new Date()): CollectionDraft {
   return {
     received_on: today.toISOString().slice(0, 10),
@@ -178,7 +197,10 @@ export function emptyCollectionDraft(today = new Date()): CollectionDraft {
     description: '',
     entry_type: 'individual',
     donor_name: '',
-    show_donor_name: false,
+    // Donors are credited by default; the admin unticks for anyone who
+    // asked to stay anonymous. With no name entered the record is anonymous
+    // regardless — see buildCollectionPayload.
+    show_donor_name: true,
     private_note: '',
   }
 }
@@ -217,9 +239,6 @@ export function validateCollectionDraft(draft: CollectionDraft): string | null {
   const donor = draft.donor_name.trim()
   if (donor && (donor.length < 2 || donor.length > 120)) {
     return 'A donor name must be between 2 and 120 characters.'
-  }
-  if (draft.show_donor_name && !donor) {
-    return 'Add a donor name, or keep this collection anonymous.'
   }
   if (draft.private_note.length > 500) {
     return 'The private note must be 500 characters or fewer.'

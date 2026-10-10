@@ -216,8 +216,10 @@ describe('validateCollectionDraft', () => {
     )
   })
 
-  it('will not publish a donor name that was never entered', () => {
-    expect(validateCollectionDraft({ ...valid, show_donor_name: true })).toMatch(/donor name/)
+  it('credits donors by default but lets a nameless record through as anonymous', () => {
+    expect(valid.show_donor_name).toBe(true)
+    expect(validateCollectionDraft({ ...valid, donor_name: '' })).toBeNull()
+    expect(buildCollectionPayload('f1', { ...valid, donor_name: '' }).show_donor_name).toBe(false)
     expect(
       validateCollectionDraft({ ...valid, show_donor_name: true, donor_name: 'Jane W.' })
     ).toBeNull()
