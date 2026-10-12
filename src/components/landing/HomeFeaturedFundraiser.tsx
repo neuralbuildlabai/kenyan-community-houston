@@ -49,9 +49,11 @@ export function HomeFeaturedFundraiser() {
   const percent = hasGoal ? (collectedCents / goalCents) * 100 : 0
   const goalReached = hasGoal && collectedCents >= goalCents
 
+  // Bottom padding absorbs the "What's happening" panel's negative top margin
+  // (-mt-12 / sm:-mt-14 / lg:-mt-16, z-20) so it can't cover the CTA.
   return (
     <section
-      className="px-4 pb-4 pt-10 sm:px-6 sm:pt-12 lg:px-8"
+      className="px-4 pb-16 pt-10 sm:px-6 sm:pb-[4.5rem] sm:pt-12 lg:px-8 lg:pb-20"
       aria-labelledby="home-featured-fundraiser-heading"
       data-testid="home-featured-fundraiser"
     >
