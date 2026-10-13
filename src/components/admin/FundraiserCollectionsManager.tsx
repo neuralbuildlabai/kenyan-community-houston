@@ -14,12 +14,23 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { formatDateShort } from '@/lib/utils'
 import {
   COLLECTION_ENTRY_TYPES,
   COLLECTION_SOURCES,
-  buildDonorListCsv,
+  DEFAULT_DONOR_LIST_COLUMNS,
+  DONOR_LIST_OPTIONAL_COLUMNS,
+  buildDonorListSheet,
   collectionDraftFromRow,
   donorListFilename,
   emptyCollectionDraft,
@@ -33,6 +44,7 @@ import {
   validateCollectionDraft,
   type AdminCollectionRow,
   type CollectionDraft,
+  type DonorListColumnKey,
 } from '@/lib/fundraiserCollections'
 import {
   createCollection,
@@ -40,7 +52,31 @@ import {
   fetchAdminCollections,
   updateCollection,
 } from '@/lib/fundraiserCollectionsApi'
+import { downloadLockedXlsx } from '@/lib/lockedXlsx'
 import { toast } from 'sonner'
+
+const DONOR_COLUMNS_STORAGE_KEY = 'kigh.donorList.columns'
+
+/** The admin's last column choice, remembered on this device only. */
+function loadDonorColumns(): DonorListColumnKey[] {
+  try {
+    const saved = JSON.parse(localStorage.getItem(DONOR_COLUMNS_STORAGE_KEY) ?? 'null')
+    if (Array.isArray(saved)) {
+      return DONOR_LIST_OPTIONAL_COLUMNS.map((c) => c.key).filter((k) => saved.includes(k))
+    }
+  } catch {
+    // Storage unavailable or corrupt — fall back to the defaults.
+  }
+  return [...DEFAULT_DONOR_LIST_COLUMNS]
+}
+
+function saveDonorColumns(columns: readonly DonorListColumnKey[]) {
+  try {
+    localStorage.setItem(DONOR_COLUMNS_STORAGE_KEY, JSON.stringify(columns))
+  } catch {
+    // Not worth interrupting a download over.
+  }
+}
 
 /**
  * Where admins tally confirmed money for one fundraiser.
@@ -78,6 +114,7 @@ export function FundraiserCollectionsManager({
   const [deleteId, setDeleteId] = useState<string | null>(null)
   /** "Other" picked from the source dropdown — show the free-text field. */
   const [customSource, setCustomSource] = useState(false)
+  const [donorColumns, setDonorColumns] = useState<DonorListColumnKey[]>(loadDonorColumns)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -136,14 +173,16 @@ export function FundraiserCollectionsManager({
     setSaving(false)
   }
 
+  function toggleDonorColumn(key: DonorListColumnKey, on: boolean) {
+    const next = DONOR_LIST_OPTIONAL_COLUMNS.map((c) => c.key).filter((k) =>
+      k === key ? on : donorColumns.includes(k)
+    )
+    setDonorColumns(next)
+    saveDonorColumns(next)
+  }
+
   function downloadDonors() {
-    const blob = new Blob([buildDonorListCsv(rows)], { type: 'text/csv;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = donorListFilename(fundraiserTitle)
-    a.click()
-    URL.revokeObjectURL(url)
+    downloadLockedXlsx(buildDonorListSheet(rows, donorColumns), donorListFilename(fundraiserTitle))
   }
 
   async function remove() {
@@ -197,18 +236,46 @@ export function FundraiserCollectionsManager({
               ) : (
                 <span className="text-muted-foreground">No goal set</span>
               )}
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="ml-auto h-7 gap-1.5 px-2.5 text-xs"
-                disabled={loading || rows.length === 0}
-                onClick={downloadDonors}
-                data-testid="admin-collections-download"
-              >
-                <Download className="h-3.5 w-3.5" aria-hidden />
-                Download donor list (CSV)
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="ml-auto h-7 gap-1.5 px-2.5 text-xs"
+                    disabled={loading || rows.length === 0}
+                    data-testid="admin-collections-download"
+                  >
+                    <Download className="h-3.5 w-3.5" aria-hidden />
+                    Download donor list (Excel)
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                    Always included: donor name, amount, running total. Add:
+                  </DropdownMenuLabel>
+                  {DONOR_LIST_OPTIONAL_COLUMNS.map((column) => (
+                    <DropdownMenuCheckboxItem
+                      key={column.key}
+                      checked={donorColumns.includes(column.key)}
+                      onCheckedChange={(on) => toggleDonorColumn(column.key, on === true)}
+                      // Keep the menu open while ticking several columns.
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      {column.header}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="gap-2 font-medium"
+                    onSelect={downloadDonors}
+                    data-testid="admin-collections-download-confirm"
+                  >
+                    <Download className="h-3.5 w-3.5" aria-hidden />
+                    Download locked Excel file
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             {draftChangesTotal ? (
               <p className="mt-1.5 text-xs text-primary" data-testid="admin-collections-preview">

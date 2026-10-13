@@ -29,8 +29,43 @@ export function formatDateShort(dateStr: string): string {
   return formatDate(dateStr, 'MMM d, yyyy')
 }
 
+/** KIGH runs on Houston time, whatever timezone the viewer's device is in. */
+export const HOUSTON_TIME_ZONE = 'America/Chicago'
+
+/**
+ * Today's date in Houston as `yyyy-MM-dd`. `toISOString()` gives the UTC
+ * date, which turns over at 6–7 pm Houston time and stamps the evening's
+ * records and exports with tomorrow's date.
+ */
+export function houstonToday(now = new Date()): string {
+  // en-CA formats as yyyy-MM-dd.
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: HOUSTON_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now)
+}
+
+/**
+ * A timestamp in Houston time, e.g. "Oct 12, 2026 8:15 PM CDT". Date-only
+ * strings have no time to convert, so they keep the plain date format.
+ */
 export function formatDateTime(dateStr: string): string {
-  return formatDate(dateStr, 'MMM d, yyyy h:mm a')
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return formatDateShort(dateStr)
+  const date = parseISO(dateStr)
+  if (Number.isNaN(date.getTime())) return dateStr
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: HOUSTON_TIME_ZONE,
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  })
+    .format(date)
+    .replace(/, (\d{1,2}:)/, ' $1')
 }
 
 export function timeAgo(dateStr: string): string {

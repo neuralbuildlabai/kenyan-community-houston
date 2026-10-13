@@ -61,7 +61,7 @@ import {
   type CertificateFormData,
   type CertificateSignatureMode,
 } from '@/lib/certificateTemplates'
-import { formatDateShort } from '@/lib/utils'
+import { formatDateShort, houstonToday } from '@/lib/utils'
 import type { CertificateRecord, CertificateSignature } from '@/lib/types'
 
 const CERTIFICATE_PRINT_ID = 'kigh-certificate-print-target'
@@ -88,7 +88,7 @@ function normalizeCertificateForm(form: CertificateFormData): CertificateFormDat
   return {
     ...form,
     designStyleId: getLegacyDesignStyleForTemplate(form.templateId),
-    issueDate: form.issueDate || new Date().toISOString().slice(0, 10),
+    issueDate: form.issueDate || houstonToday(),
   }
 }
 

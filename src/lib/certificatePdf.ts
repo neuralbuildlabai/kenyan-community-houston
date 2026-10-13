@@ -309,10 +309,17 @@ export async function downloadCertificatePdf(
     const canvas = await captureSheetToCanvas(clone)
     const imgData = canvas.toDataURL('image/png')
 
+    // Opens without a password and prints normally; editing, copying and
+    // annotating need an owner password nobody is given (fresh per file).
+    // Acrobat and Preview honour these permissions.
     const pdf = new jsPDF({
       orientation: 'landscape',
       unit: 'in',
       format: 'letter',
+      encryption: {
+        ownerPassword: crypto.randomUUID(),
+        userPermissions: ['print'],
+      },
     })
     pdf.addImage(imgData, 'PNG', 0, 0, 11, 8.5)
     pdf.save(certificatePdfFilename(recipientName, category))

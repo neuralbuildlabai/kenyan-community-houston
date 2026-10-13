@@ -19,6 +19,8 @@ import {
   PROFESSIONAL_FIELD_LABEL,
   PROFESSIONAL_FIELD_VALUES,
 } from '@/lib/memberDemographics'
+import { houstonToday } from '@/lib/utils'
+import { downloadLockedXlsx } from '@/lib/lockedXlsx'
 
 type MemberWithHousehold = Member & { household_members?: HouseholdMember[] }
 
@@ -107,7 +109,7 @@ export function AdminMembersPage() {
     }
   }
 
-  function exportCsv() {
+  function exportXlsx() {
     const cols = [
       'id',
       'first_name',
@@ -126,28 +128,21 @@ export function AdminMembersPage() {
       'submitted_at',
       'auth_email_confirmed_at',
     ]
-    const lines = [cols.join(',')]
-    for (const m of filtered) {
-      lines.push(
-        cols
-          .map((c) => {
+    downloadLockedXlsx(
+      {
+        name: 'Members',
+        columns: cols.map((c) => ({ header: c, width: c === 'id' ? 38 : c === 'interests' ? 40 : 20 })),
+        rows: filtered.map((m) =>
+          cols.map((c) => {
             const v = (m as unknown as Record<string, unknown>)[c]
             if (v == null) return ''
-            if (Array.isArray(v)) return `"${String(v.join('; ')).replace(/"/g, '""')}"`
-            const str = String(v)
-            if (str.includes(',') || str.includes('"')) return `"${str.replace(/"/g, '""')}"`
-            return str
+            if (Array.isArray(v)) return v.join('; ')
+            return String(v)
           })
-          .join(',')
-      )
-    }
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `kigh-members-${new Date().toISOString().slice(0, 10)}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
+        ),
+      },
+      `kigh-members-${houstonToday()}.xlsx`
+    )
     toast.success('Export started')
   }
 
@@ -158,8 +153,8 @@ export function AdminMembersPage() {
           <h1 className="text-2xl font-bold break-words">Membership registrations</h1>
           <p className="text-muted-foreground text-sm">Search, filter, and update member records.</p>
         </div>
-        <Button variant="outline" className="gap-2 shrink-0 w-full sm:w-auto" onClick={exportCsv}>
-          <Download className="h-4 w-4" /> Export CSV (filtered)
+        <Button variant="outline" className="gap-2 shrink-0 w-full sm:w-auto" onClick={exportXlsx}>
+          <Download className="h-4 w-4" /> Export Excel (filtered)
         </Button>
       </div>
 

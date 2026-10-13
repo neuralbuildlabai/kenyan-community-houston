@@ -44,6 +44,7 @@ import {
   type CertificateSignatureMode,
 } from '@/lib/certificateTemplates'
 import type { CertificateSignature } from '@/lib/types'
+import { houstonToday } from '@/lib/utils'
 
 const CERTIFICATE_DEV_PREVIEW_ID = 'kigh-certificate-dev-preview-target'
 const CERTIFICATE_DEV_EXPORT_ID = 'kigh-certificate-dev-export-target'
@@ -71,7 +72,7 @@ function normalizeCertificateForm(form: CertificateFormData): CertificateFormDat
   return {
     ...form,
     designStyleId: getLegacyDesignStyleForTemplate(form.templateId),
-    issueDate: form.issueDate || new Date().toISOString().slice(0, 10),
+    issueDate: form.issueDate || houstonToday(),
   }
 }
 

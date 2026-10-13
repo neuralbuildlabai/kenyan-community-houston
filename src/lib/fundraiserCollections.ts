@@ -15,6 +15,9 @@
  * its track is a rendering bug rather than information.
  */
 
+import { houstonToday } from '@/lib/utils'
+import type { LockedXlsxSheet, XlsxColumn } from '@/lib/lockedXlsx'
+
 export const COLLECTION_ENTRY_TYPES = ['individual', 'batch'] as const
 
 export type CollectionEntryType = (typeof COLLECTION_ENTRY_TYPES)[number]
@@ -190,7 +193,7 @@ export function isPresetCollectionSource(description: string): boolean {
 
 export function emptyCollectionDraft(today = new Date()): CollectionDraft {
   return {
-    received_on: today.toISOString().slice(0, 10),
+    received_on: houstonToday(today),
     amount: '',
     description: '',
     entry_type: 'individual',
@@ -300,71 +303,72 @@ export function publicDonorLabel(row: PublicCollectionRow): string | null {
 }
 
 /**
- * One CSV cell. Quoted when it holds a delimiter, quote or line break, and
- * prefixed with an apostrophe when it starts like a formula — donor names
- * and notes are typed by people, and a cell beginning with "=" or "+" is
- * executed by Excel rather than displayed.
+ * Columns an admin can add to the donor list. Name, amount and running total
+ * always come first and cannot be left out.
  */
-function csvCell(value: string | number | null | undefined): string {
-  if (value === null || value === undefined) return ''
-  if (typeof value === 'number') return String(value)
-  const text = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value
-  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
-}
+export const DONOR_LIST_OPTIONAL_COLUMNS = [
+  { key: 'received_on', header: 'Date received', width: 15, kind: 'date' },
+  { key: 'source', header: 'Source', width: 24 },
+  { key: 'entry_type', header: 'Record type', width: 12 },
+  { key: 'shown_publicly', header: 'Shown publicly', width: 15 },
+  { key: 'private_note', header: 'Private note', width: 40 },
+] as const satisfies readonly (XlsxColumn & { key: string })[]
 
-export const DONOR_LIST_COLUMNS = [
-  'Date received',
-  'Donor name',
-  'Name shown publicly',
-  'Source / description',
-  'Record type',
-  'Amount (USD)',
-  'Running total (USD)',
-  'Private note',
-] as const
+export type DonorListColumnKey = (typeof DONOR_LIST_OPTIONAL_COLUMNS)[number]['key']
+
+export const DEFAULT_DONOR_LIST_COLUMNS: readonly DonorListColumnKey[] = ['received_on', 'source']
 
 /**
- * The admin donor list as CSV, oldest first with the same running total the
- * ledger shows, and a closing total row. Amounts are plain numbers so a
- * spreadsheet can sum them. Opens directly in Excel, Numbers and Sheets; the
- * leading BOM is what makes Excel read names with accents as UTF-8.
+ * The admin donor list as a locked workbook: who gave and how much side by
+ * side, then the running total, then whichever details the admin picked.
+ * Oldest first with the same running total the ledger shows, and a bold
+ * total line at the bottom.
  *
- * Names are included whether or not they are shown publicly — the next
- * column says which. Records with no name at all export as "Anonymous".
- * Records saved before 2026-10-12 dropped hidden names, so those stay
- * anonymous here.
+ * Names are included whether or not they are shown publicly. Records with no
+ * name export as "Anonymous". Records saved before 2026-10-12 dropped hidden
+ * names, so those stay anonymous here.
  */
-export function buildDonorListCsv(rows: readonly AdminCollectionRow[]): string {
+export function buildDonorListSheet(
+  rows: readonly AdminCollectionRow[],
+  include: readonly DonorListColumnKey[] = DEFAULT_DONOR_LIST_COLUMNS
+): LockedXlsxSheet {
   const summary = summarizeFundraiserCollections(rows, null)
   const byId = new Map(rows.map((r) => [r.id, r]))
-  const lines = [DONOR_LIST_COLUMNS.map(csvCell).join(',')]
-  for (const row of summary.rows) {
-    const admin = byId.get(row.id)
-    const name = admin?.donor_name?.trim()
-    lines.push(
-      [
-        row.received_on,
+  const extras = DONOR_LIST_OPTIONAL_COLUMNS.filter((c) => include.includes(c.key))
+
+  return {
+    name: 'Donors',
+    columns: [
+      { header: 'Donor name', width: 28 },
+      { header: 'Amount', width: 14, kind: 'money' },
+      { header: 'Running total', width: 15, kind: 'money' },
+      ...extras.map(({ header, width, ...rest }) => ({ header, width, kind: 'kind' in rest ? rest.kind : undefined })),
+    ],
+    rows: summary.rows.map((row) => {
+      const admin = byId.get(row.id)
+      const name = admin?.donor_name?.trim()
+      const detail: Record<DonorListColumnKey, string> = {
+        received_on: row.received_on,
+        source: row.description,
+        entry_type: entryTypeLabel(row.entry_type),
+        shown_publicly: admin?.show_donor_name && name ? 'Yes' : 'No',
+        private_note: admin?.private_note ?? '',
+      }
+      return [
         name || 'Anonymous',
-        admin?.show_donor_name && name ? 'Yes' : 'No',
-        row.description,
-        entryTypeLabel(row.entry_type),
-        fromCents(row.amountCents).toFixed(2),
-        fromCents(row.runningTotalCents).toFixed(2),
-        admin?.private_note ?? '',
+        fromCents(row.amountCents),
+        fromCents(row.runningTotalCents),
+        ...extras.map((c) => detail[c.key]),
       ]
-        .map(csvCell)
-        .join(',')
-    )
+    }),
+    footer: [
+      `Total — ${summary.entryCount} ${summary.entryCount === 1 ? 'record' : 'records'}`,
+      fromCents(summary.collectedCents),
+    ],
   }
-  lines.push(
-    ['Total', '', '', `${summary.entryCount} records`, '', fromCents(summary.collectedCents).toFixed(2), '', '']
-      .map(csvCell)
-      .join(',')
-  )
-  return `\uFEFF${lines.join('\r\n')}\r\n`
 }
 
-/** `kigh-donors-<fundraiser-slug>-2026-10-12.csv` */
+/** `kigh-donors-<fundraiser-slug>-2026-10-12.xlsx` */
 export function donorListFilename(fundraiserTitle: string, today = new Date()): string {
   const slug =
     fundraiserTitle
@@ -372,5 +376,5 @@ export function donorListFilename(fundraiserTitle: string, today = new Date()): 
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
       .slice(0, 60) || 'fundraiser'
-  return `kigh-donors-${slug}-${today.toISOString().slice(0, 10)}.csv`
+  return `kigh-donors-${slug}-${houstonToday(today)}.xlsx`
 }

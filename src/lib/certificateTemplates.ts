@@ -1,3 +1,5 @@
+import { houstonToday } from '@/lib/utils'
+
 export type CertificateTemplateId =
   | 'volunteer-appreciation'
   | 'community-speaker'
@@ -266,7 +268,7 @@ export function createDefaultCertificateForm(): CertificateFormData {
     templateId: template.id,
     designStyleId: getLegacyDesignStyleForTemplate(template.id),
     recipientName: '',
-    issueDate: new Date().toISOString().slice(0, 10),
+    issueDate: houstonToday(),
     eventName: '',
     signatureMode: 'none',
     signatureId: null,

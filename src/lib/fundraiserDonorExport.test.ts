@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildDonorListCsv, donorListFilename, type AdminCollectionRow } from './fundraiserCollections'
+import { buildDonorListSheet, donorListFilename, type AdminCollectionRow } from './fundraiserCollections'
 
 function adminRow(id: string, received_on: string, amount: number | string, extra: Partial<AdminCollectionRow> = {}): AdminCollectionRow {
   return {
@@ -16,53 +16,57 @@ function adminRow(id: string, received_on: string, amount: number | string, extr
   }
 }
 
-function lines(csv: string): string[] {
-  return csv.replace(/^\uFEFF/, '').trimEnd().split('\r\n')
-}
-
-describe('buildDonorListCsv', () => {
-  it('lists records oldest first with a running total and a closing total row', () => {
-    const csv = buildDonorListCsv([
+describe('buildDonorListSheet', () => {
+  it('leads with name, amount and running total, oldest first, with a total line', () => {
+    const sheet = buildDonorListSheet([
       adminRow('b', '2026-10-05', '100.50', { donor_name: 'Wanjiru K', show_donor_name: true }),
       adminRow('a', '2026-10-01', 250),
-      adminRow('c', '2026-10-07', 40, { donor_name: 'Otieno M', show_donor_name: false }),
+      adminRow('c', '2026-10-07', 40, { donor_name: 'Otieno M', show_donor_name: false, private_note: 'ref 12' }),
+    ], ['received_on', 'source', 'entry_type', 'shown_publicly', 'private_note'])
+    expect(sheet.columns.slice(0, 3).map((c) => c.header)).toEqual(['Donor name', 'Amount', 'Running total'])
+    expect(sheet.rows).toEqual([
+      ['Anonymous', 250, 250, '2026-10-01', 'Zelle', 'Individual', 'No', ''],
+      ['Wanjiru K', 100.5, 350.5, '2026-10-05', 'Zelle', 'Individual', 'Yes', ''],
+      ['Otieno M', 40, 390.5, '2026-10-07', 'Zelle', 'Individual', 'No', 'ref 12'],
     ])
-    expect(csv.startsWith('\uFEFF')).toBe(true)
-    expect(lines(csv)).toEqual([
-      'Date received,Donor name,Name shown publicly,Source / description,Record type,Amount (USD),Running total (USD),Private note',
-      '2026-10-01,Anonymous,No,Zelle,Individual,250.00,250.00,',
-      '2026-10-05,Wanjiru K,Yes,Zelle,Individual,100.50,350.50,',
-      '2026-10-07,Otieno M,No,Zelle,Individual,40.00,390.50,',
-      'Total,,,3 records,,390.50,,',
-    ])
+    expect(sheet.footer?.slice(0, 2)).toEqual(['Total — 3 records', 390.5])
   })
 
-  it('quotes delimiters and neutralises formula-looking cells', () => {
-    const csv = buildDonorListCsv([
-      adminRow('a', '2026-10-01', 20, {
-        donor_name: '=HYPERLINK("x")',
-        show_donor_name: true,
-        description: 'Cash, at the mixer',
-        entry_type: 'batch',
-        private_note: 'Line one\nline two',
-      }),
-    ])
-    expect(csv).toContain(`"'=HYPERLINK(""x"")"`)
-    expect(csv).toContain('"Cash, at the mixer",Batch')
-    expect(csv).toContain('"Line one\nline two"')
+  it('totals to zero with no records', () => {
+    const sheet = buildDonorListSheet([])
+    expect(sheet.rows).toEqual([])
+    expect(sheet.footer?.slice(0, 2)).toEqual(['Total — 0 records', 0])
+  })
+})
+
+describe('buildDonorListSheet column choice', () => {
+  const rows = [adminRow('a', '2026-10-01', 250, { donor_name: 'Amani', show_donor_name: false, private_note: 'ref 9' })]
+
+  it('defaults to name, amount, total, date and source', () => {
+    const sheet = buildDonorListSheet(rows)
+    expect(sheet.columns.map((c) => c.header)).toEqual(['Donor name', 'Amount', 'Running total', 'Date received', 'Source'])
+    expect(sheet.rows[0]).toEqual(['Amani', 250, 250, '2026-10-01', 'Zelle'])
   })
 
-  it('still produces a header and zero total with no records', () => {
-    expect(lines(buildDonorListCsv([]))).toHaveLength(2)
-    expect(lines(buildDonorListCsv([]))[1]).toBe('Total,,,0 records,,0.00,,')
+  it('can be cut down to the three core columns', () => {
+    const sheet = buildDonorListSheet(rows, [])
+    expect(sheet.columns.map((c) => c.header)).toEqual(['Donor name', 'Amount', 'Running total'])
+    expect(sheet.rows[0]).toEqual(['Amani', 250, 250])
+  })
+
+  it('keeps picked columns in a fixed order whatever order they were ticked', () => {
+    const sheet = buildDonorListSheet(rows, ['private_note', 'received_on'])
+    expect(sheet.columns.map((c) => c.header).slice(3)).toEqual(['Date received', 'Private note'])
+    expect(sheet.columns[3].kind).toBe('date')
   })
 })
 
 describe('donorListFilename', () => {
-  it('slugs the fundraiser title and dates the file', () => {
+  it('slugs the fundraiser title and dates the file in Houston time', () => {
     expect(donorListFilename('Professionals Mixer — Oct 24!', new Date('2026-10-12T15:00:00Z'))).toBe(
-      'kigh-donors-professionals-mixer-oct-24-2026-10-12.csv'
+      'kigh-donors-professionals-mixer-oct-24-2026-10-12.xlsx'
     )
-    expect(donorListFilename('***', new Date('2026-10-12T15:00:00Z'))).toBe('kigh-donors-fundraiser-2026-10-12.csv')
+    // 8:15 pm Houston, already the 13th in UTC.
+    expect(donorListFilename('***', new Date('2026-10-13T01:15:00Z'))).toBe('kigh-donors-fundraiser-2026-10-12.xlsx')
   })
 })
