@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Download, Pencil, Plus, Trash2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -19,7 +19,9 @@ import { formatDateShort } from '@/lib/utils'
 import {
   COLLECTION_ENTRY_TYPES,
   COLLECTION_SOURCES,
+  buildDonorListCsv,
   collectionDraftFromRow,
+  donorListFilename,
   emptyCollectionDraft,
   entryTypeLabel,
   formatCents,
@@ -134,6 +136,16 @@ export function FundraiserCollectionsManager({
     setSaving(false)
   }
 
+  function downloadDonors() {
+    const blob = new Blob([buildDonorListCsv(rows)], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = donorListFilename(fundraiserTitle)
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   async function remove() {
     if (!deleteId) return
     try {
@@ -185,6 +197,18 @@ export function FundraiserCollectionsManager({
               ) : (
                 <span className="text-muted-foreground">No goal set</span>
               )}
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="ml-auto h-7 gap-1.5 px-2.5 text-xs"
+                disabled={loading || rows.length === 0}
+                onClick={downloadDonors}
+                data-testid="admin-collections-download"
+              >
+                <Download className="h-3.5 w-3.5" aria-hidden />
+                Download donor list (CSV)
+              </Button>
             </div>
             {draftChangesTotal ? (
               <p className="mt-1.5 text-xs text-primary" data-testid="admin-collections-preview">

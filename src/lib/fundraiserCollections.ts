@@ -296,3 +296,77 @@ export function publicDonorLabel(row: PublicCollectionRow): string | null {
   const name = row.public_donor_name?.trim()
   return name ? name : null
 }
+
+/**
+ * One CSV cell. Quoted when it holds a delimiter, quote or line break, and
+ * prefixed with an apostrophe when it starts like a formula — donor names
+ * and notes are typed by people, and a cell beginning with "=" or "+" is
+ * executed by Excel rather than displayed.
+ */
+function csvCell(value: string | number | null | undefined): string {
+  if (value === null || value === undefined) return ''
+  if (typeof value === 'number') return String(value)
+  const text = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+}
+
+export const DONOR_LIST_COLUMNS = [
+  'Date received',
+  'Donor name',
+  'Name shown publicly',
+  'Source / description',
+  'Record type',
+  'Amount (USD)',
+  'Running total (USD)',
+  'Private note',
+] as const
+
+/**
+ * The admin donor list as CSV, oldest first with the same running total the
+ * ledger shows, and a closing total row. Amounts are plain numbers so a
+ * spreadsheet can sum them. Opens directly in Excel, Numbers and Sheets; the
+ * leading BOM is what makes Excel read names with accents as UTF-8.
+ *
+ * Only names an admin chose to show are stored (see buildCollectionPayload),
+ * so everyone else exports as "Anonymous".
+ */
+export function buildDonorListCsv(rows: readonly AdminCollectionRow[]): string {
+  const summary = summarizeFundraiserCollections(rows, null)
+  const byId = new Map(rows.map((r) => [r.id, r]))
+  const lines = [DONOR_LIST_COLUMNS.map(csvCell).join(',')]
+  for (const row of summary.rows) {
+    const admin = byId.get(row.id)
+    const name = admin?.donor_name?.trim()
+    lines.push(
+      [
+        row.received_on,
+        name || 'Anonymous',
+        admin?.show_donor_name && name ? 'Yes' : 'No',
+        row.description,
+        entryTypeLabel(row.entry_type),
+        fromCents(row.amountCents).toFixed(2),
+        fromCents(row.runningTotalCents).toFixed(2),
+        admin?.private_note ?? '',
+      ]
+        .map(csvCell)
+        .join(',')
+    )
+  }
+  lines.push(
+    ['Total', '', '', `${summary.entryCount} records`, '', fromCents(summary.collectedCents).toFixed(2), '', '']
+      .map(csvCell)
+      .join(',')
+  )
+  return `\uFEFF${lines.join('\r\n')}\r\n`
+}
+
+/** `kigh-donors-<fundraiser-slug>-2026-10-12.csv` */
+export function donorListFilename(fundraiserTitle: string, today = new Date()): string {
+  const slug =
+    fundraiserTitle
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60) || 'fundraiser'
+  return `kigh-donors-${slug}-${today.toISOString().slice(0, 10)}.csv`
+}
