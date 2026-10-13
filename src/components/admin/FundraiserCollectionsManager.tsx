@@ -53,6 +53,7 @@ import {
   updateCollection,
 } from '@/lib/fundraiserCollectionsApi'
 import { downloadLockedXlsx } from '@/lib/lockedXlsx'
+import { downloadLockedPdf } from '@/lib/lockedPdf'
 import { toast } from 'sonner'
 
 const DONOR_COLUMNS_STORAGE_KEY = 'kigh.donorList.columns'
@@ -181,8 +182,20 @@ export function FundraiserCollectionsManager({
     saveDonorColumns(next)
   }
 
-  function downloadDonors() {
+  function downloadDonorsExcel() {
     downloadLockedXlsx(buildDonorListSheet(rows, donorColumns), donorListFilename(fundraiserTitle))
+  }
+
+  async function downloadDonorsPdf() {
+    try {
+      await downloadLockedPdf(
+        buildDonorListSheet(rows, donorColumns),
+        { title: fundraiserTitle, subtitle: 'Donor list · Kenyans in Greater Houston' },
+        donorListFilename(fundraiserTitle, new Date(), 'pdf')
+      )
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not create the PDF')
+    }
   }
 
   async function remove() {
@@ -247,7 +260,7 @@ export function FundraiserCollectionsManager({
                     data-testid="admin-collections-download"
                   >
                     <Download className="h-3.5 w-3.5" aria-hidden />
-                    Download donor list (Excel)
+                    Download donor list
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64">
@@ -268,12 +281,33 @@ export function FundraiserCollectionsManager({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="gap-2 font-medium"
-                    onSelect={downloadDonors}
+                    onSelect={() => void downloadDonorsPdf()}
+                    data-testid="admin-collections-download-pdf"
+                  >
+                    <Download className="h-3.5 w-3.5" aria-hidden />
+                    <span>
+                      PDF
+                      <span className="block text-xs font-normal text-muted-foreground">
+                        Opens on any phone — best for WhatsApp
+                      </span>
+                    </span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="gap-2 font-medium"
+                    onSelect={downloadDonorsExcel}
                     data-testid="admin-collections-download-confirm"
                   >
                     <Download className="h-3.5 w-3.5" aria-hidden />
-                    Download locked Excel file
+                    <span>
+                      Excel
+                      <span className="block text-xs font-normal text-muted-foreground">
+                        For working with the numbers
+                      </span>
+                    </span>
                   </DropdownMenuItem>
+                  <p className="px-2 pb-1.5 pt-1 text-[11px] text-muted-foreground">
+                    Both files are locked against editing.
+                  </p>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

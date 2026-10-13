@@ -368,13 +368,17 @@ export function buildDonorListSheet(
   }
 }
 
-/** `kigh-donors-<fundraiser-slug>-2026-10-12.xlsx` */
-export function donorListFilename(fundraiserTitle: string, today = new Date()): string {
+/** `kigh-donors-<fundraiser-slug>-2026-10-12.xlsx` (or `.pdf`) */
+export function donorListFilename(
+  fundraiserTitle: string,
+  today = new Date(),
+  extension: 'xlsx' | 'pdf' = 'xlsx'
+): string {
   const slug =
     fundraiserTitle
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
       .slice(0, 60) || 'fundraiser'
-  return `kigh-donors-${slug}-${houstonToday(today)}.xlsx`
+  return `kigh-donors-${slug}-${houstonToday(today)}.${extension}`
 }
