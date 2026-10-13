@@ -241,9 +241,9 @@ describe('buildCollectionPayload', () => {
     private_note: '  ',
   }
 
-  it('drops a donor name that is not being displayed', () => {
+  it('keeps a hidden donor name for the admin list without showing it', () => {
     const payload = buildCollectionPayload('f1', base)
-    expect(payload.donor_name).toBeNull()
+    expect(payload.donor_name).toBe('Jane W.')
     expect(payload.show_donor_name).toBe(false)
   })
 

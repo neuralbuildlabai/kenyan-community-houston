@@ -25,13 +25,15 @@ describe('buildDonorListCsv', () => {
     const csv = buildDonorListCsv([
       adminRow('b', '2026-10-05', '100.50', { donor_name: 'Wanjiru K', show_donor_name: true }),
       adminRow('a', '2026-10-01', 250),
+      adminRow('c', '2026-10-07', 40, { donor_name: 'Otieno M', show_donor_name: false }),
     ])
     expect(csv.startsWith('\uFEFF')).toBe(true)
     expect(lines(csv)).toEqual([
       'Date received,Donor name,Name shown publicly,Source / description,Record type,Amount (USD),Running total (USD),Private note',
       '2026-10-01,Anonymous,No,Zelle,Individual,250.00,250.00,',
       '2026-10-05,Wanjiru K,Yes,Zelle,Individual,100.50,350.50,',
-      'Total,,,2 records,,350.50,,',
+      '2026-10-07,Otieno M,No,Zelle,Individual,40.00,390.50,',
+      'Total,,,3 records,,390.50,,',
     ])
   })
 

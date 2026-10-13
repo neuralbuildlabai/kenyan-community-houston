@@ -158,8 +158,8 @@ test.describe('admin collection ledger round trip', () => {
     const afterAdd = await total(page).innerText()
     expect(afterAdd).not.toBe(startingTotal)
     await expect(manager(page).getByText(DESCRIPTION)).toBeVisible()
-    // Unticked donor name means the record reads as anonymous.
-    await expect(manager(page).getByText('· anonymous').first()).toBeVisible()
+    // Unticked: the name is kept for admins but marked anonymous publicly.
+    await expect(manager(page).getByText(`${DONOR} (anonymous on public page)`)).toBeVisible()
 
     const row = adminRows(page).filter({ hasText: DESCRIPTION })
     await expect(row).toContainText('$125')

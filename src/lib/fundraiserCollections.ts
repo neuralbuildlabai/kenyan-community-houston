@@ -245,8 +245,10 @@ export function validateCollectionDraft(draft: CollectionDraft): string | null {
 }
 
 /**
- * Row payload. `donor_name` is dropped unless it is being displayed, so a
- * name typed and then unticked is not quietly retained.
+ * Row payload. `donor_name` is kept whether or not it is displayed, so the
+ * admin donor list stays complete; only `show_donor_name` decides whether
+ * the generated `public_donor_name` column (the one anon can read) carries
+ * it. `donor_name` itself is never granted to a client role.
  */
 export function buildCollectionPayload(
   fundraiserId: string,
@@ -268,7 +270,7 @@ export function buildCollectionPayload(
     amount: fromCents(toCents(draft.amount)),
     description: draft.description.trim(),
     entry_type: normalizeEntryType(draft.entry_type),
-    donor_name: draft.show_donor_name && donor ? donor : null,
+    donor_name: donor || null,
     show_donor_name: draft.show_donor_name && donor.length > 0,
     private_note: draft.private_note.trim() || null,
   }
@@ -327,8 +329,10 @@ export const DONOR_LIST_COLUMNS = [
  * spreadsheet can sum them. Opens directly in Excel, Numbers and Sheets; the
  * leading BOM is what makes Excel read names with accents as UTF-8.
  *
- * Only names an admin chose to show are stored (see buildCollectionPayload),
- * so everyone else exports as "Anonymous".
+ * Names are included whether or not they are shown publicly — the next
+ * column says which. Records with no name at all export as "Anonymous".
+ * Records saved before 2026-10-12 dropped hidden names, so those stay
+ * anonymous here.
  */
 export function buildDonorListCsv(rows: readonly AdminCollectionRow[]): string {
   const summary = summarizeFundraiserCollections(rows, null)

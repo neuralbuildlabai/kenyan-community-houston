@@ -330,7 +330,8 @@ export function FundraiserCollectionsManager({
                   >
                     Show this donor&apos;s name on the public page.{' '}
                     <span className="text-muted-foreground">
-                      Untick for anyone who asked to stay anonymous. With no name entered, the
+                      Untick for anyone who asked to stay anonymous — their name stays in the
+                      admin donor list but never appears publicly. With no name entered, the
                       record shows as anonymous.
                     </span>
                   </Label>
@@ -407,8 +408,10 @@ export function FundraiserCollectionsManager({
                           <span className="font-medium">{row.description}</span>
                           <span className="block text-xs text-muted-foreground">
                             {entryTypeLabel(row.entry_type)}
-                            {admin?.show_donor_name && admin.donor_name
-                              ? ` · ${admin.donor_name} (shown publicly)`
+                            {admin?.donor_name
+                              ? ` · ${admin.donor_name} (${
+                                  admin.show_donor_name ? 'shown publicly' : 'anonymous on public page'
+                                })`
                               : ' · anonymous'}
                           </span>
                           {admin?.private_note ? (
