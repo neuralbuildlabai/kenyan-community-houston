@@ -34,6 +34,7 @@ import {
   vendorCategoryLabel,
 } from '@/lib/eventVendorSignup'
 import { OrganizationRegistrationPrompt } from '@/components/public/OrganizationRegistrationPrompt'
+import { SignupWhatsAppGroup } from '@/components/public/SignupWhatsAppGroup'
 import {
   eventApplicationGate,
   organizationRegisterHref,
@@ -86,6 +87,7 @@ type VendorSignupSuccess = {
   category: VendorCategory
   /** Short reference code (e.g. VND-A1B2C3) the vendor includes in their payment note. */
   referenceCode: string
+  phone: string
 }
 
 /**
@@ -231,6 +233,7 @@ export function EventVendorSignupPage() {
       feeCents: (row.fee_amount_cents as number) ?? liveFeeCents,
       category: (row.vendor_category as VendorCategory) ?? category,
       referenceCode: (row.reference_code as string) ?? '',
+      phone: phoneRes.value ?? '',
     })
   }
 
@@ -369,6 +372,7 @@ export function EventVendorSignupPage() {
 
           {success ? (
             <VendorSuccessPanel
+              eventId={event.id}
               eventSlug={event.slug}
               eventTitle={event.title}
               success={success}
@@ -509,6 +513,7 @@ export function EventVendorSignupPage() {
 }
 
 interface VendorSuccessPanelProps {
+  eventId: string
   eventSlug: string
   eventTitle: string
   success: VendorSignupSuccess
@@ -522,6 +527,7 @@ interface VendorSuccessPanelProps {
  * point; this panel is just instructions.
  */
 function VendorSuccessPanel({
+  eventId,
   eventSlug,
   eventTitle,
   success,
@@ -549,6 +555,8 @@ function VendorSuccessPanel({
           received.
         </p>
       </div>
+
+      {success.phone ? <SignupWhatsAppGroup eventId={eventId} phone={success.phone} /> : null}
 
       {success.referenceCode ? (
         <div className="rounded-lg border border-foreground/15 bg-background/80 p-3" data-testid="vendor-reference-code">

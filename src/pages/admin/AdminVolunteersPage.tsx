@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ExternalLink, Search } from 'lucide-react'
+import { ExternalLink, Eye, Search } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,6 +17,13 @@ import { toast } from 'sonner'
 import type { VolunteerSignupStatus } from '@/lib/types'
 import { VOLUNTEER_SIGNUP_STATUSES, volunteerSignupStatusLabel } from '@/lib/eventVolunteerSignup'
 import { formatDateShort } from '@/lib/utils'
+import { ContactDetailDialog, OutreachPanel, useOutreachDraft } from '@/components/admin/ContactOutreach'
+
+const DEFAULT_DRAFT = {
+  subject: 'KIGH volunteer update',
+  message:
+    'Hi {name}, thank you for volunteering with KIGH! Please join our volunteer WhatsApp group for updates: <paste group invite link>',
+}
 
 type SignupRow = {
   id: string
@@ -38,6 +45,8 @@ export function AdminVolunteersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [selected, setSelected] = useState<SignupRow | null>(null)
+  const [draft, setDraft] = useOutreachDraft('kigh.outreach.volunteers', DEFAULT_DRAFT)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -97,6 +106,11 @@ export function AdminVolunteersPage() {
     })
   }, [rows, eventFilter, statusFilter, search])
 
+  const contacts = useMemo(
+    () => filtered.map((r) => ({ name: r.full_name, phone: r.phone, email: r.email })),
+    [filtered]
+  )
+
   async function updateStatus(id: string, status: VolunteerSignupStatus) {
     setUpdatingId(id)
     const { error } = await supabase.from('event_volunteer_signups').update({ status }).eq('id', id)
@@ -150,6 +164,8 @@ export function AdminVolunteersPage() {
           </div>
         </div>
 
+        <OutreachPanel contacts={contacts} draft={draft} onDraftChange={setDraft} audienceLabel="volunteers" />
+
         <div className="rounded-xl border overflow-x-auto">
           <Table>
             <TableHeader>
@@ -159,10 +175,10 @@ export function AdminVolunteersPage() {
                 <TableHead>Phone</TableHead>
                 <TableHead className="hidden lg:table-cell">Email</TableHead>
                 <TableHead className="hidden md:table-cell">Role</TableHead>
-                <TableHead className="hidden xl:table-cell max-w-[180px]">Availability</TableHead>
+                <TableHead className="hidden lg:table-cell min-w-[200px]">Availability</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="whitespace-nowrap">Submitted</TableHead>
-                <TableHead className="text-right">Event link</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -192,8 +208,19 @@ export function AdminVolunteersPage() {
                       {r.email ?? '—'}
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-sm max-w-[140px] truncate">{r.volunteer_role ?? '—'}</TableCell>
-                    <TableCell className="hidden xl:table-cell text-sm text-muted-foreground max-w-[200px] truncate" title={r.availability_note ?? ''}>
-                      {r.availability_note ?? '—'}
+                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground max-w-[280px]">
+                      {r.availability_note ? (
+                        <button
+                          type="button"
+                          onClick={() => setSelected(r)}
+                          className="line-clamp-2 text-left hover:text-foreground"
+                          title="View full comment"
+                        >
+                          {r.availability_note}
+                        </button>
+                      ) : (
+                        '—'
+                      )}
                     </TableCell>
                     <TableCell>
                       <Select
@@ -213,15 +240,24 @@ export function AdminVolunteersPage() {
                       {formatDateShort(r.submitted_at.slice(0, 10))}
                     </TableCell>
                     <TableCell className="text-right">
-                      {r.events?.slug ? (
-                        <Button variant="ghost" size="icon" className="h-8 w-8" asChild title="Public event">
-                          <a href={`/events/${r.events.slug}`} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </a>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          title="View details & contact"
+                          onClick={() => setSelected(r)}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
                         </Button>
-                      ) : (
-                        '—'
-                      )}
+                        {r.events?.slug ? (
+                          <Button variant="ghost" size="icon" className="h-8 w-8" asChild title="Public event">
+                            <a href={`/events/${r.events.slug}`} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          </Button>
+                        ) : null}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -230,6 +266,27 @@ export function AdminVolunteersPage() {
           </Table>
         </div>
       </div>
+
+      <ContactDetailDialog
+        open={selected !== null}
+        onOpenChange={(o) => !o && setSelected(null)}
+        title={selected?.full_name ?? ''}
+        subtitle={selected?.events?.title}
+        contact={selected ? { name: selected.full_name, phone: selected.phone, email: selected.email } : null}
+        draft={draft}
+        fields={
+          selected
+            ? [
+                { label: 'Availability / comments', value: selected.availability_note },
+                { label: 'Role', value: selected.volunteer_role },
+                { label: 'Phone', value: selected.phone },
+                { label: 'Email', value: selected.email },
+                { label: 'Status', value: volunteerSignupStatusLabel(selected.status) },
+                { label: 'Submitted', value: formatDateShort(selected.submitted_at.slice(0, 10)) },
+              ]
+            : []
+        }
+      />
     </>
   )
 }

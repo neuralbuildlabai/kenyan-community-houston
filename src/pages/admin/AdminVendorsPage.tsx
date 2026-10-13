@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, ExternalLink, Search, XCircle } from 'lucide-react'
+import { CheckCircle2, ExternalLink, Eye, Search, XCircle } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,6 +35,13 @@ import {
   vendorSignupStatusLabel,
 } from '@/lib/eventVendorSignup'
 import { formatDateShort } from '@/lib/utils'
+import { ContactDetailDialog, OutreachPanel, useOutreachDraft } from '@/components/admin/ContactOutreach'
+
+const DEFAULT_DRAFT = {
+  subject: 'KIGH vendor update',
+  message:
+    'Hi {name}, thank you for signing up as a vendor with KIGH! Please join our vendor WhatsApp group for setup details and updates: <paste group invite link>',
+}
 
 /**
  * Admin → Vendors. Private list of every vendor signup across
@@ -79,6 +86,8 @@ export function AdminVendorsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [selected, setSelected] = useState<SignupRow | null>(null)
+  const [draft, setDraft] = useOutreachDraft('kigh.outreach.vendors', DEFAULT_DRAFT)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -168,6 +177,11 @@ export function AdminVendorsPage() {
       .reduce((sum, r) => sum + r.fee_amount_cents, 0)
     return { unpaidCents, paidCents }
   }, [filtered])
+
+  const contacts = useMemo(
+    () => filtered.map((r) => ({ name: r.contact_name, phone: r.phone, email: r.email })),
+    [filtered]
+  )
 
   async function updateStatus(id: string, status: VendorSignupStatus) {
     setUpdatingId(id)
@@ -378,6 +392,8 @@ export function AdminVendorsPage() {
           </div>
         </div>
 
+        <OutreachPanel contacts={contacts} draft={draft} onDraftChange={setDraft} audienceLabel="vendors" />
+
         <div className="overflow-x-auto rounded-xl border">
           <Table>
             <TableHeader>
@@ -432,12 +448,14 @@ export function AdminVendorsPage() {
                           {r.business_name}
                         </div>
                         {r.product_description ? (
-                          <div
-                            className="truncate text-xs text-muted-foreground"
-                            title={r.product_description}
+                          <button
+                            type="button"
+                            onClick={() => setSelected(r)}
+                            className="line-clamp-2 text-left text-xs text-muted-foreground hover:text-foreground"
+                            title="View full description"
                           >
                             {r.product_description}
-                          </div>
+                          </button>
                         ) : null}
                       </TableCell>
                       <TableCell className="hidden max-w-[150px] truncate md:table-cell">
@@ -512,6 +530,16 @@ export function AdminVendorsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            title="View details & contact"
+                            onClick={() => setSelected(r)}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
                           {!isCancelled &&
                           (r.payment_status !== 'paid' || r.status !== 'confirmed') ? (
                             <Button
@@ -568,6 +596,32 @@ export function AdminVendorsPage() {
           </Table>
         </div>
       </div>
+
+      <ContactDetailDialog
+        open={selected !== null}
+        onOpenChange={(o) => !o && setSelected(null)}
+        title={selected?.business_name ?? ''}
+        subtitle={selected ? `${selected.events?.title ?? 'Event'} · ${selected.reference_code}` : undefined}
+        contact={selected ? { name: selected.contact_name, phone: selected.phone, email: selected.email } : null}
+        draft={draft}
+        fields={
+          selected
+            ? [
+                { label: 'What they sell / comments', value: selected.product_description },
+                { label: 'Contact', value: selected.contact_name },
+                { label: 'Phone', value: selected.phone },
+                { label: 'Email', value: selected.email },
+                { label: 'Category', value: vendorCategoryLabel(selected.vendor_category) },
+                {
+                  label: 'Fee',
+                  value: `${formatVendorFee(selected.fee_amount_cents)} · ${vendorPaymentStatusLabel(selected.payment_status)}`,
+                },
+                { label: 'Status', value: vendorSignupStatusLabel(selected.status) },
+                { label: 'Submitted', value: formatDateShort(selected.submitted_at.slice(0, 10)) },
+              ]
+            : []
+        }
+      />
     </>
   )
 }

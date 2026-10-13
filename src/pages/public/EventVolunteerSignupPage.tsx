@@ -34,6 +34,7 @@ import {
   type ParticipationTypeId,
 } from '@/lib/eventParticipation'
 import { OrganizationRegistrationPrompt } from '@/components/public/OrganizationRegistrationPrompt'
+import { SignupWhatsAppGroup } from '@/components/public/SignupWhatsAppGroup'
 
 function rpcErrorToMessage(err: { message?: string } | null): string {
   const raw = (err?.message ?? '').trim()
@@ -101,6 +102,7 @@ export function EventVolunteerSignupPage() {
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
   const [membershipRequested, setMembershipRequested] = useState(false)
+  const [submittedPhone, setSubmittedPhone] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -229,6 +231,7 @@ export function EventVolunteerSignupPage() {
       return
     }
     setMembershipRequested(wantsMembership && membershipTermsAccepted)
+    setSubmittedPhone(phoneRes.value ?? '')
     setDone(true)
   }
 
@@ -351,6 +354,7 @@ export function EventVolunteerSignupPage() {
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 text-sm text-foreground space-y-2">
               <p className="font-semibold text-base">Thank you — you're signed up.</p>
               <p className="text-muted-foreground">A KIGH organizer will reach out with next steps.</p>
+              {submittedPhone ? <SignupWhatsAppGroup eventId={event.id} phone={submittedPhone} /> : null}
               {membershipRequested ? (
                 <>
                   <p className="text-muted-foreground">

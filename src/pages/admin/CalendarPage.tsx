@@ -125,7 +125,12 @@ const defaultForm = () => ({
   vendor_signup_closes_at: '' as string,
   vendor_food_fee_usd: '' as string,
   vendor_other_fee_usd: '' as string,
+  // Admin-only table (migration 087), shown on the signup thank-you screens.
+  whatsapp_group_url: '',
+  whatsapp_group_url_prev: '',
 })
+
+const WHATSAPP_INVITE_RE = /^https:\/\/(chat\.whatsapp\.com|(www\.)?whatsapp\.com\/channel)\/[A-Za-z0-9_-]+\/?$/
 
 function toDatetimeLocalValue(iso: string | null | undefined): string {
   if (!iso) return ''
@@ -289,7 +294,19 @@ export function AdminCalendarPage() {
         e.vendor_food_fee_cents != null ? (e.vendor_food_fee_cents / 100).toString() : '',
       vendor_other_fee_usd:
         e.vendor_other_fee_cents != null ? (e.vendor_other_fee_cents / 100).toString() : '',
+      whatsapp_group_url: '',
+      whatsapp_group_url_prev: '',
     })
+    void supabase
+      .from('event_whatsapp_groups')
+      .select('invite_url')
+      .eq('event_id', e.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        const url = (data?.invite_url as string | undefined) ?? ''
+        if (!url) return
+        setForm((f) => (f.id === e.id ? { ...f, whatsapp_group_url: url, whatsapp_group_url_prev: url } : f))
+      })
     setFlyerFileName(null)
     setFlyerError(null)
     setDialogOpen(true)
@@ -327,6 +344,11 @@ export function AdminCalendarPage() {
     )
     if (form.vendor_signup_enabled && (vendorFoodCents === null || vendorOtherCents === null)) {
       toast.error('Vendor fees must be numbers between $0 and $10,000.')
+      return
+    }
+    const whatsappUrl = form.whatsapp_group_url.trim()
+    if (whatsappUrl && !WHATSAPP_INVITE_RE.test(whatsappUrl)) {
+      toast.error('WhatsApp link must be a group invite (https://chat.whatsapp.com/…) or channel link.')
       return
     }
     setSaving(true)
@@ -406,6 +428,7 @@ export function AdminCalendarPage() {
 
     if (form.id) {
       const { error } = await supabase.from('events').update(row).eq('id', form.id)
+      if (!error) await saveWhatsAppGroup(form.id, whatsappUrl)
       setSaving(false)
       if (error) toast.error(error.message)
       else {
@@ -414,7 +437,8 @@ export function AdminCalendarPage() {
         load()
       }
     } else {
-      const { error } = await supabase.from('events').insert([row])
+      const { data: created, error } = await supabase.from('events').insert([row]).select('id').single()
+      if (!error && created?.id) await saveWhatsAppGroup(created.id as string, whatsappUrl)
       setSaving(false)
       if (error) toast.error(error.message)
       else {
@@ -423,6 +447,17 @@ export function AdminCalendarPage() {
         load()
       }
     }
+  }
+
+  /** Only writes when the link changed, so event saves never depend on this table. */
+  async function saveWhatsAppGroup(eventId: string, url: string) {
+    if (url === form.whatsapp_group_url_prev.trim()) return
+    const { error } = url
+      ? await supabase
+          .from('event_whatsapp_groups')
+          .upsert({ event_id: eventId, invite_url: url, updated_at: isoNow() })
+      : await supabase.from('event_whatsapp_groups').delete().eq('event_id', eventId)
+    if (error) toast.error(`Event saved, but the WhatsApp link was not: ${error.message}`)
   }
 
   async function archiveEvent(id: string) {
@@ -1025,6 +1060,26 @@ export function AdminCalendarPage() {
                 </div>
               ) : null}
             </div>
+
+            {form.volunteer_signup_enabled || form.vendor_signup_enabled ? (
+              <div className="sm:col-span-2 rounded-xl border border-border/80 bg-muted/20 p-4 space-y-2">
+                <Label htmlFor="wa-group" className="flex items-center gap-1.5">
+                  <MessageCircle className="h-3.5 w-3.5" /> WhatsApp group link (optional)
+                </Label>
+                <Input
+                  id="wa-group"
+                  value={form.whatsapp_group_url}
+                  onChange={(e) => setForm((f) => ({ ...f, whatsapp_group_url: e.target.value }))}
+                  placeholder="https://chat.whatsapp.com/…"
+                  className="font-mono text-xs"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Shown as a “Join the WhatsApp group” button on the thank-you screen after someone signs up as a
+                  volunteer or vendor for this event. Not shown on the public event page. In WhatsApp: group info →
+                  Invite via link → Copy link.
+                </p>
+              </div>
+            ) : null}
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>Cancel</Button>
