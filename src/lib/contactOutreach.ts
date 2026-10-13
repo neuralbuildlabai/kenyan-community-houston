@@ -64,6 +64,48 @@ export function mailtoLink(opts: {
   return url.length <= MAILTO_SAFE_LENGTH ? url : null
 }
 
+/** KIGH's shared inbox. Outreach email opens in Gmail signed in as this account. */
+export const OUTREACH_FROM_EMAIL = 'kenyansinhouston@gmail.com'
+
+/**
+ * Gmail web compose, pinned to the KIGH account via `authuser` so mail goes
+ * out from kenyansinhouston@gmail.com even when the admin is also signed in
+ * to a personal Gmail. The admin must be signed in to the KIGH account in that
+ * browser; Gmail asks them to sign in if not.
+ */
+export const GMAIL_COMPOSE_SAFE_LENGTH = 7500
+
+export function gmailComposeLink(opts: {
+  to?: string[]
+  bcc?: string[]
+  subject?: string
+  body?: string
+  from?: string
+}): string | null {
+  const params = new URLSearchParams({ authuser: opts.from ?? OUTREACH_FROM_EMAIL, view: 'cm', fs: '1' })
+  if (opts.to?.length) params.set('to', opts.to.join(','))
+  if (opts.bcc?.length) params.set('bcc', opts.bcc.join(','))
+  if (opts.subject?.trim()) params.set('su', opts.subject)
+  if (opts.body?.trim()) params.set('body', opts.body)
+  const url = `https://mail.google.com/mail/?${params.toString()}`
+  return url.length <= GMAIL_COMPOSE_SAFE_LENGTH ? url : null
+}
+
+const WHATSAPP_INVITE_RE = /^https:\/\/(chat\.whatsapp\.com|(www\.)?whatsapp\.com\/channel)\/[A-Za-z0-9_-]+\/?$/
+
+/**
+ * Cleans a pasted WhatsApp group/channel invite link. WhatsApp's "Copy link"
+ * now appends tracking like `?mode=ems_copy_t`; the invite works without it,
+ * and the DB constraint (migration 087) only accepts the bare form. Returns
+ * '' for blank input and null when it isn't a WhatsApp invite at all.
+ */
+export function normalizeWhatsAppInviteUrl(input: string): string | null {
+  const trimmed = input.trim()
+  if (!trimmed) return ''
+  const bare = trimmed.replace(/^http:\/\//i, 'https://').split(/[?#]/)[0]
+  return WHATSAPP_INVITE_RE.test(bare) ? bare : null
+}
+
 export function uniqueEmails(contacts: OutreachContact[]): string[] {
   const seen = new Set<string>()
   const out: string[] = []

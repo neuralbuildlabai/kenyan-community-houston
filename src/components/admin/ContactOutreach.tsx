@@ -13,7 +13,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import {
-  mailtoLink,
+  OUTREACH_FROM_EMAIL,
+  gmailComposeLink,
   outreachPhoneDigits,
   personalize,
   smsLink,
@@ -82,9 +83,9 @@ export function OutreachPanel({
   const bulkBody = draft.message.replace(/\s*\{name\}/g, '')
 
   function emailEveryone() {
-    const url = mailtoLink({ bcc: emails, subject: draft.subject, body: bulkBody })
+    const url = gmailComposeLink({ bcc: emails, subject: draft.subject, body: bulkBody })
     if (url) {
-      window.location.href = url
+      window.open(url, '_blank', 'noopener,noreferrer')
     } else {
       void copy(emails.join(', '), `${emails.length} emails — paste them into BCC`)
     }
@@ -128,7 +129,14 @@ export function OutreachPanel({
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" className="gap-1.5" disabled={!emails.length} onClick={emailEveryone}>
+            <Button
+              type="button"
+              size="sm"
+              className="gap-1.5"
+              disabled={!emails.length}
+              onClick={emailEveryone}
+              title={`Opens Gmail as ${OUTREACH_FROM_EMAIL}`}
+            >
               <Mail className="h-3.5 w-3.5" /> Email everyone (BCC)
             </Button>
             <Button
@@ -163,7 +171,8 @@ export function OutreachPanel({
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            WhatsApp: post the message (with your group invite link) in a broadcast list, or open a person below and
+            Email opens Gmail as <span className="font-medium text-foreground">{OUTREACH_FROM_EMAIL}</span> — sign in
+            to that account in this browser first (Gmail limits it to about 500 recipients a day). WhatsApp: post the message (with your group invite link) in a broadcast list, or open a person below and
             tap WhatsApp to send it 1:1. Narrow the list with the filters above first — e.g. one event, confirmed only.
           </p>
         </div>
@@ -196,8 +205,8 @@ export function ContactDetailDialog({
   const sms = smsLink(contact.phone, message)
   const digits = outreachPhoneDigits(contact.phone)
   const mail = contact.email
-    ? mailtoLink({ to: [contact.email], subject: draft.subject, body: message }) ??
-      mailtoLink({ to: [contact.email], subject: draft.subject })
+    ? gmailComposeLink({ to: [contact.email], subject: draft.subject, body: message }) ??
+      gmailComposeLink({ to: [contact.email], subject: draft.subject })
     : null
 
   return (
@@ -232,7 +241,7 @@ export function ContactDetailDialog({
           ) : null}
           {mail ? (
             <Button size="sm" variant="outline" className="gap-1.5" asChild>
-              <a href={mail}>
+              <a href={mail} target="_blank" rel="noopener noreferrer" title={`Opens Gmail as ${OUTREACH_FROM_EMAIL}`}>
                 <Mail className="h-3.5 w-3.5" /> Email
               </a>
             </Button>
@@ -246,7 +255,8 @@ export function ContactDetailDialog({
           ) : null}
         </div>
         <p className="text-xs text-muted-foreground">
-          Buttons open your own WhatsApp, Messages, or mail app with the message from “Message …” above filled in.
+          Buttons open WhatsApp, Messages, or Gmail (as {OUTREACH_FROM_EMAIL}) with the message from “Message …” above
+          filled in.
         </p>
       </DialogContent>
     </Dialog>

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  gmailComposeLink,
   mailtoLink,
+  normalizeWhatsAppInviteUrl,
   outreachPhoneDigits,
   personalize,
   smsLink,
@@ -49,6 +51,37 @@ describe('mailtoLink', () => {
   it('returns null when the URL would be too long for mail clients', () => {
     const bcc = Array.from({ length: 200 }, (_, i) => `person${i}@example.org`)
     expect(mailtoLink({ bcc })).toBeNull()
+  })
+})
+
+describe('gmailComposeLink', () => {
+  it('pins the compose window to the KIGH account and BCCs everyone', () => {
+    const url = new URL(gmailComposeLink({ bcc: ['a@x.org', 'b@x.org'], subject: 'Update', body: 'Hi & welcome' })!)
+    expect(url.origin + url.pathname).toBe('https://mail.google.com/mail/')
+    expect(url.searchParams.get('authuser')).toBe('kenyansinhouston@gmail.com')
+    expect(url.searchParams.get('view')).toBe('cm')
+    expect(url.searchParams.get('bcc')).toBe('a@x.org,b@x.org')
+    expect(url.searchParams.get('su')).toBe('Update')
+    expect(url.searchParams.get('body')).toBe('Hi & welcome')
+  })
+  it('returns null when too long', () => {
+    const bcc = Array.from({ length: 400 }, (_, i) => `person${i}@example.org`)
+    expect(gmailComposeLink({ bcc })).toBeNull()
+  })
+})
+
+describe('normalizeWhatsAppInviteUrl', () => {
+  it('strips the ?mode= tracking WhatsApp adds on copy', () => {
+    expect(normalizeWhatsAppInviteUrl(' https://chat.whatsapp.com/AbC123xyz?mode=ems_copy_t ')).toBe(
+      'https://chat.whatsapp.com/AbC123xyz'
+    )
+  })
+  it('accepts channel links', () => {
+    expect(normalizeWhatsAppInviteUrl('https://whatsapp.com/channel/0029Va')).toBe('https://whatsapp.com/channel/0029Va')
+  })
+  it('returns empty for blank and null for non-WhatsApp links', () => {
+    expect(normalizeWhatsAppInviteUrl('  ')).toBe('')
+    expect(normalizeWhatsAppInviteUrl('https://example.com/abc')).toBeNull()
   })
 })
 

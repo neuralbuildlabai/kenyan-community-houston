@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { normalizeWhatsAppInviteUrl } from '@/lib/contactOutreach'
 import { MapLink } from '@/components/MapLink'
 import { SubmissionMediaUploadField } from '@/components/public/SubmissionMediaUploadField'
 import { uploadSubmissionMedia } from '@/lib/submissionMediaUpload'
@@ -129,8 +130,6 @@ const defaultForm = () => ({
   whatsapp_group_url: '',
   whatsapp_group_url_prev: '',
 })
-
-const WHATSAPP_INVITE_RE = /^https:\/\/(chat\.whatsapp\.com|(www\.)?whatsapp\.com\/channel)\/[A-Za-z0-9_-]+\/?$/
 
 function toDatetimeLocalValue(iso: string | null | undefined): string {
   if (!iso) return ''
@@ -346,8 +345,8 @@ export function AdminCalendarPage() {
       toast.error('Vendor fees must be numbers between $0 and $10,000.')
       return
     }
-    const whatsappUrl = form.whatsapp_group_url.trim()
-    if (whatsappUrl && !WHATSAPP_INVITE_RE.test(whatsappUrl)) {
+    const whatsappUrl = normalizeWhatsAppInviteUrl(form.whatsapp_group_url)
+    if (whatsappUrl === null) {
       toast.error('WhatsApp link must be a group invite (https://chat.whatsapp.com/…) or channel link.')
       return
     }
