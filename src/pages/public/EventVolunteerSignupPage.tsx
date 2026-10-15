@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select'
 import { PageLoader } from '@/components/LoadingSpinner'
 import { supabase } from '@/lib/supabase'
+import { RATE_LIMITED_MESSAGE, isRateLimitedError, useFormBotGuard } from '@/lib/formBotGuard'
 import type { Event } from '@/lib/types'
 import { isEventPast } from '@/lib/eventDate'
 import { formatDate, isValidEmail } from '@/lib/utils'
@@ -35,6 +36,7 @@ import {
 } from '@/lib/eventParticipation'
 import { OrganizationRegistrationPrompt } from '@/components/public/OrganizationRegistrationPrompt'
 import { SignupWhatsAppGroup } from '@/components/public/SignupWhatsAppGroup'
+import { BotTrapField } from '@/components/public/BotTrapField'
 
 function rpcErrorToMessage(err: { message?: string } | null): string {
   const raw = (err?.message ?? '').trim()
@@ -104,6 +106,7 @@ export function EventVolunteerSignupPage() {
   const [membershipRequested, setMembershipRequested] = useState(false)
   const [submittedPhone, setSubmittedPhone] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const { trapValue, setTrapValue, isLikelyBot } = useFormBotGuard()
 
   useEffect(() => {
     async function load() {
@@ -214,6 +217,12 @@ export function EventVolunteerSignupPage() {
       note: n,
     })
 
+    if (isLikelyBot()) {
+      setMembershipRequested(wantsMembership && membershipTermsAccepted)
+      setDone(true)
+      return
+    }
+
     setSubmitting(true)
     const { error: rpcErr } = await supabase.rpc('create_event_volunteer_signup', {
       p_event_id: event.id,
@@ -227,7 +236,7 @@ export function EventVolunteerSignupPage() {
     })
     setSubmitting(false)
     if (rpcErr) {
-      setError(rpcErrorToMessage(rpcErr))
+      setError(isRateLimitedError(rpcErr) ? RATE_LIMITED_MESSAGE : rpcErrorToMessage(rpcErr))
       return
     }
     setMembershipRequested(wantsMembership && membershipTermsAccepted)
@@ -572,6 +581,7 @@ export function EventVolunteerSignupPage() {
                 ) : null}
               </div>
 
+              <BotTrapField value={trapValue} onChange={setTrapValue} />
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
               <Button type="submit" className="w-full font-semibold shadow-md" size="lg" disabled={submitting}>
                 {submitting ? 'Submitting…' : 'Submit signup'}

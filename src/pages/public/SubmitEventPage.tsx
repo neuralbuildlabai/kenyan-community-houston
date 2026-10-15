@@ -10,11 +10,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { SubmissionMediaUploadField } from '@/components/public/SubmissionMediaUploadField'
+import { BotTrapField } from '@/components/public/BotTrapField'
 import { supabase } from '@/lib/supabase'
 import { EVENT_CATEGORIES } from '@/lib/constants'
 import { uploadSubmissionMedia } from '@/lib/submissionMediaUpload'
 import { trackSubmissionCreated } from '@/lib/analytics'
 import { generateSlug } from '@/lib/utils'
+import { RATE_LIMITED_MESSAGE, isRateLimitedError, useFormBotGuard } from '@/lib/formBotGuard'
 import { toast } from 'sonner'
 
 export function SubmitEventPage() {
@@ -43,6 +45,7 @@ export function SubmitEventPage() {
   const [flyerFileName, setFlyerFileName] = useState<string | null>(null)
   const [flyerUploading, setFlyerUploading] = useState(false)
   const [flyerUploadError, setFlyerUploadError] = useState<string | null>(null)
+  const { trapValue, setTrapValue, isLikelyBot } = useFormBotGuard()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -52,6 +55,10 @@ export function SubmitEventPage() {
     }
     if (flyerUploading) {
       toast.error('Wait for the flyer upload to finish.')
+      return
+    }
+    if (isLikelyBot()) {
+      setSubmitted(true)
       return
     }
     setLoading(true)
@@ -83,7 +90,7 @@ export function SubmitEventPage() {
     ])
     setLoading(false)
     if (error) {
-      toast.error('Submission failed. Please try again.')
+      toast.error(isRateLimitedError(error) ? RATE_LIMITED_MESSAGE : 'Submission failed. Please try again.')
     } else {
       void trackSubmissionCreated('event')
       setSubmitted(true)
@@ -368,6 +375,8 @@ export function SubmitEventPage() {
                   </div>
                 </div>
               </fieldset>
+
+              <BotTrapField value={trapValue} onChange={setTrapValue} />
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Button

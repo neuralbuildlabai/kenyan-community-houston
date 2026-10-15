@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, HeartHandshake } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
+import { BotTrapField } from '@/components/public/BotTrapField'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,11 +13,13 @@ import { supabase } from '@/lib/supabase'
 import { SERVICE_AVAILABILITY_OPTIONS } from '@/lib/serveOpportunities'
 import type { ServiceInterestAvailability } from '@/lib/types'
 import { sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
+import { RATE_LIMITED_MESSAGE, isRateLimitedError, useFormBotGuard } from '@/lib/formBotGuard'
 import { toast } from 'sonner'
 
 export function ServeApplyPage() {
   const navigate = useNavigate()
   const [saving, setSaving] = useState(false)
+  const { trapValue, setTrapValue, isLikelyBot } = useFormBotGuard()
   const [form, setForm] = useState({
     full_name: '',
     email: '',
@@ -44,6 +47,11 @@ export function ServeApplyPage() {
       toast.error(phoneRes.reason)
       return
     }
+    if (isLikelyBot()) {
+      toast.success('Thank you! Your interest has been received.')
+      navigate('/serve', { replace: true })
+      return
+    }
     setSaving(true)
     const { error } = await supabase.from('service_interests').insert({
       full_name: form.full_name.trim(),
@@ -58,7 +66,11 @@ export function ServeApplyPage() {
     })
     setSaving(false)
     if (error) {
-      toast.error(error.message || 'Could not submit. Please try again or contact KIGH.')
+      toast.error(
+        isRateLimitedError(error)
+          ? RATE_LIMITED_MESSAGE
+          : error.message || 'Could not submit. Please try again or contact KIGH.',
+      )
       return
     }
     toast.success('Thank you! Your interest has been received.')
@@ -207,6 +219,8 @@ export function ServeApplyPage() {
               </div>
             </CardContent>
           </Card>
+
+          <BotTrapField value={trapValue} onChange={setTrapValue} />
 
           <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
             <Button type="button" variant="outline" asChild>

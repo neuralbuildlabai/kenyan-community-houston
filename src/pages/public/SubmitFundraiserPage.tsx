@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowLeft, CheckCircle, AlertTriangle, ShieldCheck, Eye } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { PublicPageHero } from '@/components/public/PublicPageHero'
+import { BotTrapField } from '@/components/public/BotTrapField'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -25,6 +26,7 @@ import {
 } from '@/lib/fundraiserFunding'
 import { hasActiveKighSupportOptions } from '@/lib/kighSupportOptions'
 import { generateSlug, statusLabel } from '@/lib/utils'
+import { RATE_LIMITED_MESSAGE, isRateLimitedError, useFormBotGuard } from '@/lib/formBotGuard'
 import { toast } from 'sonner'
 
 /** Pinned by the insert RLS policy and a CHECK constraint (migration 083). */
@@ -52,6 +54,7 @@ export function SubmitFundraiserPage() {
   const [submittedStatus, setSubmittedStatus] = useState<string | null>(null)
   const supportMethodsAvailable = hasActiveKighSupportOptions()
   const fundingMode = isInternal ? 'internal' : 'external'
+  const { trapValue, setTrapValue, isLikelyBot } = useFormBotGuard()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -62,6 +65,10 @@ export function SubmitFundraiserPage() {
     const fundingError = validateFundraiserFunding({ fundingMode, supportMethodsAvailable })
     if (fundingError) {
       toast.error(fundingError)
+      return
+    }
+    if (isLikelyBot()) {
+      setSubmittedStatus(SUBMITTED_FUNDRAISER_STATUS)
       return
     }
     setLoading(true)
@@ -84,7 +91,7 @@ export function SubmitFundraiserPage() {
       },
     ])
     setLoading(false)
-    if (error) toast.error('Submission failed. Please try again.')
+    if (error) toast.error(isRateLimitedError(error) ? RATE_LIMITED_MESSAGE : 'Submission failed. Please try again.')
     else {
       void trackSubmissionCreated('fundraiser')
       setSubmittedStatus(SUBMITTED_FUNDRAISER_STATUS)
@@ -366,6 +373,8 @@ export function SubmitFundraiserPage() {
                   </div>
                 </div>
               </fieldset>
+
+              <BotTrapField value={trapValue} onChange={setTrapValue} />
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Button

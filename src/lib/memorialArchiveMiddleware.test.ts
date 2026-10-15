@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import middleware from '../../middleware'
+import middleware, { config } from '../../middleware'
 import {
   ARCHIVED_MEMORIAL_HEADING,
   ARCHIVED_MEMORIAL_NOTICE,
@@ -42,8 +42,12 @@ function stubFetch({ states, admin }: { states?: Reply; admin?: Reply }) {
 const archived = { body: [{ status: 'archived' }] }
 const published = { body: [] as unknown[] }
 
+/** A real browser UA, so the bot filter in front of the gate lets it in. */
+const BROWSER_UA =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
+
 function get(url: string, headers: Record<string, string> = {}) {
-  return middleware(new Request(url, { headers }))
+  return middleware(new Request(url, { headers: { 'user-agent': BROWSER_UA, ...headers } }))
 }
 
 function previewCookie(token = 'admin-token') {
@@ -209,8 +213,9 @@ describe('middleware stays in sync with the app', () => {
   const source = readFileSync(resolve(process.cwd(), 'middleware.ts'), 'utf8')
 
   it('matches the memorial page and everything beneath it', () => {
-    expect(source).toContain("'/memorials/:slug'")
-    expect(source).toContain("'/memorials/:slug/:asset*'")
+    const pattern = new RegExp(`^${config.matcher[0]}$`)
+    expect(pattern.test(`/memorials/${SLUG}`)).toBe(true)
+    expect(pattern.test(`/memorials/${SLUG}/${SLUG}-funeral-program.pdf`)).toBe(true)
   })
 
   it('duplicates the shared copy and cookie name verbatim', () => {

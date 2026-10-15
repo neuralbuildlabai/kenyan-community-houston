@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, CheckCircle, ShieldCheck, Sparkles } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { PublicPageHero } from '@/components/public/PublicPageHero'
+import { BotTrapField } from '@/components/public/BotTrapField'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,6 +14,7 @@ import { trackSubmissionCreated } from '@/lib/analytics'
 import { BUSINESS_CATEGORIES } from '@/lib/constants'
 import { generateSlug } from '@/lib/utils'
 import { sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
+import { RATE_LIMITED_MESSAGE, isRateLimitedError, useFormBotGuard } from '@/lib/formBotGuard'
 import { toast } from 'sonner'
 import { eventApplicationReturnPath } from '@/lib/eventParticipation'
 
@@ -36,6 +38,7 @@ export function SubmitBusinessPage() {
   })
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const { trapValue, setTrapValue, isLikelyBot } = useFormBotGuard()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -46,6 +49,10 @@ export function SubmitBusinessPage() {
     const phoneRes = validatePhoneNumber(form.phone, { allowEmpty: true })
     if (!phoneRes.ok) {
       toast.error(phoneRes.reason)
+      return
+    }
+    if (isLikelyBot()) {
+      setSubmitted(true)
       return
     }
     setLoading(true)
@@ -59,7 +66,7 @@ export function SubmitBusinessPage() {
       },
     ])
     setLoading(false)
-    if (error) toast.error('Submission failed. Please try again.')
+    if (error) toast.error(isRateLimitedError(error) ? RATE_LIMITED_MESSAGE : 'Submission failed. Please try again.')
     else {
       void trackSubmissionCreated('business')
       setSubmitted(true)
@@ -263,6 +270,8 @@ export function SubmitBusinessPage() {
                   </div>
                 </div>
               </fieldset>
+
+              <BotTrapField value={trapValue} onChange={setTrapValue} />
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Button

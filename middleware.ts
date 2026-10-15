@@ -1,6 +1,9 @@
 /**
- * Two jobs, both of which have to happen before the app loads.
+ * Three jobs, all of which have to happen before the app loads.
  *
+ * 0. Turning away AI training crawlers, bulk scrapers and scripted clients
+ *    (see BLOCKED_UA below). Search engines and link-preview bots are not on
+ *    the list, so Google/Bing indexing and WhatsApp previews are unaffected.
  * 1. Real link previews for individual listings (the bulk of this file).
  * 2. Taking archived memorials offline. An archived memorial must stop
  *    serving its page *and* its funeral program, and those files are static
@@ -26,16 +29,10 @@
  * public in the client bundle, and reads only published rows.
  */
 export const config = {
-  matcher: [
-    '/businesses/:slug',
-    '/events/:slug',
-    '/announcements/:slug',
-    '/community-support/:slug',
-    '/sports-youth/:slug',
-    // Memorial pages and everything beneath them (funeral program, QR files).
-    '/memorials/:slug',
-    '/memorials/:slug/:asset*',
-  ],
+  // Every path except Vite's hashed bundles, so the bot filter also covers
+  // public documents and images. The listing previews and memorial gate
+  // below pick out their own paths.
+  matcher: ['/((?!assets/).*)'],
 }
 
 const SITE_URL = 'https://www.kenyansingreaterhouston.org'
@@ -45,6 +42,37 @@ const FALLBACK_IMAGE = `${SITE_URL}/og-image.png`
 /** Scrapers that read tags but never execute the app. */
 const CRAWLER_UA =
   /(facebookexternalhit|facebookcatalog|WhatsApp|Twitterbot|LinkedInBot|Slackbot|Slack-ImgProxy|TelegramBot|Discordbot|Pinterest|redditbot|SkypeUriPreview|vkShare|Google-InspectionTool|Googlebot|bingbot|Applebot|embedly|iframely|Yahoo! Slurp|DuckDuckBot|Mastodon|Bluesky)/i
+
+/**
+ * Clients refused outright. Two groups:
+ *
+ * - AI training and bulk-collection crawlers. User-initiated AI fetchers
+ *   (ChatGPT-User, Claude-User, Perplexity-User) are deliberately absent:
+ *   they fetch one page because a person pasted the link, like a browser.
+ *   `FacebookBot` is Meta's AI crawler; the WhatsApp/Facebook preview bot is
+ *   `facebookexternalhit` and stays allowed.
+ * - SEO scrapers and scripting libraries that no visitor's browser sends.
+ *
+ * Googlebot, bingbot, Applebot and the link-preview bots in CRAWLER_UA are
+ * never matched here — pinned by botBlockMiddleware.test.ts.
+ */
+const BLOCKED_UA =
+  /(GPTBot|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-SearchBot|anthropic-ai|CCBot|Bytespider|Amazonbot|PerplexityBot|meta-externalagent|meta-externalfetcher|FacebookBot|Diffbot|cohere-ai|cohere-training-data-crawler|ImagesiftBot|Omgilibot|omgili|Timpibot|YouBot|AI2Bot|Ai2Bot-Dolma|PetalBot|PanguBot|Kangaroo Bot|Sidetrade|img2dataset|Webzio|DuckAssistBot|MistralAI-User|Scrapy|AhrefsBot|SemrushBot|MJ12bot|DotBot|BLEXBot|DataForSeoBot|serpstatbot|magpie-crawler|python-requests|python-urllib|python-httpx|aiohttp|Go-http-client|libwww-perl|Java\/|Apache-HttpClient|PhantomJS|node-fetch|axios\/)/i
+
+/** robots.txt stays readable so well-behaved crawlers can see they're unwelcome. */
+function blockedClient(request: Request, pathname: string): Response | undefined {
+  if (pathname === '/robots.txt') return
+  const userAgent = (request.headers.get('user-agent') || '').trim()
+  if (userAgent && !BLOCKED_UA.test(userAgent)) return
+  return new Response('Automated access to this site is not permitted.\n', {
+    status: 403,
+    headers: {
+      'content-type': 'text/plain; charset=utf-8',
+      'cache-control': 'no-store',
+      'x-robots-tag': 'noindex, nofollow',
+    },
+  })
+}
 
 interface RouteConfig {
   table: string
@@ -290,6 +318,9 @@ async function archivedMemorialGate(
 export default async function middleware(request: Request) {
   const url = new URL(request.url)
   const [, section, slug] = url.pathname.split('/')
+
+  const blocked = blockedClient(request, url.pathname)
+  if (blocked) return blocked
 
   // Runs for every visitor, crawlers included — unlike the preview below.
   if (section === 'memorials' && slug) return archivedMemorialGate(request, slug)

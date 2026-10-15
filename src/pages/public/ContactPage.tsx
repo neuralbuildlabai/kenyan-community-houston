@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Mail, MapPin, CheckCircle, Clock, ShieldCheck } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { PublicPageHero } from '@/components/public/PublicPageHero'
+import { BotTrapField } from '@/components/public/BotTrapField'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,6 +14,7 @@ import {
   KIGH_NONPROFIT_CREDIBILITY_STATEMENT,
 } from '@/lib/constants'
 import { sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
+import { RATE_LIMITED_MESSAGE, isRateLimitedError, useFormBotGuard } from '@/lib/formBotGuard'
 import { toast } from 'sonner'
 
 const INQUIRY_TYPES = [
@@ -47,10 +49,10 @@ export function ContactPage() {
     subject: '',
     inquiry_type: '',
     message: '',
-    company_website: '',
   })
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const { trapValue, setTrapValue, isLikelyBot } = useFormBotGuard()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -66,14 +68,14 @@ export function ContactPage() {
       toast.error('Please write a short message before submitting')
       return
     }
-    if (form.company_website.trim() !== '') {
-      setSubmitted(true)
-      return
-    }
-
     const phoneRes = validatePhoneNumber(form.phone, { allowEmpty: true })
     if (!phoneRes.ok) {
       toast.error(phoneRes.reason)
+      return
+    }
+
+    if (isLikelyBot()) {
+      setSubmitted(true)
       return
     }
 
@@ -87,13 +89,13 @@ export function ContactPage() {
       inquiry_type: form.inquiry_type || null,
       type: INQUIRY_TYPE_TO_DB_TYPE[form.inquiry_type] ?? 'general',
       status: 'new',
-      honeypot: form.company_website,
+      honeypot: trapValue,
     }
 
     const { error } = await supabase.from('contact_submissions').insert([payload])
     setLoading(false)
     if (error) {
-      toast.error('Failed to send message. Please try again.')
+      toast.error(isRateLimitedError(error) ? RATE_LIMITED_MESSAGE : 'Failed to send message. Please try again.')
     } else {
       setSubmitted(true)
     }
@@ -268,18 +270,7 @@ export function ContactPage() {
                   </div>
                 </fieldset>
 
-                {/* Honeypot — hidden from humans but present in DOM. */}
-                <div aria-hidden="true" className="hidden">
-                  <Label htmlFor="company_website">Company website</Label>
-                  <Input
-                    id="company_website"
-                    name="company_website"
-                    tabIndex={-1}
-                    autoComplete="off"
-                    value={form.company_website}
-                    onChange={(e) => setForm({ ...form, company_website: e.target.value })}
-                  />
-                </div>
+                <BotTrapField value={trapValue} onChange={setTrapValue} />
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                   <Button type="submit" size="lg" className="w-full sm:w-auto px-8" disabled={loading}>

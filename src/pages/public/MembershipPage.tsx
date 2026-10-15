@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { PublicPageHero } from '@/components/public/PublicPageHero'
+import { BotTrapField } from '@/components/public/BotTrapField'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -24,6 +25,7 @@ import {
   MEMBERSHIP_INTEREST_OPTIONS,
   KIGH_NONPROFIT_CREDIBILITY_STATEMENT,
 } from '@/lib/constants'
+import { RATE_LIMITED_MESSAGE, isRateLimitedError, useFormBotGuard } from '@/lib/formBotGuard'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import { getBrowserOrigin } from '@/lib/siteOrigin'
@@ -95,6 +97,7 @@ export function MembershipPage() {
   const [passwordFieldErrors, setPasswordFieldErrors] = useState<string[]>([])
   const [pendingAccountCreated, setPendingAccountCreated] = useState(false)
   const [oauthLoading, setOauthLoading] = useState(false)
+  const { trapValue, setTrapValue, isLikelyBot } = useFormBotGuard()
   const [membershipType, setMembershipType] = useState<MembershipType>('individual')
   const [interests, setInterests] = useState<string[]>([])
   const [agreed, setAgreed] = useState(false)
@@ -240,6 +243,18 @@ export function MembershipPage() {
         }
       }
     }
+    if (isLikelyBot()) {
+      if (user) {
+        navigate('/membership/success')
+      } else {
+        setPendingAccountCreated(true)
+        toast.info('Confirm your email', {
+          description:
+            'We saved your membership intake as pending. After you confirm your email, sign in and return here to complete required agreements and details.',
+        })
+      }
+      return
+    }
     setLoading(true)
 
     if (!user) {
@@ -267,7 +282,9 @@ export function MembershipPage() {
       })
       if (signUpErr) {
         setLoading(false)
-        toast.error(signUpErr.message || 'Could not create account')
+        toast.error(
+          isRateLimitedError(signUpErr) ? RATE_LIMITED_MESSAGE : signUpErr.message || 'Could not create account',
+        )
         return
       }
       if (!signUpData.user) {
@@ -368,7 +385,8 @@ export function MembershipPage() {
     setLoading(false)
     if (error) {
       logSupabaseErrorDebug('rpc.submit_membership_registration', error)
-      if (error.message?.includes('consent_required')) toast.error('Consent and agreement are required')
+      if (isRateLimitedError(error)) toast.error(RATE_LIMITED_MESSAGE)
+      else if (error.message?.includes('consent_required')) toast.error('Consent and agreement are required')
       else if (error.message?.includes('missing_required_fields')) toast.error('Please complete required fields')
       else if (error.message?.includes('authentication_required'))
         toast.error('Please sign in to submit membership.')
@@ -975,6 +993,8 @@ export function MembershipPage() {
                   </label>
                 </CardContent>
               </Card>
+
+              <BotTrapField value={trapValue} onChange={setTrapValue} />
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Button

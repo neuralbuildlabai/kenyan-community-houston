@@ -10,11 +10,13 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SubmissionMediaUploadField } from '@/components/public/SubmissionMediaUploadField'
+import { BotTrapField } from '@/components/public/BotTrapField'
 import { supabase } from '@/lib/supabase'
 import { ANNOUNCEMENT_CATEGORIES } from '@/lib/constants'
 import { uploadSubmissionMedia } from '@/lib/submissionMediaUpload'
 import { trackSubmissionCreated } from '@/lib/analytics'
 import { generateSlug } from '@/lib/utils'
+import { RATE_LIMITED_MESSAGE, isRateLimitedError, useFormBotGuard } from '@/lib/formBotGuard'
 import { toast } from 'sonner'
 
 type CalendarFields = {
@@ -63,6 +65,7 @@ export function SubmitAnnouncementPage() {
   const [calendarFlyerFileName, setCalendarFlyerFileName] = useState<string | null>(null)
   const [calendarFlyerUploading, setCalendarFlyerUploading] = useState(false)
   const [calendarFlyerError, setCalendarFlyerError] = useState<string | null>(null)
+  const { trapValue, setTrapValue, isLikelyBot } = useFormBotGuard()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -89,6 +92,11 @@ export function SubmitAnnouncementPage() {
           return
         }
       }
+    }
+
+    if (isLikelyBot()) {
+      setSubmitted(true)
+      return
     }
 
     setLoading(true)
@@ -125,7 +133,13 @@ export function SubmitAnnouncementPage() {
 
     const { error } = await supabase.from('announcements').insert([payload])
     setLoading(false)
-    if (error) toast.error(error.message || 'Submission failed. Please try again.')
+    if (error) {
+      toast.error(
+        isRateLimitedError(error)
+          ? RATE_LIMITED_MESSAGE
+          : error.message || 'Submission failed. Please try again.',
+      )
+    }
     else {
       void trackSubmissionCreated('announcement')
       setSubmitted(true)
@@ -504,6 +518,8 @@ export function SubmitAnnouncementPage() {
                   </div>
                 )}
               </fieldset>
+
+              <BotTrapField value={trapValue} onChange={setTrapValue} />
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Button

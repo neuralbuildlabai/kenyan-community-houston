@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, CheckCircle, ShieldCheck, Sparkles, Users } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
+import { BotTrapField } from '@/components/public/BotTrapField'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,6 +15,7 @@ import { generateSlug } from '@/lib/utils'
 import { normalizeExternalUrl } from '@/lib/externalUrl'
 import { sanitizePhoneInput, validatePhoneNumber } from '@/lib/phoneValidation'
 import { BEST_CONTACT_METHOD_OPTIONS, type BestContactMethod } from '@/lib/communityGroupSubmission'
+import { RATE_LIMITED_MESSAGE, isRateLimitedError, useFormBotGuard } from '@/lib/formBotGuard'
 import { toast } from 'sonner'
 import { eventApplicationReturnPath } from '@/lib/eventParticipation'
 
@@ -94,6 +96,7 @@ export function CommunityGroupsSubmitPage() {
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [form, setForm] = useState<FormState>(emptyForm)
+  const { trapValue, setTrapValue, isLikelyBot } = useFormBotGuard()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -150,6 +153,11 @@ export function CommunityGroupsSubmitPage() {
       return
     }
 
+    if (isLikelyBot()) {
+      setSubmitted(true)
+      return
+    }
+
     const slug = `${generateSlug(form.organization_name)}-${Date.now().toString(36)}`
 
     setLoading(true)
@@ -183,7 +191,11 @@ export function CommunityGroupsSubmitPage() {
     ])
     setLoading(false)
     if (error) {
-      toast.error(error.message || 'Submission failed. Please try again.')
+      toast.error(
+        isRateLimitedError(error)
+          ? RATE_LIMITED_MESSAGE
+          : error.message || 'Submission failed. Please try again.',
+      )
       return
     }
     setSubmitted(true)
@@ -573,6 +585,8 @@ export function CommunityGroupsSubmitPage() {
                   <span>Yes, our organization is interested in community social participation.</span>
                 </label>
               </div>
+
+              <BotTrapField value={trapValue} onChange={setTrapValue} />
 
               <div>
                 <Button

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select'
 import { PageLoader } from '@/components/LoadingSpinner'
 import { supabase } from '@/lib/supabase'
+import { RATE_LIMITED_MESSAGE, isRateLimitedError, useFormBotGuard } from '@/lib/formBotGuard'
 import type { Event, VendorCategory } from '@/lib/types'
 import { isEventPast } from '@/lib/eventDate'
 import { formatDate, isValidEmail } from '@/lib/utils'
@@ -35,6 +36,7 @@ import {
 } from '@/lib/eventVendorSignup'
 import { OrganizationRegistrationPrompt } from '@/components/public/OrganizationRegistrationPrompt'
 import { SignupWhatsAppGroup } from '@/components/public/SignupWhatsAppGroup'
+import { BotTrapField } from '@/components/public/BotTrapField'
 import {
   eventApplicationGate,
   organizationRegisterHref,
@@ -116,6 +118,7 @@ export function EventVendorSignupPage() {
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState<VendorSignupSuccess | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const { trapValue, setTrapValue, isLikelyBot } = useFormBotGuard()
 
   // Fee is computed live from the selected category and the event's
   // configured fees, so users see the right number before submit.
@@ -203,6 +206,11 @@ export function EventVendorSignupPage() {
       }
     }
 
+    if (isLikelyBot()) {
+      setSuccess({ signupId: '', feeCents: liveFeeCents, category, referenceCode: '', phone: '' })
+      return
+    }
+
     setSubmitting(true)
     const { data, error: rpcErr } = await supabase.rpc('create_event_vendor_signup', {
       p_event_id: event.id,
@@ -216,7 +224,7 @@ export function EventVendorSignupPage() {
     setSubmitting(false)
 
     if (rpcErr) {
-      setError(rpcErrorToMessage(rpcErr))
+      setError(isRateLimitedError(rpcErr) ? RATE_LIMITED_MESSAGE : rpcErrorToMessage(rpcErr))
       return
     }
 
@@ -484,6 +492,8 @@ export function EventVendorSignupPage() {
                   placeholder="What will you be selling or offering? (optional)"
                 />
               </div>
+
+              <BotTrapField value={trapValue} onChange={setTrapValue} />
 
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
