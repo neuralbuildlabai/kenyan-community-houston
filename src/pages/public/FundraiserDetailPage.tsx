@@ -13,8 +13,16 @@ import { FundraiserShareActions } from '@/components/fundraisers/FundraiserShare
 import { FundraiserCollectionsTable } from '@/components/fundraisers/FundraiserCollectionsTable'
 import { formatDate, statusLabel } from '@/lib/utils'
 import { FUNDRAISER_DISCLAIMER } from '@/lib/constants'
-import { isInternalFundraiser } from '@/lib/fundraiserFunding'
-import { summarizeFundraiserCollections, type PublicCollectionRow } from '@/lib/fundraiserCollections'
+import {
+  isInternalFundraiser,
+  INDEPENDENT_FUNDRAISER_LABEL,
+  ORGANIZER_REPORTED_SOURCE_LABEL,
+} from '@/lib/fundraiserFunding'
+import {
+  summarizeFundraiserCollections,
+  summarizeReportedTotal,
+  type PublicCollectionRow,
+} from '@/lib/fundraiserCollections'
 import { fundraiserPublicUrl } from '@/lib/fundraiserShare'
 import {
   fetchFundraiserPreviewBySlug,
@@ -96,7 +104,11 @@ export function FundraiserDetailPage() {
 
   const internal = isInternalFundraiser(item.funding_mode)
   const organizer = internal ? KIGH_ORGANIZER_NAME : item.organizer_name
-  const summary = summarizeFundraiserCollections(collections, item.goal_amount)
+  // KIGH-run fundraisers are tallied from KIGH's ledger; independent ones
+  // show the total their organizer reports through the manage link.
+  const summary = internal
+    ? summarizeFundraiserCollections(collections, item.goal_amount)
+    : summarizeReportedTotal(item.raised_amount, item.goal_amount, item.collections_updated_at)
   const publicUrl = fundraiserPublicUrl(item.slug)
   const published = item.status === 'published'
 
@@ -146,6 +158,11 @@ export function FundraiserDetailPage() {
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <Badge variant="secondary">{item.category}</Badge>
             <VerificationBadge status={item.verification_status} />
+            {internal ? null : (
+              <Badge variant="outline" data-testid="fundraiser-independent-badge">
+                {INDEPENDENT_FUNDRAISER_LABEL}
+              </Badge>
+            )}
           </div>
           <h1 className="text-3xl font-bold tracking-tight">{item.title}</h1>
           {organizer ? (
@@ -161,7 +178,10 @@ export function FundraiserDetailPage() {
 
         <div className="mt-8 space-y-6">
           {/* 3 — progress and goal status */}
-          <FundraiserProgressPanel summary={summary} />
+          <FundraiserProgressPanel
+            summary={summary}
+            sourceLabel={internal ? undefined : ORGANIZER_REPORTED_SOURCE_LABEL}
+          />
 
           {/* 4 — donation options */}
           <FundraiserDonationOptions fundraiser={item} />
@@ -198,9 +218,11 @@ export function FundraiserDetailPage() {
         </dl>
 
         {/* 7 — collections and last updated */}
-        <div className="mt-10">
-          <FundraiserCollectionsTable summary={summary} />
-        </div>
+        {internal ? (
+          <div className="mt-10">
+            <FundraiserCollectionsTable summary={summary} />
+          </div>
+        ) : null}
       </div>
     </>
   )

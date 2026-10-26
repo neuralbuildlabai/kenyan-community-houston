@@ -9,8 +9,9 @@ import {
   publishAnnouncementRow,
   type AnnouncementCalendarRow,
 } from '@/lib/announcementCalendarPublish'
-import { pendingQueuePublishPayload, pendingQueueRejectPayload } from '@/lib/publishLifecycle'
-import { isInternalFundraiser, KIGH_ORGANIZED_LABEL } from '@/lib/fundraiserFunding'
+import { pendingQueuePublishPayload } from '@/lib/publishLifecycle'
+import { isInternalFundraiser, INDEPENDENT_FUNDRAISER_LABEL } from '@/lib/fundraiserFunding'
+import { RejectSubmissionDialog } from '@/components/admin/RejectSubmissionDialog'
 import { formatCategoryLabel } from '@/lib/communityCategories'
 import { formatDateShort } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -103,6 +104,7 @@ export function AdminSubmissionsPage() {
   const [items, setItems] = useState<PendingItem[]>([])
   const [loading, setLoading] = useState(true)
   const [counts, setCounts] = useState({ events: 0, announcements: 0, businesses: 0, fundraisers: 0 })
+  const [rejecting, setRejecting] = useState<{ id: string; title: string } | null>(null)
 
   async function loadCounts() {
     const [{ count: e }, { count: a }, { count: b }, { count: f }] = await Promise.all([
@@ -179,15 +181,10 @@ export function AdminSubmissionsPage() {
     }
   }
 
-  async function reject(id: string) {
-    const { data, error } = await supabase.from(activeTab).update(pendingQueueRejectPayload()).eq('id', id).select('id')
-    if (error) toast.error(error.message || 'Failed to reject')
-    else if (!data?.length) toast.error('Could not update — no matching row (check permissions).')
-    else {
-      toast.success('Submission rejected')
-      load(activeTab)
-      loadCounts()
-    }
+  /** Rejection goes through `kigh_reject_submission` (migration 090): note saved, submitter emailed. */
+  function afterReject() {
+    load(activeTab)
+    loadCounts()
   }
 
   const tabLabel = (type: ContentType) => {
@@ -257,12 +254,21 @@ export function AdminSubmissionsPage() {
                             {type === 'announcements' && item.image_url?.trim() && (
                               <SubmissionFlyerPreview url={item.image_url.trim()} label="Announcement image" />
                             )}
-                            {type === 'fundraisers' && isInternalFundraiser(item.funding_mode) && (
-                              <Badge variant="outline" className="text-[10px] gap-1">
-                                <HeartHandshake className="h-3 w-3" />
-                                {KIGH_ORGANIZED_LABEL}
-                              </Badge>
-                            )}
+                            {type === 'fundraisers' &&
+                              (isInternalFundraiser(item.funding_mode) ? (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] gap-1 border-amber-300 text-amber-800"
+                                  title="Collects through KIGH's own payment handles. Only approve fundraisers KIGH itself runs."
+                                >
+                                  <HeartHandshake className="h-3 w-3" />
+                                  Uses KIGH payment handles
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[10px]">
+                                  {INDEPENDENT_FUNDRAISER_LABEL}
+                                </Badge>
+                              ))}
                             {type === 'announcements' && item.include_in_calendar && (
                               <Badge variant="outline" className="text-[10px] gap-1 lg:hidden">
                                 <CalendarDays className="h-3 w-3" />
@@ -310,7 +316,7 @@ export function AdminSubmissionsPage() {
                               size="sm"
                               variant="outline"
                               className="h-7 border-red-300 text-red-700 hover:bg-red-50"
-                              onClick={() => reject(item.id)}
+                              onClick={() => setRejecting({ id: item.id, title: getTitle(item) })}
                             >
                               <XCircle className="h-3.5 w-3.5 mr-1" /> Reject
                             </Button>
@@ -325,6 +331,14 @@ export function AdminSubmissionsPage() {
           </TabsContent>
         ))}
       </Tabs>
+
+      <RejectSubmissionDialog
+        type={activeTab}
+        item={rejecting}
+        open={rejecting !== null}
+        onOpenChange={(o) => !o && setRejecting(null)}
+        onRejected={afterReject}
+      />
     </div>
   )
 }

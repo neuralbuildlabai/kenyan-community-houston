@@ -26,9 +26,12 @@ import {
 export function FundraiserProgressPanel({
   summary,
   headingId = 'fundraiser-progress-heading',
+  sourceLabel = COLLECTIONS_SOURCE_LABEL,
 }: {
   summary: FundraiserFundingSummary
   headingId?: string
+  /** Who the figure comes from: KIGH's ledger, or the organizer's own report. */
+  sourceLabel?: string
 }) {
   const { collectedCents, goalCents, percentRaised, goalReached, overageCents } = summary
   const hasGoal = goalCents !== null && goalCents > 0
@@ -106,7 +109,7 @@ export function FundraiserProgressPanel({
       ) : null}
 
       <p className="mt-4 border-t border-border/50 pt-3 text-xs leading-relaxed text-muted-foreground">
-        {COLLECTIONS_SOURCE_LABEL}
+        {sourceLabel}
         {summary.lastUpdated ? (
           <>
             {' '}

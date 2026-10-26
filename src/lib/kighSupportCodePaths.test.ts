@@ -38,22 +38,19 @@ describe('KIGH support handle code paths', () => {
     expect(supportPage).toContain('<KighSupportHandles />')
   })
 
-  it('the fundraiser form previews the shared handles in internal mode', () => {
-    expect(submitPage).toContain("from '@/components/support/KighSupportHandles'")
-    expect(submitPage).toContain('<KighSupportHandles variant="compact" />')
-    expect(submitPage).toContain('INTERNAL_FUNDRAISER_HELPER_TEXT')
-    expect(submitPage).toContain('id="internal_fundraiser"')
-    expect(submitPage).toContain('htmlFor="internal_fundraiser"')
+  it('the public fundraiser form never offers KIGH handles (migration 090)', () => {
+    // Community fundraisers are independent: only admins can switch one to
+    // KIGH's own handles, from the admin Fundraisers page.
+    expect(submitPage).not.toContain('KighSupportHandles')
+    expect(submitPage).not.toContain('internal_fundraiser')
+    expect(submitPage).not.toContain('INTERNAL_FUNDRAISER_LABEL')
+    expect(submitPage).toContain('INDEPENDENT_FUNDRAISER_NOTE')
   })
 
-  it('the form submits the funding selection and blocks unconfigured internal mode', () => {
-    expect(submitPage).toContain('buildFundraiserFundingPayload({ fundingMode, donationUrl: form.donation_url })')
-    expect(submitPage).toContain('validateFundraiserFunding({ fundingMode, supportMethodsAvailable })')
-    expect(submitPage).toContain('disabled={loading || (isInternal && !supportMethodsAvailable)}')
-    // The external field is hidden in internal mode, but toggling must not
-    // touch form state — unchecking restores what the submitter typed.
-    expect(submitPage).toContain('{!isInternal && (')
-    expect(submitPage).toContain('onCheckedChange={(v) => setIsInternal(v === true)}')
+  it('the form submits as external with a required link and organizer email', () => {
+    expect(submitPage).toContain("buildFundraiserFundingPayload({ fundingMode: 'external', donationUrl: form.donation_url })")
+    expect(submitPage).toContain('validateIndependentFundraiser({')
+    expect(submitPage).toContain('organizer_email: form.organizer_email.trim()')
   })
 
   it('internal fundraiser pages resolve handles instead of stored payment details', () => {

@@ -12,6 +12,7 @@ import {
   toCents,
 } from '@/lib/fundraiserCollections'
 import { fundraiserPath } from '@/lib/fundraiserShare'
+import { isInternalFundraiser, INDEPENDENT_FUNDRAISER_LABEL } from '@/lib/fundraiserFunding'
 import { fetchHomepageFeaturedFundraiser, type PublicFundraiser } from '@/lib/fundraisersPublic'
 import { trackClick } from '@/lib/analytics'
 
@@ -79,7 +80,7 @@ export function HomeFeaturedFundraiser() {
           <div className="min-w-0 flex-1 p-5 pt-0 sm:py-5 sm:pl-0 sm:pr-6">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80">
-                Community fundraiser
+                {isInternalFundraiser(fundraiser.funding_mode) ? 'KIGH fundraiser' : INDEPENDENT_FUNDRAISER_LABEL}
               </p>
               {goalReached ? (
                 <Badge className="bg-green-600 text-[10px] text-white hover:bg-green-600">

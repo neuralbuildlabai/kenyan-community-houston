@@ -99,6 +99,7 @@ const SubmitAnnouncementPage = lazy(() => import('@/pages/public/SubmitAnnouncem
 const SubmitBusinessPage = lazy(() => import('@/pages/public/SubmitBusinessPage').then((m) => ({ default: m.SubmitBusinessPage })))
 const SubmitEventPage = lazy(() => import('@/pages/public/SubmitEventPage').then((m) => ({ default: m.SubmitEventPage })))
 const SubmitFundraiserPage = lazy(() => import('@/pages/public/SubmitFundraiserPage').then((m) => ({ default: m.SubmitFundraiserPage })))
+const ManageFundraiserPage = lazy(() => import('@/pages/public/ManageFundraiserPage').then((m) => ({ default: m.ManageFundraiserPage })))
 const SupportPage = lazy(() => import('@/pages/public/SupportPage').then((m) => ({ default: m.SupportPage })))
 const TermsPage = lazy(() => import('@/pages/public/TermsPage').then((m) => ({ default: m.TermsPage })))
 
@@ -140,6 +141,7 @@ export default function App() {
 
             <Route path="community-support" element={<CommunitySupportPage />} />
             <Route path="community-support/submit" element={<SubmitFundraiserPage />} />
+            <Route path="community-support/manage" element={<ManageFundraiserPage />} />
             <Route path="community-support/:slug" element={<FundraiserDetailPage />} />
 
             {/* Permanent memorial URLs — do not rename (printed QR destinations). */}

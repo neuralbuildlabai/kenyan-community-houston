@@ -85,3 +85,56 @@ export function validateFundraiserFunding({
   if (!supportMethodsAvailable) return KIGH_SUPPORT_UNAVAILABLE_MESSAGE
   return null
 }
+
+/**
+ * Community fundraisers (migration 090). KIGH lists them but does not run
+ * them or hold their money, so the public form only takes external
+ * fundraisers and every public surface says so.
+ */
+export const INDEPENDENT_FUNDRAISER_LABEL = 'Independent fundraiser'
+
+export const INDEPENDENT_FUNDRAISER_NOTE =
+  'Not run by KIGH. Donations go straight to the organizer’s own fundraising page. KIGH lists it for the community but does not collect or hold these funds.'
+
+export const ORGANIZER_REPORTED_SOURCE_LABEL =
+  'Amount reported by the organizer. KIGH does not hold or verify these funds.'
+
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+
+export function isValidEmail(value: string): boolean {
+  return EMAIL_RE.test(value.trim())
+}
+
+/** https only, with a real host: the same rule the database applies. */
+export function isValidDonationUrl(value: string): boolean {
+  return /^https:\/\/[^\s/]+\.[^\s]+$/i.test(value.trim())
+}
+
+/**
+ * Form-side mirror of `kigh_capture_submission_private()`: a public
+ * fundraiser needs its own donation page and an email for the organizer's
+ * private manage link. Returns a message to show, or null when submittable.
+ */
+export function validateIndependentFundraiser({
+  donationUrl,
+  organizerEmail,
+}: {
+  donationUrl: string
+  organizerEmail: string
+}): string | null {
+  if (!donationUrl.trim()) return 'Add the link to your fundraising page (GoFundMe, Givebutter, etc.).'
+  if (!isValidDonationUrl(donationUrl)) return 'The donation link must be a full https:// address.'
+  if (!organizerEmail.trim()) return 'Add the organizer’s email so we can send your private update link.'
+  if (!isValidEmail(organizerEmail)) return 'Enter a valid organizer email address.'
+  return null
+}
+
+/** Database refusals from migration 090, in words a submitter can act on. */
+export function fundraiserSubmitErrorMessage(error: { message?: string | null } | null | undefined): string | null {
+  const message = error?.message ?? ''
+  if (message.includes('fundraiser_must_be_independent'))
+    return 'Community fundraisers must use your own donation page. Only KIGH admins can run a fundraiser through KIGH.'
+  if (message.includes('donation_link_required')) return 'Add a full https:// link to your fundraising page.'
+  if (message.includes('organizer_email_required')) return 'Enter a valid organizer email address.'
+  return null
+}

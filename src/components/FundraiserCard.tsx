@@ -12,6 +12,7 @@ import {
   toCents,
 } from '@/lib/fundraiserCollections'
 import { fundraiserPath } from '@/lib/fundraiserShare'
+import { isInternalFundraiser, INDEPENDENT_FUNDRAISER_LABEL } from '@/lib/fundraiserFunding'
 import type { FundraiserVerificationStatus } from '@/lib/types'
 
 /** The fields a listing card needs — satisfied by both `Fundraiser` and `PublicFundraiser`. */
@@ -27,6 +28,7 @@ interface FundraiserCardFundraiser {
   raised_amount: number
   verification_status: FundraiserVerificationStatus
   published_at: string | null
+  funding_mode?: string | null
 }
 
 interface FundraiserCardProps {
@@ -74,6 +76,11 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
           <Badge variant="secondary" className="text-xs">
             {fundraiser.category}
           </Badge>
+          {isInternalFundraiser(fundraiser.funding_mode) ? null : (
+            <Badge variant="outline" className="text-xs">
+              {INDEPENDENT_FUNDRAISER_LABEL}
+            </Badge>
+          )}
           {goalReached ? (
             <Badge className="bg-green-600 text-xs text-white hover:bg-green-600">
               {GOAL_REACHED_LABEL}

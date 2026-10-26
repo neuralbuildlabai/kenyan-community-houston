@@ -1,30 +1,26 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, CheckCircle, AlertTriangle, ShieldCheck, Eye } from 'lucide-react'
+import { ArrowLeft, CheckCircle, AlertTriangle, ShieldCheck, Eye, ExternalLink } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { PublicPageHero } from '@/components/public/PublicPageHero'
 import { BotTrapField } from '@/components/public/BotTrapField'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { KighSupportHandles } from '@/components/support/KighSupportHandles'
 import { supabase } from '@/lib/supabase'
 import { trackSubmissionCreated } from '@/lib/analytics'
 import { FUNDRAISER_CATEGORIES, FUNDRAISER_DISCLAIMER } from '@/lib/constants'
 import {
   buildFundraiserFundingPayload,
-  validateFundraiserFunding,
-  INTERNAL_FUNDRAISER_HELPER_TEXT,
-  INTERNAL_FUNDRAISER_LABEL,
-  KIGH_ORGANIZED_LABEL,
-  KIGH_SUPPORT_UNAVAILABLE_MESSAGE,
+  fundraiserSubmitErrorMessage,
+  validateIndependentFundraiser,
+  INDEPENDENT_FUNDRAISER_LABEL,
+  INDEPENDENT_FUNDRAISER_NOTE,
 } from '@/lib/fundraiserFunding'
-import { hasActiveKighSupportOptions } from '@/lib/kighSupportOptions'
 import { generateSlug, statusLabel } from '@/lib/utils'
 import { RATE_LIMITED_MESSAGE, isRateLimitedError, useFormBotGuard } from '@/lib/formBotGuard'
 import { toast } from 'sonner'
@@ -40,20 +36,18 @@ export function SubmitFundraiserPage() {
     body: '',
     beneficiary_name: '',
     organizer_name: '',
+    organizer_email: '',
     organizer_contact: '',
     goal_amount: '',
     donation_url: '',
     deadline: '',
   })
-  const [isInternal, setIsInternal] = useState(false)
   const [loading, setLoading] = useState(false)
   // The status the row was actually saved with. The insert policy and a
   // CHECK constraint both pin it to 'pending' (migration 083), so a
   // submission that returns without an error is a pending submission —
   // never a published one, whatever the confirmation screen might imply.
   const [submittedStatus, setSubmittedStatus] = useState<string | null>(null)
-  const supportMethodsAvailable = hasActiveKighSupportOptions()
-  const fundingMode = isInternal ? 'internal' : 'external'
   const { trapValue, setTrapValue, isLikelyBot } = useFormBotGuard()
 
   async function handleSubmit(e: React.FormEvent) {
@@ -62,7 +56,10 @@ export function SubmitFundraiserPage() {
       toast.error('Please fill in all required fields')
       return
     }
-    const fundingError = validateFundraiserFunding({ fundingMode, supportMethodsAvailable })
+    const fundingError = validateIndependentFundraiser({
+      donationUrl: form.donation_url,
+      organizerEmail: form.organizer_email,
+    })
     if (fundingError) {
       toast.error(fundingError)
       return
@@ -81,17 +78,25 @@ export function SubmitFundraiserPage() {
         body: form.body || null,
         beneficiary_name: form.beneficiary_name,
         organizer_name: form.organizer_name || null,
+        // Both are moved to the admin-only store and blanked on this row by
+        // the database (migration 090), so they never become public.
+        organizer_email: form.organizer_email.trim(),
         organizer_contact: form.organizer_contact || null,
         goal_amount: form.goal_amount ? parseFloat(form.goal_amount) : null,
         raised_amount: 0,
-        ...buildFundraiserFundingPayload({ fundingMode, donationUrl: form.donation_url }),
+        ...buildFundraiserFundingPayload({ fundingMode: 'external', donationUrl: form.donation_url }),
         deadline: form.deadline || null,
         status: SUBMITTED_FUNDRAISER_STATUS,
         verification_status: 'unverified',
       },
     ])
     setLoading(false)
-    if (error) toast.error(isRateLimitedError(error) ? RATE_LIMITED_MESSAGE : 'Submission failed. Please try again.')
+    if (error)
+      toast.error(
+        isRateLimitedError(error)
+          ? RATE_LIMITED_MESSAGE
+          : fundraiserSubmitErrorMessage(error) ?? 'Submission failed. Please try again.'
+      )
     else {
       void trackSubmissionCreated('fundraiser')
       setSubmittedStatus(SUBMITTED_FUNDRAISER_STATUS)
@@ -140,6 +145,11 @@ export function SubmitFundraiserPage() {
                       </Link>{' '}
                       with its own permanent page you can share on WhatsApp.
                     </li>
+                    <li>
+                      When it goes live we email you a private link to update the amount raised
+                      and close donations. KIGH does not hold the money, so you keep the total
+                      current.
+                    </li>
                     <li>If anything needs changing first, we will reach out before publishing.</li>
                   </ol>
                 </div>
@@ -168,7 +178,7 @@ export function SubmitFundraiserPage() {
       <PublicPageHero
         eyebrow="Community support"
         title="Submit a Fundraiser"
-        subtitle="Share a community support update or fundraising drive. All submissions go through moderation before publication."
+        subtitle="List your own fundraiser for the community. KIGH reviews every submission, but donations go to your fundraising page, not to KIGH."
         primaryAction={
           <Button asChild variant="ghost" size="sm" className="-ml-3 gap-1">
             <Link to="/community-support">
@@ -250,9 +260,26 @@ export function SubmitFundraiserPage() {
                     />
                   </div>
                   <div className="form-field-stack">
-                    <Label htmlFor="organizer_contact">Organizer Contact (private)</Label>
+                    <Label htmlFor="organizer_email">
+                      Organizer Email <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="organizer_email"
+                      type="email"
+                      autoComplete="email"
+                      value={form.organizer_email}
+                      onChange={(e) => setForm({ ...form, organizer_email: e.target.value })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Where we send your private link for updating the total.
+                    </p>
+                  </div>
+                  <div className="form-field-stack">
+                    <Label htmlFor="organizer_contact">Phone (optional)</Label>
                     <Input
                       id="organizer_contact"
+                      type="tel"
+                      autoComplete="tel"
                       value={form.organizer_contact}
                       onChange={(e) =>
                         setForm({ ...form, organizer_contact: e.target.value })
@@ -286,66 +313,32 @@ export function SubmitFundraiserPage() {
                       onChange={(e) => setForm({ ...form, deadline: e.target.value })}
                     />
                   </div>
-                  <div className="sm:col-span-2 space-y-4 rounded-xl border border-primary/15 bg-secondary/30 p-4">
-                    <div className="flex items-start gap-3">
-                      <Checkbox
-                        id="internal_fundraiser"
-                        checked={isInternal}
-                        onCheckedChange={(v) => setIsInternal(v === true)}
-                        className="mt-0.5"
-                      />
-                      <div className="min-w-0 space-y-1">
-                        <Label
-                          htmlFor="internal_fundraiser"
-                          className="cursor-pointer text-sm font-semibold leading-snug"
-                        >
-                          {INTERNAL_FUNDRAISER_LABEL}
-                        </Label>
-                        <p className="text-sm leading-relaxed text-muted-foreground">
-                          {isInternal
-                            ? INTERNAL_FUNDRAISER_HELPER_TEXT
-                            : 'Check this if KIGH is organizing the fundraiser and collecting donations through its official handles.'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {isInternal && (
-                      <div className="space-y-3 border-t border-border/45 pt-4">
-                        <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
-                          {KIGH_ORGANIZED_LABEL}
-                        </Badge>
-                        {supportMethodsAvailable ? (
-                          <>
-                            <KighSupportHandles variant="compact" />
-                            <p className="text-[11px] leading-relaxed text-muted-foreground">
-                              These are the official handles from{' '}
-                              <Link to="/support" className="link-editorial">
-                                Ways to Support
-                              </Link>
-                              . They stay in sync — nothing is copied into this fundraiser.
-                            </p>
-                          </>
-                        ) : (
-                          <p className="text-sm leading-relaxed text-destructive">
-                            {KIGH_SUPPORT_UNAVAILABLE_MESSAGE}
-                          </p>
-                        )}
-                      </div>
-                    )}
+                  <div
+                    className="sm:col-span-2 space-y-2 rounded-xl border border-primary/15 bg-secondary/30 p-4"
+                    data-testid="fundraiser-independent-explainer"
+                  >
+                    <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
+                      {INDEPENDENT_FUNDRAISER_LABEL}
+                    </Badge>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {INDEPENDENT_FUNDRAISER_NOTE} Set up your fundraiser on a site such as
+                      GoFundMe or Givebutter first, then paste its link below.
+                    </p>
                   </div>
 
-                  {!isInternal && (
-                    <div className="sm:col-span-2 form-field-stack">
-                      <Label htmlFor="donation_url">Donation / GoFundMe Link</Label>
-                      <Input
-                        id="donation_url"
-                        type="url"
-                        value={form.donation_url}
-                        onChange={(e) => setForm({ ...form, donation_url: e.target.value })}
-                        placeholder="https://gofundme.com/…"
-                      />
-                    </div>
-                  )}
+                  <div className="sm:col-span-2 form-field-stack">
+                    <Label htmlFor="donation_url">
+                      Your Fundraising Page Link <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="donation_url"
+                      type="url"
+                      inputMode="url"
+                      value={form.donation_url}
+                      onChange={(e) => setForm({ ...form, donation_url: e.target.value })}
+                      placeholder="https://gofundme.com/…"
+                    />
+                  </div>
                 </div>
               </fieldset>
 
@@ -381,7 +374,7 @@ export function SubmitFundraiserPage() {
                   type="submit"
                   size="lg"
                   className="w-full min-w-[12rem] sm:w-auto"
-                  disabled={loading || (isInternal && !supportMethodsAvailable)}
+                  disabled={loading}
                 >
                   {loading ? 'Submitting…' : 'Submit for Review'}
                 </Button>
@@ -411,9 +404,15 @@ export function SubmitFundraiserPage() {
                 <li className="flex gap-3">
                   <Eye className="h-4 w-4 mt-0.5 shrink-0 text-primary/70" />
                   <span>
-                    <span className="font-medium text-foreground">Transparent.</span> If you have an
-                    external donation link (GoFundMe, Givebutter), include it so neighbors can see
-                    progress directly.
+                    <span className="font-medium text-foreground">Transparent.</span> Your own
+                    fundraising page (GoFundMe, Givebutter) lets neighbors see progress directly.
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <ExternalLink className="h-4 w-4 mt-0.5 shrink-0 text-primary/70" />
+                  <span>
+                    <span className="font-medium text-foreground">Yours to run.</span> KIGH lists
+                    your fundraiser but does not collect, hold or pass on donations.
                   </span>
                 </li>
               </ul>

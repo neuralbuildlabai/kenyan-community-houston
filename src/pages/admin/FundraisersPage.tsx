@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, Coins, Copy, ExternalLink, Eye, Search, Trash2 } from 'lucide-react'
+import { Check, Coins, Copy, ExternalLink, Eye, KeyRound, Search, Trash2, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
@@ -8,12 +8,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { FundraiserCollectionsManager } from '@/components/admin/FundraiserCollectionsManager'
+import { FundraiserManageLinkDialog } from '@/components/admin/FundraiserManageLinkDialog'
+import { RejectSubmissionDialog } from '@/components/admin/RejectSubmissionDialog'
 import { supabase } from '@/lib/supabase'
 import { moderationStatusPatch } from '@/lib/publishLifecycle'
 import {
   FUNDRAISER_FUNDING_MODES,
   fundraiserFundingModeLabel,
   fundraiserFundingModePatch,
+  isInternalFundraiser,
   normalizeFundraiserFundingMode,
 } from '@/lib/fundraiserFunding'
 import { fundraiserPath, fundraiserPublicUrl } from '@/lib/fundraiserShare'
@@ -33,14 +36,23 @@ interface Fundraiser {
   donations_closed: boolean | null
   is_homepage_featured: boolean | null
   beneficiary_name: string
+  rejection_note: string | null
   created_at: string
 }
 
-const STATUS_OPTIONS = ['all', 'published', 'pending', 'draft', 'archived']
+/** Admin-only contact store (migration 090); never on the public row. */
+interface PrivateContact {
+  record_id: string
+  email: string | null
+  contact: string | null
+  manage_token_created_at: string | null
+}
+
+const STATUS_OPTIONS = ['all', 'published', 'pending', 'draft', 'rejected', 'archived']
 const VERIFICATION = ['unverified', 'under_review', 'verified', 'flagged']
 
 const SELECT_COLUMNS =
-  'id, title, slug, category, status, verification_status, funding_mode, goal_amount, raised_amount, donations_closed, is_homepage_featured, beneficiary_name, created_at'
+  'id, title, slug, category, status, verification_status, funding_mode, goal_amount, raised_amount, donations_closed, is_homepage_featured, beneficiary_name, rejection_note, created_at'
 
 /** Copy-to-clipboard for one row's public URL, with its own confirmation state. */
 function CopyPublicLinkButton({ slug }: { slug: string }) {
@@ -84,13 +96,26 @@ export function AdminFundraisersPage() {
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [collectionsFor, setCollectionsFor] = useState<Fundraiser | null>(null)
+  const [contacts, setContacts] = useState<Record<string, PrivateContact>>({})
+  const [rejecting, setRejecting] = useState<Fundraiser | null>(null)
+  const [manageLinkFor, setManageLinkFor] = useState<Fundraiser | null>(null)
+  const [internalConfirm, setInternalConfirm] = useState<Fundraiser | null>(null)
 
   async function load() {
     setLoading(true)
     let q = supabase.from('fundraisers').select(SELECT_COLUMNS).order('created_at', { ascending: false })
     if (statusFilter !== 'all') q = q.eq('status', statusFilter)
-    const { data } = await q
+    const [{ data }, { data: privateRows }] = await Promise.all([
+      q,
+      supabase
+        .from('kigh_submission_private')
+        .select('record_id, email, contact, manage_token_created_at')
+        .eq('source_table', 'fundraisers'),
+    ])
     setItems((data ?? []) as unknown as Fundraiser[])
+    setContacts(
+      Object.fromEntries(((privateRows ?? []) as PrivateContact[]).map((r) => [r.record_id, r]))
+    )
     setLoading(false)
   }
 
@@ -100,6 +125,10 @@ export function AdminFundraisersPage() {
   useEffect(() => { load() }, [statusFilter])
 
   async function updateStatus(id: string, status: string) {
+    if (status === 'rejected') {
+      setRejecting(items.find((f) => f.id === id) ?? null)
+      return
+    }
     const { data, error } = await supabase
       .from('fundraisers')
       .update(moderationStatusPatch(status))
@@ -129,6 +158,12 @@ export function AdminFundraisersPage() {
    * that carries both.
    */
   async function updateFundingMode(id: string, mode: string) {
+    const row = items.find((f) => f.id === id)
+    if (mode === 'internal' && row && !isInternalFundraiser(row.funding_mode) && internalConfirm?.id !== id) {
+      setInternalConfirm(row)
+      return
+    }
+    setInternalConfirm(null)
     const { error } = await supabase.from('fundraisers').update(fundraiserFundingModePatch(mode)).eq('id', id)
     if (error) toast.error(error.message || 'Update failed')
     else { toast.success('Donation source updated'); load() }
@@ -208,6 +243,18 @@ export function AdminFundraisersPage() {
                   <span className="block text-xs font-normal text-muted-foreground">
                     {item.beneficiary_name}
                   </span>
+                  {contacts[item.id]?.email || contacts[item.id]?.contact ? (
+                    <span className="block break-all text-xs font-normal text-muted-foreground" title="Private: admins only">
+                      {[contacts[item.id]?.email, contacts[item.id]?.contact !== contacts[item.id]?.email ? contacts[item.id]?.contact : null]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </span>
+                  ) : null}
+                  {item.status === 'rejected' && item.rejection_note ? (
+                    <span className="mt-1 block text-xs font-normal text-red-700" title={item.rejection_note}>
+                      <span className="line-clamp-2">Rejected: {item.rejection_note}</span>
+                    </span>
+                  ) : null}
                 </TableCell>
                 <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
                   <span className="font-medium text-foreground">{formatCents(collectedCents)}</span>
@@ -261,7 +308,7 @@ export function AdminFundraisersPage() {
                 <TableCell>
                   <Select value={item.status} onValueChange={(v) => updateStatus(item.id, v)}>
                     <SelectTrigger className="h-7 text-xs w-28"><SelectValue /></SelectTrigger>
-                    <SelectContent>{['draft', 'pending', 'published', 'archived'].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                    <SelectContent>{['draft', 'pending', 'published', 'rejected', 'archived'].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                   </Select>
                 </TableCell>
                 <TableCell>
@@ -286,15 +333,39 @@ export function AdminFundraisersPage() {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex flex-wrap items-center justify-end gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 gap-1 px-2 text-xs"
-                      onClick={() => setCollectionsFor(item)}
-                      data-testid="admin-fundraiser-collections"
-                    >
-                      <Coins className="h-3.5 w-3.5" aria-hidden /> Collections
-                    </Button>
+                    {isInternalFundraiser(item.funding_mode) ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 gap-1 px-2 text-xs"
+                        onClick={() => setCollectionsFor(item)}
+                        data-testid="admin-fundraiser-collections"
+                      >
+                        <Coins className="h-3.5 w-3.5" aria-hidden /> Collections
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 gap-1 px-2 text-xs"
+                        onClick={() => setManageLinkFor(item)}
+                        title="Organizer's private link for updating the total"
+                        data-testid="admin-fundraiser-manage-link"
+                      >
+                        <KeyRound className="h-3.5 w-3.5" aria-hidden /> Organizer link
+                      </Button>
+                    )}
+                    {item.status !== 'rejected' ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 gap-1 px-2 text-xs text-red-700 hover:text-red-700"
+                        onClick={() => setRejecting(item)}
+                        data-testid="admin-fundraiser-reject"
+                      >
+                        <XCircle className="h-3.5 w-3.5" aria-hidden /> Reject
+                      </Button>
+                    ) : null}
                     <Button asChild size="sm" variant="ghost" className="h-7 gap-1 px-2 text-xs">
                       <a href={fundraiserPath(item.slug)} target="_blank" rel="noopener noreferrer">
                         {published ? (
@@ -328,6 +399,33 @@ export function AdminFundraisersPage() {
           onSaved={load}
         />
       ) : null}
+
+      <RejectSubmissionDialog
+        type="fundraisers"
+        item={rejecting ? { id: rejecting.id, title: rejecting.title } : null}
+        knownEmail={rejecting ? contacts[rejecting.id]?.email ?? null : null}
+        open={rejecting !== null}
+        onOpenChange={(o) => !o && setRejecting(null)}
+        onRejected={load}
+      />
+
+      <FundraiserManageLinkDialog
+        fundraiser={manageLinkFor ? { id: manageLinkFor.id, title: manageLinkFor.title } : null}
+        organizerEmail={manageLinkFor ? contacts[manageLinkFor.id]?.email ?? null : null}
+        issuedAt={manageLinkFor ? contacts[manageLinkFor.id]?.manage_token_created_at ?? null : null}
+        open={manageLinkFor !== null}
+        onOpenChange={(o) => !o && setManageLinkFor(null)}
+        onIssued={load}
+      />
+
+      <ConfirmDialog
+        open={internalConfirm !== null}
+        onOpenChange={(open) => !open && setInternalConfirm(null)}
+        title="Run this fundraiser through KIGH?"
+        description="Donations will go to KIGH's official payment handles, the page will say Organized by KIGH, and the organizer's external link and update link are removed. Only do this for fundraisers KIGH itself runs."
+        confirmLabel="Use KIGH handles"
+        onConfirm={() => internalConfirm && void updateFundingMode(internalConfirm.id, 'internal')}
+      />
 
       <ConfirmDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)} title="Delete Fundraiser" description="This action cannot be undone." onConfirm={deleteItem} />
     </div>

@@ -69,10 +69,13 @@ describe('public fundraiser reads', () => {
 })
 
 describe('public fundraiser page composition', () => {
-  it('derives every figure from one ledger summary', () => {
+  it('derives every figure from one summary per fundraiser kind', () => {
+    // KIGH-run: KIGH's ledger. Independent: the organizer's reported total.
     expect(detailPage).toContain('summarizeFundraiserCollections(collections, item.goal_amount)')
-    expect(detailPage).toContain('<FundraiserProgressPanel summary={summary} />')
+    expect(detailPage).toContain('summarizeReportedTotal(item.raised_amount, item.goal_amount, item.collections_updated_at)')
+    expect(detailPage).toContain('summary={summary}')
     expect(detailPage).toContain('<FundraiserCollectionsTable summary={summary} />')
+    expect(detailPage).toContain('ORGANIZER_REPORTED_SOURCE_LABEL')
     for (const component of [progressPanel, collectionsTable]) {
       expect(component).not.toContain('raised_amount')
     }

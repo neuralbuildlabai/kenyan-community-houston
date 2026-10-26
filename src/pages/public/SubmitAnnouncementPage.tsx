@@ -18,6 +18,7 @@ import { trackSubmissionCreated } from '@/lib/analytics'
 import { generateSlug } from '@/lib/utils'
 import { RATE_LIMITED_MESSAGE, isRateLimitedError, useFormBotGuard } from '@/lib/formBotGuard'
 import { toast } from 'sonner'
+import { isValidEmail } from '@/lib/fundraiserFunding'
 
 type CalendarFields = {
   calendar_start_date: string
@@ -48,6 +49,9 @@ export function SubmitAnnouncementPage() {
     summary: '',
     body: '',
     author_name: '',
+    // Optional. Moved to the admin-only store by the database (migration 090)
+    // so KIGH can tell the submitter if the announcement needs changes.
+    submitter_email: '',
     external_url: '',
     image_url: '',
   })
@@ -92,6 +96,11 @@ export function SubmitAnnouncementPage() {
           return
         }
       }
+    }
+
+    if (form.submitter_email.trim() && !isValidEmail(form.submitter_email)) {
+      toast.error('Please enter a valid email address, or leave it blank.')
+      return
     }
 
     if (isLikelyBot()) {
@@ -280,6 +289,19 @@ export function SubmitAnnouncementPage() {
                       value={form.author_name}
                       onChange={(e) => setForm({ ...form, author_name: e.target.value })}
                     />
+                  </div>
+                  <div className="form-field-stack">
+                    <Label htmlFor="submitter_email">Your Email (optional, private)</Label>
+                    <Input
+                      id="submitter_email"
+                      type="email"
+                      autoComplete="email"
+                      value={form.submitter_email}
+                      onChange={(e) => setForm({ ...form, submitter_email: e.target.value })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Only used to tell you if your announcement needs changes. Never shown publicly.
+                    </p>
                   </div>
                   <div className="sm:col-span-2 form-field-stack">
                     <Label htmlFor="summary">Summary (optional)</Label>

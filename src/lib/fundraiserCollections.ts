@@ -164,6 +164,33 @@ export function summarizeFundraiserCollections(
   }
 }
 
+/**
+ * Independent fundraisers (migration 090) have no KIGH ledger: the organizer
+ * reports one running total through their manage link. Same summary shape,
+ * so the progress panel renders it identically, with no ledger rows.
+ */
+export function summarizeReportedTotal(
+  raisedAmount: number | string | null | undefined,
+  goalAmount: number | string | null | undefined,
+  reportedAt: string | null | undefined
+): FundraiserFundingSummary {
+  const base = summarizeFundraiserCollections([], goalAmount)
+  const collectedCents = toCents(raisedAmount)
+  const { goalCents } = base
+  const hasGoal = goalCents !== null && goalCents > 0
+  const percentRaised = hasGoal ? (collectedCents / goalCents!) * 100 : null
+  return {
+    ...base,
+    collectedCents,
+    percentRaised,
+    progressBarPercent: percentRaised === null ? 0 : Math.min(100, Math.max(0, percentRaised)),
+    remainingCents: hasGoal ? Math.max(0, goalCents! - collectedCents) : 0,
+    goalReached: hasGoal ? collectedCents >= goalCents! : false,
+    overageCents: hasGoal ? Math.max(0, collectedCents - goalCents!) : 0,
+    lastUpdated: reportedAt ?? null,
+  }
+}
+
 export interface CollectionDraft {
   received_on: string
   amount: string
