@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ExternalLink, Eye, Search } from 'lucide-react'
+import { ExternalLink, Eye, MailCheck, Search, Send } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,7 +35,16 @@ type SignupRow = {
   availability_note: string | null
   status: string
   submitted_at: string
+  /** Migration 091: set when the confirmation / reminder email was queued. */
+  confirmation_emailed_at: string | null
+  reminder_emailed_at: string | null
+  /** Null for volunteers confirmed before emails existed: they are never emailed automatically. */
+  confirmed_at: string | null
   events: { title: string; slug: string } | null
+}
+
+function emailedLabel(iso: string | null): string | null {
+  return iso ? `Emailed ${formatDateShort(iso.slice(0, 10))}` : null
 }
 
 export function AdminVolunteersPage() {
@@ -52,7 +61,9 @@ export function AdminVolunteersPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('event_volunteer_signups')
-      .select('id, event_id, full_name, phone, email, volunteer_role, availability_note, status, submitted_at, events(title, slug)')
+      .select(
+        'id, event_id, full_name, phone, email, volunteer_role, availability_note, status, submitted_at, confirmation_emailed_at, reminder_emailed_at, confirmed_at, events(title, slug)'
+      )
       .order('submitted_at', { ascending: false })
     if (error) {
       toast.error(error.message)
@@ -72,6 +83,9 @@ export function AdminVolunteersPage() {
           availability_note: (r.availability_note as string | null) ?? null,
           status: r.status as string,
           submitted_at: r.submitted_at as string,
+          confirmation_emailed_at: (r.confirmation_emailed_at as string | null) ?? null,
+          reminder_emailed_at: (r.reminder_emailed_at as string | null) ?? null,
+          confirmed_at: (r.confirmed_at as string | null) ?? null,
           events: one?.title ? { title: one.title, slug: one.slug ?? '' } : null,
         }
       })
@@ -117,8 +131,31 @@ export function AdminVolunteersPage() {
     setUpdatingId(null)
     if (error) toast.error(error.message)
     else {
-      toast.success('Status updated')
-      setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)))
+      const row = rows.find((r) => r.id === id)
+      toast.success(
+        status === 'confirmed' && row?.email && !row.confirmation_emailed_at
+          ? 'Confirmed. The volunteer has been emailed their confirmation.'
+          : 'Status updated'
+      )
+      // Confirming emails the volunteer in the database (migration 091);
+      // reload so the "Emailed" note appears.
+      void load()
+    }
+  }
+
+  async function resendConfirmation(r: SignupRow) {
+    setUpdatingId(r.id)
+    const { data, error } = await supabase.rpc('kigh_admin_send_volunteer_email', {
+      p_signup_id: r.id,
+      p_kind: 'confirmation',
+    })
+    setUpdatingId(null)
+    const res = data as { emailed: boolean; email: string | null } | null
+    if (error) toast.error(error.message)
+    else if (!res?.emailed) toast.error('No email on file. Use WhatsApp or text from the details view.')
+    else {
+      toast.success(`Confirmation emailed to ${res.email}`)
+      void load()
     }
   }
 
@@ -235,6 +272,22 @@ export function AdminVolunteersPage() {
                           ))}
                         </SelectContent>
                       </Select>
+                      {r.status === 'confirmed' ? (
+                        <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                          {r.confirmation_emailed_at ? (
+                            <>
+                              <MailCheck className="h-3 w-3 text-green-600" aria-hidden />
+                              {emailedLabel(r.confirmation_emailed_at)}
+                            </>
+                          ) : !r.confirmed_at ? (
+                            'Confirmed before email notices'
+                          ) : r.email ? (
+                            'Email sending…'
+                          ) : (
+                            'No email: message them'
+                          )}
+                        </p>
+                      ) : null}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                       {formatDateShort(r.submitted_at.slice(0, 10))}
@@ -250,6 +303,18 @@ export function AdminVolunteersPage() {
                         >
                           <Eye className="h-3.5 w-3.5" />
                         </Button>
+                        {r.status === 'confirmed' && r.email && r.confirmed_at ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            title="Resend confirmation email"
+                            disabled={updatingId === r.id}
+                            onClick={() => void resendConfirmation(r)}
+                          >
+                            <Send className="h-3.5 w-3.5" />
+                          </Button>
+                        ) : null}
                         {r.events?.slug ? (
                           <Button variant="ghost" size="icon" className="h-8 w-8" asChild title="Public event">
                             <a href={`/events/${r.events.slug}`} target="_blank" rel="noopener noreferrer">
@@ -282,6 +347,8 @@ export function AdminVolunteersPage() {
                 { label: 'Phone', value: selected.phone },
                 { label: 'Email', value: selected.email },
                 { label: 'Status', value: volunteerSignupStatusLabel(selected.status) },
+                { label: 'Confirmation email', value: emailedLabel(selected.confirmation_emailed_at) },
+                { label: 'Reminder email', value: emailedLabel(selected.reminder_emailed_at) },
                 { label: 'Submitted', value: formatDateShort(selected.submitted_at.slice(0, 10)) },
               ]
             : []
