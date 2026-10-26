@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Activity, CheckCircle2, Server } from 'lucide-react'
+import { Activity, CheckCircle2, Mail, Server } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 import { APP_ENV_LABEL, appEnv } from '@/lib/appEnv'
@@ -12,6 +12,42 @@ type HealthPayload = {
   storage_objects_by_bucket?: { bucket_id: string; object_count: number }[]
   pending_and_inbox_counts?: Record<string, number>
   audit_events_last_7_days?: number
+}
+
+type EmailAlertStatus = {
+  enabled?: boolean
+  recipients?: string[]
+  from_address?: string
+  api_key_configured?: boolean
+  scheduled_jobs?: string[]
+  triggers_installed?: number
+  sources?: number
+  last_sent_at?: string | null
+  last_digest_at?: string | null
+  last_failure_at?: string | null
+  last_error?: string | null
+  unsent_alerts?: number
+  retrying_alerts?: number
+  sent_last_7_days?: number
+}
+
+function formatWhen(iso: string | null | undefined): string {
+  return iso ? new Date(iso).toLocaleString() : 'never'
+}
+
+/** Plain-words problems with the admin email alerts, empty when healthy. */
+function emailAlertProblems(s: EmailAlertStatus): string[] {
+  const problems: string[] = []
+  if (!s.enabled) problems.push('Alerts are switched off in kigh_admin_alert_settings.')
+  if (!s.api_key_configured) problems.push('No Resend API key in Vault (resend_api_key), so nothing can be sent.')
+  if ((s.scheduled_jobs ?? []).length < 2) problems.push('The every-minute sender or the daily digest is not scheduled.')
+  if ((s.triggers_installed ?? 0) < (s.sources ?? 0))
+    problems.push(`Only ${s.triggers_installed ?? 0} of ${s.sources ?? 0} forms are wired up. Re-run kigh_install_admin_alert_triggers().`)
+  if ((s.retrying_alerts ?? 0) > 0)
+    problems.push(`${s.retrying_alerts} alert(s) have failed 3+ times and are being retried (up to hourly).`)
+  if (s.last_failure_at && (!s.last_sent_at || s.last_failure_at > s.last_sent_at))
+    problems.push(`Last send failed: ${s.last_error ?? 'unknown error'}`)
+  return problems
 }
 
 function formatBytes(n: number | undefined): string {
@@ -38,6 +74,8 @@ export function AdminSystemHealthPage() {
   const [dbOk, setDbOk] = useState<boolean | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [emailStatus, setEmailStatus] = useState<EmailAlertStatus | null>(null)
+  const [emailError, setEmailError] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -58,6 +96,18 @@ export function AdminSystemHealthPage() {
       }
     }
     void load()
+
+    async function loadEmailStatus() {
+      const { data, error: rpcErr } = await supabase.rpc('kigh_admin_email_alert_status')
+      if (rpcErr) {
+        setEmailError(
+          rpcErr.code === 'PGRST202' ? 'Email alerts are not set up yet (migration 089 not applied).' : rpcErr.message,
+        )
+        return
+      }
+      setEmailStatus((data as EmailAlertStatus) ?? null)
+    }
+    void loadEmailStatus()
   }, [])
 
   const buckets = health?.storage_objects_by_bucket ?? []
@@ -132,6 +182,43 @@ export function AdminSystemHealthPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Mail className="h-4 w-4" /> Admin email alerts
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm space-y-2">
+          {emailError ? (
+            <p className="text-destructive">{emailError}</p>
+          ) : !emailStatus ? (
+            <span className="text-muted-foreground">Checking…</span>
+          ) : (
+            <>
+              {emailAlertProblems(emailStatus).length === 0 ? (
+                <p className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                  <span>Working. New submissions are emailed to {(emailStatus.recipients ?? []).join(', ')}.</span>
+                </p>
+              ) : (
+                <ul className="list-disc pl-5 text-destructive space-y-1">
+                  {emailAlertProblems(emailStatus).map((p) => (
+                    <li key={p}>{p}</li>
+                  ))}
+                </ul>
+              )}
+              <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-muted-foreground">
+                <p>Last email sent: <span className="text-foreground">{formatWhen(emailStatus.last_sent_at)}</span></p>
+                <p>Last daily summary: <span className="text-foreground">{formatWhen(emailStatus.last_digest_at)}</span></p>
+                <p>Alerts sent (7 days): <span className="text-foreground tabular-nums">{emailStatus.sent_last_7_days ?? 0}</span></p>
+                <p>Waiting to send: <span className="text-foreground tabular-nums">{emailStatus.unsent_alerts ?? 0}</span></p>
+                <p className="sm:col-span-2">From: <span className="text-foreground break-all">{emailStatus.from_address}</span></p>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {error && (
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
