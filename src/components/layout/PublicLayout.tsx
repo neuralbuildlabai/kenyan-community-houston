@@ -1,5 +1,5 @@
-import { Outlet } from 'react-router-dom'
 import { Header } from './Header'
+import { RouteOutlet } from './RouteOutlet'
 import { Footer } from './Footer'
 import { StagingBanner } from '@/components/StagingBanner'
 import { AnalyticsRouteListener } from '@/components/AnalyticsRouteListener'
@@ -13,7 +13,7 @@ export function PublicLayout() {
       <PasswordExpiryBanner />
       <Header />
       <main className="flex-1 min-w-0 bg-gradient-to-b from-background via-background to-secondary/20">
-        <Outlet />
+        <RouteOutlet />
       </main>
       <Footer />
     </div>

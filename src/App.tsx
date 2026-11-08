@@ -7,7 +7,6 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { PageLoader } from '@/components/LoadingSpinner'
 
 import { PublicLayout } from '@/components/layout/PublicLayout'
-import { AdminLayout } from '@/components/layout/AdminLayout'
 
 import { HomePage } from '@/pages/public/HomePage'
 import { NotFoundPage } from '@/pages/public/NotFoundPage'
@@ -17,11 +16,13 @@ import { SYSTEM_HEALTH_ADMIN_ROLES } from '@/lib/platformAdmin'
 import { RequireAuth } from '@/components/RequireAuth'
 import { RequiresFreshPassword } from '@/components/RequiresFreshPassword'
 import { PasswordExpiryRouteGate } from '@/components/PasswordExpiryRouteGate'
-import { LoginPage } from '@/pages/auth/LoginPage'
 
 // Route components load on demand: this keeps the 29 admin pages — and the
 // PDF libraries only the certificate pages use — out of the bundle a first-time
 // visitor downloads.
+// Admin shell and sign-in stay out of the public entry bundle.
+const AdminLayout = lazy(() => import('@/components/layout/AdminLayout').then((m) => ({ default: m.AdminLayout })))
+const LoginPage = lazy(() => import('@/pages/auth/LoginPage').then((m) => ({ default: m.LoginPage })))
 const AboutPage = lazy(() => import('@/pages/public/AboutPage').then((m) => ({ default: m.AboutPage })))
 const AdminAnalyticsPage = lazy(() => import('@/pages/admin/AdminAnalyticsPage').then((m) => ({ default: m.AdminAnalyticsPage })))
 const AdminAnnouncementsPage = lazy(() => import('@/pages/admin/AnnouncementsPage').then((m) => ({ default: m.AdminAnnouncementsPage })))

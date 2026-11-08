@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { AdminSidebar } from './AdminSidebar'
+import { RouteOutlet } from './RouteOutlet'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -122,7 +123,7 @@ export function AdminLayout() {
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
               </div>
             ) : (
-              <Outlet />
+              <RouteOutlet />
             )}
           </div>
         </main>

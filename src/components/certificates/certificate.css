@@ -1,3 +1,7 @@
+/* Certificate fonts load only with this stylesheet (admin certificates), not
+   on every page. certificatePdf.ts waits for them before export. */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Great+Vibes&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@600;700&display=swap');
+
 /* Certificate document — landscape US Letter (11 × 8.5 in) */
 
 .certificate-sheet {

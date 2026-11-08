@@ -57,7 +57,11 @@ export function SportsYouthPage() {
       <section className="relative overflow-hidden border-b border-border/50 bg-[#f7f2e8]">
         <div className="absolute inset-y-0 right-0 hidden w-[58%] lg:block">
           <img
-            src="/kigh-media/backgrounds/sportsyouth.png"
+            src="/kigh-media/backgrounds/sportsyouth-1600.webp"
+            srcSet="/kigh-media/backgrounds/sportsyouth-1000.webp 1000w, /kigh-media/backgrounds/sportsyouth-1600.webp 1600w"
+            sizes="58vw"
+            loading="lazy"
+            decoding="async"
             alt=""
             aria-hidden="true"
             className="h-full w-full object-cover object-center opacity-90"

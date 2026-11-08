@@ -17,7 +17,7 @@ export async function loginAsAdmin(page: Page) {
   }
   await page.goto('/login')
   await page.getByLabel('Email', { exact: false }).fill(email)
-  await page.getByLabel('Password', { exact: false }).fill(password)
+  await page.getByLabel('Password', { exact: true }).fill(password)
   await page.getByRole('button', { name: /sign in/i }).click()
   await page.waitForURL(/\/admin\/dashboard/, { timeout: 30_000 })
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
@@ -31,7 +31,7 @@ export async function loginAsMember(page: Page) {
   }
   await page.goto('/login')
   await page.getByLabel('Email', { exact: false }).fill(email)
-  await page.getByLabel('Password', { exact: false }).fill(password)
+  await page.getByLabel('Password', { exact: true }).fill(password)
   await page.getByRole('button', { name: /sign in/i }).click()
   await page.waitForURL(/\/profile/, { timeout: 30_000 })
   await expect(page.getByRole('heading', { name: 'My profile' })).toBeVisible()

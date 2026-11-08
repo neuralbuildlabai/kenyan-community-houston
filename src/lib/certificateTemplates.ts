@@ -59,10 +59,11 @@ export function formatCertificateReference(recordId: string): string {
   return compact ? `KIGH-${compact}` : ''
 }
 
-export const BIG_FIVE_CERTIFICATE_BG_PATH = '/kigh-media/kigh-big-five-certificate-bg.png'
+/** The default background is the same artwork as option 2, so it shares the file. */
+export const BIG_FIVE_CERTIFICATE_BG_PATH = '/kigh-media/certificates/kigh-big-five-certificate-bg-option-2.png'
 
 export const BIG_FIVE_CERTIFICATE_BG_OPTIONS = {
-  default: '/kigh-media/kigh-big-five-certificate-bg.png',
+  default: BIG_FIVE_CERTIFICATE_BG_PATH,
   option1: '/kigh-media/certificates/kigh-big-five-certificate-bg-option-1.png',
   option2: '/kigh-media/certificates/kigh-big-five-certificate-bg-option-2.png',
   option3: '/kigh-media/certificates/kigh-big-five-certificate-bg-option-3.png',

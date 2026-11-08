@@ -228,7 +228,10 @@ export function NewToHoustonPage() {
 
       <section className="relative overflow-hidden min-h-screen">
         <img
-          src="/kigh-media/backgrounds/newtohouston.png"
+          src="/kigh-media/backgrounds/newtohouston-1600.webp"
+          srcSet="/kigh-media/backgrounds/newtohouston-960.webp 960w, /kigh-media/backgrounds/newtohouston-1600.webp 1600w"
+          sizes="100vw"
+          decoding="async"
           alt=""
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 h-full w-full object-cover object-[center_top] opacity-70"

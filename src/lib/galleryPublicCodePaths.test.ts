@@ -52,19 +52,23 @@ describe('public gallery code paths — submitter PII guard', () => {
     expect(homePage).not.toMatch(/from\(\s*['"]gallery_images['"]\s*\)/)
   })
 
-  it('shows one public cover per album and keeps the full album behind sign-in', () => {
+  it('shows one public cover per album and keeps the full album for approved members', () => {
     expect(galleryPage).toContain('useAuth()')
     expect(galleryPage).toContain('data-testid="gallery-members-only"')
     expect(galleryPage).toContain('data-testid="gallery-cover-grid"')
     expect(galleryPage).toContain('data-testid="gallery-cover-card"')
     expect(galleryPage).toContain('loginNextFromLocation(location)')
     expect(galleryPage).toContain('buildLoginNextUrl(')
-    const signedOutBranch = galleryPage.slice(
-      galleryPage.indexOf('if (!userId)'),
+    // Covers only, unless the viewer is an approved member or an admin.
+    const approvalCheck = galleryPage.indexOf("rpc('kigh_is_approved_member')")
+    const coversOnlyBranch = galleryPage.slice(
+      galleryPage.indexOf('if (!browse)'),
       galleryPage.indexOf("from('gallery_images_public')"),
     )
-    expect(signedOutBranch).toContain('setImages([])')
-    expect(signedOutBranch).not.toContain("from('gallery_images_public')")
+    expect(approvalCheck).toBeGreaterThan(-1)
+    expect(approvalCheck).toBeLessThan(galleryPage.indexOf('if (!browse)'))
+    expect(coversOnlyBranch).toContain('setImages([])')
+    expect(coversOnlyBranch).not.toContain("from('gallery_images_public')")
   })
 
   it('GalleryPage does not select submitter PII columns', () => {

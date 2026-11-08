@@ -22,6 +22,11 @@ const PAGE_TITLE = 'Collins “Collo” Namaswa | Forever in Our Hearts'
 const PAGE_DESCRIPTION =
   'A respectful memorial page honoring the life and memory of Collins “Collo” Namaswa.'
 
+/** The memorial headings are the only public use of this font; load it here, not site-wide. */
+const MEMORIAL_FONT_ID = 'memorial-heading-font'
+const MEMORIAL_FONT_HREF =
+  'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&display=swap'
+
 export function CollinsColloNamaswaMemorialPage() {
   // An archived memorial is already refused at the edge (middleware.ts), so
   // a scanned QR code never reaches this component. This covers the other
@@ -29,6 +34,15 @@ export function CollinsColloNamaswaMemorialPage() {
   // The state defaults to active, so a failed lookup shows the memorial.
   const [statuses, setStatuses] = useState<MemorialStatusMap>({})
   const { isAdmin } = useAuth()
+
+  useEffect(() => {
+    if (document.getElementById(MEMORIAL_FONT_ID)) return
+    const link = document.createElement('link')
+    link.id = MEMORIAL_FONT_ID
+    link.rel = 'stylesheet'
+    link.href = MEMORIAL_FONT_HREF
+    document.head.appendChild(link)
+  }, [])
 
   useEffect(() => {
     let active = true

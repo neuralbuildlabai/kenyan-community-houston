@@ -174,6 +174,19 @@ async function waitForLayout(): Promise<void> {
   })
 }
 
+/**
+ * Certificate fonts load with certificate.css, not with the site, so wait
+ * for them before capturing or printing; otherwise the first export can
+ * fall back to Georgia. Bounded so a blocked font never stalls export.
+ */
+async function waitForFonts(timeoutMs = 5000): Promise<void> {
+  if (typeof document === 'undefined' || !document.fonts?.ready) return
+  await Promise.race([
+    document.fonts.ready.then(() => undefined),
+    new Promise<void>((resolve) => setTimeout(resolve, timeoutMs)),
+  ])
+}
+
 function createExportHost(): HTMLDivElement {
   const host = document.createElement('div')
   host.setAttribute('aria-hidden', 'true')
@@ -234,6 +247,7 @@ async function buildCaptureClone(elementOrId: HTMLElement | string): Promise<{
   await waitForCloneImages(clone)
   await prepareSignatureImagesInRoot(clone)
   await waitForCloneImages(clone)
+  await waitForFonts()
   sanitizeCloneForCapture(clone)
 
   const cloneDimensions = assertSheetDimensions(clone)
@@ -372,6 +386,7 @@ export async function printCertificate(elementOrId?: HTMLElement | string): Prom
   await waitForPrintImages(printRoot)
   await prepareSignatureImagesInRoot(printRoot)
   await waitForPrintImages(printRoot)
+  await waitForFonts()
   await waitForLayout()
 
   const rect = sheet.getBoundingClientRect()

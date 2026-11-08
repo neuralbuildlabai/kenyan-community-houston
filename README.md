@@ -25,7 +25,8 @@ A modern community platform connecting Kenyans across the greater Houston area. 
 | Backend | Supabase (PostgreSQL + Auth + Storage) |
 | Routing | React Router v6 |
 | Notifications | Sonner |
-| SEO | react-helmet-async |
+| SEO | `SEOHead` (writes `document.head`) + `middleware.ts` link previews for crawlers |
+| Hosting | Vercel, deployed from the CLI (`.vercelignore` decides what is uploaded) |
 
 ---
 
@@ -160,9 +161,7 @@ src/
 ├── components/
 │   ├── ui/              # shadcn/ui components (Button, Input, Card, etc.)
 │   ├── layout/          # PublicLayout, AdminLayout, Header, Footer, AdminSidebar
-│   ├── AnnouncementCard.tsx
-│   ├── BusinessCard.tsx
-│   ├── EventCard.tsx
+│   ├── public/          # Page sections and cards (EditorialEventRow, PublicPageHero, …)
 │   ├── FundraiserCard.tsx
 │   ├── SportsCard.tsx
 │   ├── ConfirmDialog.tsx

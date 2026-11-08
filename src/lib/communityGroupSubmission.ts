@@ -87,4 +87,4 @@ export function julyInterestLabel(interest: string | null | undefined): string {
   return JULY_INTEREST_OPTIONS.find((o) => o.value === interest)?.label ?? interest ?? '—'
 }
 
-export const COMMUNITY_SUBMIT_BG = '/images/community/commsignup.png'
+export const COMMUNITY_SUBMIT_BG = '/images/community/commsignup-1032.webp'

@@ -5,6 +5,8 @@ import { ArrowRight, HeartHandshake } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
+import { useGalleryImageUrls } from '@/lib/galleryImageUrls'
+import { SignedGalleryImage } from '@/components/gallery/SignedGalleryImage'
 import type { Event, Announcement } from '@/lib/types'
 import { buildHomepageWhatsHappeningList, filterPublishedUpcomingEvents } from '@/lib/homepageEvents'
 import { buildHomepageAnnouncementsList } from '@/lib/announcementsPublic'
@@ -15,7 +17,6 @@ import { HomeFeaturedFundraiser } from '@/components/landing/HomeFeaturedFundrai
 
 /** Optimized hero (see `public/kigh-media/houstonmainimage-hero.jpg`). */
 const HOME_HERO_IMAGE_JPEG = '/kigh-media/houstonmainimage-hero.jpg'
-const HOME_HERO_IMAGE_PNG = '/kigh-media/houstonmainimage.png'
 
 type HomeMoment = {
   id: string
@@ -63,6 +64,7 @@ export function HomePage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [moments, setMoments] = useState<HomeMoment[]>([])
   const [listsLoaded, setListsLoaded] = useState(false)
+  const momentUrl = useGalleryImageUrls(moments.map((m) => m.thumbnail_url ?? m.image_url))
 
   // The soonest event on the homepage list that currently accepts
   // volunteer signups. Only ONE badge appears across the list (admin
@@ -75,50 +77,45 @@ export function HomePage() {
     async function load() {
       try {
         const todayYmd = format(new Date(), 'yyyy-MM-dd')
-        const { data: ev } = await supabase
-          .from('events')
-          .select('*')
-          .eq('status', 'published')
-          .or(`end_date.gte.${todayYmd},and(end_date.is.null,start_date.gte.${todayYmd})`)
-          .order('start_date', { ascending: true })
-          .limit(60)
-        const raw = (ev as Event[]) ?? []
-        const upcomingOnly = filterPublishedUpcomingEvents(raw)
+        // Independent reads: run them together so the page waits for one
+        // round trip, not three. Limits stay above what is shown because
+        // recurrence/duplicate-title dedupe and expiry filtering run here.
+        const [{ data: ev }, { data: announcementRows }, { data: momentsRows }] = await Promise.all([
+          supabase
+            .from('events')
+            .select('*')
+            .eq('status', 'published')
+            .or(`end_date.gte.${todayYmd},and(end_date.is.null,start_date.gte.${todayYmd})`)
+            .order('start_date', { ascending: true })
+            .limit(60),
+          supabase
+            .from('announcements')
+            .select('*')
+            .eq('status', 'published')
+            .order('is_featured', { ascending: false })
+            .order('priority', { ascending: false })
+            .order('published_at', { ascending: false, nullsFirst: false })
+            .order('created_at', { ascending: false })
+            .limit(24),
+          supabase
+            .from('gallery_images_public')
+            .select('id, thumbnail_url, image_url, alt_text')
+            .eq('is_homepage_featured', true)
+            .order('sort_order', { ascending: true })
+            .order('created_at', { ascending: false })
+            .limit(6),
+        ])
+        if (cancelled) return
+
         // Show up to 5: the soonest 2 are visually elevated ("Coming up
         // next") and the remainder render as a compact "Also coming up"
         // list. Past events naturally drop off because the query
         // already filters by start_date >= today.
-        if (!cancelled) setEvents(buildHomepageWhatsHappeningList(upcomingOnly, 5))
-
-        const { data: announcementRows } = await supabase
-          .from('announcements')
-          .select('*')
-          .eq('status', 'published')
-          .order('is_featured', { ascending: false })
-          .order('priority', { ascending: false })
-          .order('published_at', { ascending: false, nullsFirst: false })
-          .order('created_at', { ascending: false })
-          .limit(24)
-        if (!cancelled) {
-          setAnnouncements(
-            buildHomepageAnnouncementsList((announcementRows as Announcement[]) ?? [], 3)
-          )
-        }
-
-        const { data: momentsRows } = await supabase
-          .from('gallery_images_public')
-          .select('id, thumbnail_url, image_url, alt_text')
-          .eq('is_homepage_featured', true)
-          .order('sort_order', { ascending: true })
-          .order('created_at', { ascending: false })
-          .limit(6)
-        if (!cancelled) {
-          setMoments(
-            ((momentsRows ?? []) as HomeMoment[]).filter((m) =>
-              (m.thumbnail_url ?? m.image_url)?.trim()
-            )
-          )
-        }
+        setEvents(buildHomepageWhatsHappeningList(filterPublishedUpcomingEvents((ev as Event[]) ?? []), 5))
+        setAnnouncements(buildHomepageAnnouncementsList((announcementRows as Announcement[]) ?? [], 3))
+        setMoments(
+          ((momentsRows ?? []) as HomeMoment[]).filter((m) => (m.thumbnail_url ?? m.image_url)?.trim())
+        )
       } finally {
         if (!cancelled) setListsLoaded(true)
       }
@@ -144,12 +141,16 @@ export function HomePage() {
       >
         <div className="pointer-events-none absolute inset-0 z-0">
           <picture className="absolute inset-0 block h-full w-full">
-            <source srcSet={HOME_HERO_IMAGE_JPEG} type="image/jpeg" />
+            <source
+              type="image/webp"
+              srcSet="/kigh-media/houstonmainimage-hero-800.webp 800w, /kigh-media/houstonmainimage-hero-1600.webp 1600w"
+              sizes="100vw"
+            />
             <img
-              src={HOME_HERO_IMAGE_PNG}
+              src={HOME_HERO_IMAGE_JPEG}
               alt=""
-              width={1672}
-              height={941}
+              width={1600}
+              height={900}
               decoding="async"
               className="absolute inset-0 h-full w-full object-cover object-center"
               aria-hidden
@@ -526,11 +527,9 @@ export function HomePage() {
                   className="group relative aspect-[4/3] w-[min(85vw,280px)] shrink-0 overflow-hidden rounded-lg bg-muted md:w-auto"
                   onClick={() => void trackClick('home_moment_thumb', '/gallery')}
                 >
-                  <img
-                    src={m.thumbnail_url ?? m.image_url ?? ''}
+                  <SignedGalleryImage
+                    image={momentUrl(m.thumbnail_url ?? m.image_url)}
                     alt={m.alt_text?.trim() || 'Community moment from a KIGH gathering'}
-                    loading="lazy"
-                    decoding="async"
                     className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                   />
                 </Link>

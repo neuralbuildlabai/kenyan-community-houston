@@ -28,9 +28,6 @@ export default defineConfig({
             return 'react-vendor'
           }
           if (id.includes('@supabase')) return 'supabase-vendor'
-          if (/[\\/]node_modules[\\/](react-hook-form|@hookform|zod)[\\/]/.test(id)) {
-            return 'forms-vendor'
-          }
         },
       },
     },

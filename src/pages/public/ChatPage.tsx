@@ -218,7 +218,10 @@ export function ChatPage() {
 
       <section className="relative overflow-hidden min-h-screen">
         <img
-          src="/kigh-media/backgrounds/communitychat.png"
+          src="/kigh-media/backgrounds/communitychat-1536.webp"
+          srcSet="/kigh-media/backgrounds/communitychat-960.webp 960w, /kigh-media/backgrounds/communitychat-1536.webp 1536w"
+          sizes="100vw"
+          decoding="async"
           alt=""
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-70"

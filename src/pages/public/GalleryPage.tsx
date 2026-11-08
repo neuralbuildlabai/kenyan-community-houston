@@ -12,6 +12,8 @@ import { PageLoader } from '@/components/LoadingSpinner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
+import { useGalleryImageUrls } from '@/lib/galleryImageUrls'
+import { SignedGalleryImage } from '@/components/gallery/SignedGalleryImage'
 import type { GalleryAlbum, GalleryImage } from '@/lib/types'
 
 type GalleryImageRow = GalleryImage & {
@@ -33,13 +35,16 @@ export function GalleryPage() {
   const [loading, setLoading] = useState(true)
   const [selectedAlbum, setSelectedAlbum] = useState<string | null>(null)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, isAdmin } = useAuth()
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const userId = user?.id ?? null
+  // Approved members and admins browse albums; everyone else sees covers.
+  const [canBrowse, setCanBrowse] = useState(false)
 
-  // Logged-out visitors see one cover per album (migration 082).
-  // The full photo list stays members-only (migration 076).
+  // Logged-out visitors and signed-in accounts that are not approved
+  // members see one cover per album (migration 082). The full photo list
+  // is for approved members and admins (migration 092).
   useEffect(() => {
     if (authLoading) return
     setLoading(true)
@@ -55,7 +60,14 @@ export function GalleryPage() {
 
       const albs = (albRows ?? []) as GalleryAlbum[]
 
-      if (!userId) {
+      let browse = false
+      if (userId) {
+        const { data: approved } = await supabase.rpc('kigh_is_approved_member')
+        browse = approved === true || isAdmin
+      }
+      setCanBrowse(browse)
+
+      if (!browse) {
         setImages([])
         setAlbums(albs.filter((a) => a.cover_url?.trim()))
         setLoading(false)
@@ -81,15 +93,15 @@ export function GalleryPage() {
       setLoading(false)
     }
     void load()
-  }, [authLoading, userId])
+  }, [authLoading, userId, isAdmin])
 
   useEffect(() => {
-    if (!userId) return
+    if (!canBrowse) return
     const slug = searchParams.get('album')
     if (!slug) return
     const match = albums.find((a) => a.slug === slug)
     if (match) setSelectedAlbum(match.id)
-  }, [albums, searchParams, userId])
+  }, [albums, searchParams, canBrowse])
 
   const filtered = selectedAlbum ? images.filter((i) => i.album_id === selectedAlbum) : images
 
@@ -108,6 +120,16 @@ export function GalleryPage() {
     if (!featuredAlbum) return [] as GalleryImageRow[]
     return images.filter((i) => i.album_id === featuredAlbum.id).slice(0, 5)
   }, [featuredAlbum, images])
+
+  // Gallery files are private: sign covers and thumbnails up front, and
+  // full-size images only once the lightbox opens.
+  const displayUrl = useGalleryImageUrls([
+    ...albums.map((a) => a.cover_url),
+    ...images.map((i) => i.thumbnail_url ?? i.image_url),
+  ])
+  const fullSizeUrl = useGalleryImageUrls(
+    lightboxIndex !== null ? filtered.map((i) => i.image_url ?? i.thumbnail_url) : []
+  )
 
   return (
     <>
@@ -130,7 +152,7 @@ export function GalleryPage() {
       <PublicSection className="!py-10 sm:!py-12 lg:!py-14">
         {authLoading || loading ? (
           <PageLoader />
-        ) : !userId ? (
+        ) : !canBrowse ? (
           <div className="space-y-8" data-testid="gallery-members-only">
             <div className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card p-6 sm:flex-row sm:items-center sm:justify-between">
               <div className="max-w-2xl">
@@ -138,18 +160,22 @@ export function GalleryPage() {
                   Album covers
                 </p>
                 <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-                  Sign in to open an album
+                  {userId ? 'Albums open once your membership is approved' : 'Sign in to open an album'}
                 </h2>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Each album shows one cover photo here. The rest of the album is for signed-in members.
+                  {userId
+                    ? 'Each album shows one cover photo here. The full albums are for approved KIGH members; an admin reviews new memberships.'
+                    : 'Each album shows one cover photo here. The rest of the album is for approved members.'}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button asChild>
-                  <Link to={loginNextFromLocation(location)} data-testid="gallery-sign-in">
-                    Sign in to view gallery
-                  </Link>
-                </Button>
+                {userId ? null : (
+                  <Button asChild>
+                    <Link to={loginNextFromLocation(location)} data-testid="gallery-sign-in">
+                      Sign in to view gallery
+                    </Link>
+                  </Button>
+                )}
                 <Button asChild variant="outline">
                   <Link to="/membership">Become a member</Link>
                 </Button>
@@ -172,11 +198,9 @@ export function GalleryPage() {
                     className="overflow-hidden rounded-2xl border border-border/60 bg-card"
                     data-testid="gallery-cover-card"
                   >
-                    <img
-                      src={album.cover_url ?? ''}
+                    <SignedGalleryImage
+                      image={displayUrl(album.cover_url)}
                       alt={album.name}
-                      loading="lazy"
-                      decoding="async"
                       className="aspect-[4/3] w-full object-cover"
                     />
                     <div className="space-y-3 p-4">
@@ -236,7 +260,7 @@ export function GalleryPage() {
                 </header>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:grid-rows-2">
                   {featuredAlbumImages.map((img, idx) => {
-                    const thumb = img.thumbnail_url ?? img.image_url ?? ''
+                    const thumb = displayUrl(img.thumbnail_url ?? img.image_url)
                     const span =
                       idx === 0
                         ? 'col-span-2 row-span-2 aspect-square sm:aspect-auto'
@@ -248,11 +272,9 @@ export function GalleryPage() {
                         className={`group relative overflow-hidden rounded-xl bg-muted ${span}`}
                         onClick={() => openLightbox(img)}
                       >
-                        <img
-                          src={thumb}
+                        <SignedGalleryImage
+                          image={thumb}
                           alt={displayAlt(img)}
-                          loading="lazy"
-                          decoding="async"
                           className="gallery-image h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
@@ -322,7 +344,7 @@ export function GalleryPage() {
                   data-testid="gallery-public-grid"
                 >
                   {filtered.map((img) => {
-                    const thumb = img.thumbnail_url ?? img.image_url ?? ''
+                    const thumb = displayUrl(img.thumbnail_url ?? img.image_url)
                     return (
                       <button
                         key={img.id}
@@ -330,11 +352,9 @@ export function GalleryPage() {
                         className="group relative aspect-[4/3] cursor-pointer overflow-hidden rounded-xl bg-muted"
                         onClick={() => openLightbox(img)}
                       >
-                        <img
-                          src={thumb}
+                        <SignedGalleryImage
+                          image={thumb}
                           alt={displayAlt(img)}
-                          loading="lazy"
-                          decoding="async"
                           className="gallery-image h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
                         />
                         {img.caption?.trim() ? (
@@ -379,7 +399,13 @@ export function GalleryPage() {
         onOpenChange={(open) => {
           if (!open) setLightboxIndex(null)
         }}
-        getImageSrc={(img) => img.image_url ?? img.thumbnail_url ?? ''}
+        getImageSrc={(img) => {
+          // Full size once signed; the signed thumbnail meanwhile; nothing if refused.
+          const full = fullSizeUrl(img.image_url ?? img.thumbnail_url)
+          if (full.state === 'ready') return full.url
+          const thumb = displayUrl(img.thumbnail_url ?? img.image_url)
+          return thumb.state === 'ready' ? thumb.url : ''
+        }}
         getAlt={displayAlt}
         getCaption={(img) => img.caption?.trim() || null}
       />

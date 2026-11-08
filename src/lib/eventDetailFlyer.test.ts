@@ -7,7 +7,11 @@ describe('event detail flyer rendering', () => {
     resolve(process.cwd(), 'src/pages/public/EventDetailPage.tsx'),
     'utf8'
   )
-  const eventCard = readFileSync(resolve(process.cwd(), 'src/components/EventCard.tsx'), 'utf8')
+  // The /events list renders each event with EditorialEventRow.
+  const eventRow = readFileSync(
+    resolve(process.cwd(), 'src/components/public/EditorialEventRow.tsx'),
+    'utf8'
+  )
 
   it('detail page uses object-contain for flyer, not object-cover', () => {
     const flyerBlock = detailPage.slice(
@@ -23,7 +27,8 @@ describe('event detail flyer rendering', () => {
     expect(detailPage).not.toMatch(/event-detail-flyer[\s\S]{0,200}h-full object-cover/)
   })
 
-  it('event list cards keep object-cover for thumbnails', () => {
-    expect(eventCard).toContain('object-cover')
+  it('event list rows keep object-cover for thumbnails', () => {
+    expect(eventRow).toContain('object-cover')
+    expect(eventRow).not.toContain('object-contain')
   })
 })

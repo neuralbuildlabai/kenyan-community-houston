@@ -407,7 +407,7 @@ export function MembershipPage() {
     <div className="relative overflow-hidden">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[url('/kigh-media/backgrounds/memberbecome.png')] bg-contain bg-top bg-no-repeat opacity-[0.9]"
+        className="pointer-events-none absolute inset-0 bg-[url('/kigh-media/backgrounds/memberbecome-941.webp')] bg-contain bg-top bg-no-repeat opacity-[0.9]"
       />
       <div
         aria-hidden="true"

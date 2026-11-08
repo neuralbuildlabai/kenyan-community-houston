@@ -30,6 +30,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { supabase } from '@/lib/supabase'
+import { useGalleryImageUrls } from '@/lib/galleryImageUrls'
+import { SignedGalleryImage } from '@/components/gallery/SignedGalleryImage'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import {
@@ -226,6 +228,14 @@ export function AdminGalleryPage() {
     else if (albumFilter !== 'all') rows = rows.filter((i) => i.album_id === albumFilter)
     return rows
   }, [images, albumFilter])
+
+  // Stored URLs stay raw (they are written back as album covers); only
+  // the rendered `src` is a signed URL.
+  const displayUrl = useGalleryImageUrls([
+    ...albums.map((a) => a.cover_url),
+    ...publishedRows.map((i) => i.thumbnail_url ?? i.image_url),
+    viewPublished?.image_url ?? viewPublished?.thumbnail_url,
+  ])
 
   const selectedPublishedCount = selectedPublishedIds.size
   const selectedPublishedRows = useMemo(
@@ -1269,7 +1279,7 @@ export function AdminGalleryPage() {
                         data-testid={`gallery-published-select-${img.id}`}
                       />
                     </div>
-                    <img src={thumb} alt="" className="gallery-image h-full w-full object-cover" />
+                    <SignedGalleryImage image={displayUrl(thumb)} alt="" className="gallery-image h-full w-full object-cover" />
                     
                     <div className="absolute inset-x-0 bottom-0 flex flex-wrap gap-1 bg-black/80 p-2">
                       <Button
@@ -1439,8 +1449,8 @@ export function AdminGalleryPage() {
                   <Card key={a.id} className="overflow-hidden" data-testid={`gallery-album-card-${a.id}`}>
                     <div className="aspect-[4/3] bg-muted relative">
                       {a.cover_url ? (
-                        <img
-                          src={a.cover_url}
+                        <SignedGalleryImage
+                          image={displayUrl(a.cover_url)}
                           alt=""
                           className="album-cover-image h-full w-full object-cover"
                         />
@@ -1610,8 +1620,9 @@ export function AdminGalleryPage() {
             <DialogDescription>{viewPublished?.caption || 'No caption'}</DialogDescription>
           </DialogHeader>
           {viewPublished ? (
-            <img
-              src={viewPublished.image_url ?? viewPublished.thumbnail_url ?? ''}
+            <SignedGalleryImage
+              loading="eager"
+              image={displayUrl(viewPublished.image_url ?? viewPublished.thumbnail_url)}
               alt={viewPublished.alt_text ?? viewPublished.caption ?? 'Gallery image'}
               className="max-h-[70vh] w-full rounded-lg object-contain"
             />
