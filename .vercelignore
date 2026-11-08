@@ -1,0 +1,29 @@
+# Deploys run `vercel` from this folder, and the CLI uploads the working
+# tree as the deployment source. It does NOT read .gitignore, so anything
+# on disk here (private review files, database backups, .env files, media
+# originals) was uploaded with every deploy until this file existed.
+#
+# Allowlist: ignore everything at the top level, then re-include only
+# what the Vercel build needs. A new top-level file or folder stays out of
+# deployments until it is added below on purpose.
+
+/*
+
+!/index.html
+!/middleware.ts
+!/package.json
+!/package-lock.json
+!/postcss.config.cjs
+!/public
+!/src
+!/tailwind.config.ts
+!/tsconfig.json
+!/tsconfig.node.json
+!/vercel.json
+!/vite.config.ts
+
+# Never ship media originals, OS junk or tests, even inside allowed folders.
+**/source/
+**/.DS_Store
+src/**/*.test.ts
+src/**/*.test.tsx

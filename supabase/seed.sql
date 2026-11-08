@@ -14,6 +14,8 @@
 -- ============================================================
 
 -- ─── Gallery Album ──────────────────────────────────────────
+-- The demo album points at the public homepage hero image. Real
+-- community photos are members-only and must never live in public/.
 insert into gallery_albums (id, slug, name, description) values
   ('00000000-0000-0000-0000-000000000001', 'community-events-2024', 'Community Events 2024', 'Highlights from our 2024 gatherings'),
   ('00000000-0000-0000-0000-000000000002', 'cultural-celebrations', 'Cultural Celebrations', 'Jamhuri Day, Madaraka Day, and more')
@@ -26,7 +28,7 @@ insert into gallery_albums (id, slug, name, description, event_date, cover_url, 
     'Community Park Event 2025',
     'Photos from the 2025 Kenyan Community Houston park gathering.',
     '2025-05-18',
-    '/kigh-media/gallery/community-park-event-2025/thumbs/IMG_5759.jpg',
+    '/kigh-media/houstonmainimage-hero.jpg',
     'public',
     true
   )
@@ -36,8 +38,8 @@ insert into gallery_images (id, album_id, image_url, thumbnail_url, caption, alt
   (
     '00000000-0000-0000-0000-0000000000d1',
     '00000000-0000-0000-0000-0000000000c5',
-    '/kigh-media/gallery/community-park-event-2025/web/IMG_5759.jpg',
-    '/kigh-media/gallery/community-park-event-2025/thumbs/IMG_5759.jpg',
+    '/kigh-media/houstonmainimage-hero.jpg',
+    '/kigh-media/houstonmainimage-hero.jpg',
     null,
     'Kenyan Community Houston park gathering',
     'published',
@@ -47,8 +49,8 @@ insert into gallery_images (id, album_id, image_url, thumbnail_url, caption, alt
   (
     '00000000-0000-0000-0000-0000000000d2',
     '00000000-0000-0000-0000-0000000000c5',
-    '/kigh-media/gallery/community-park-event-2025/web/IMG_5762.jpg',
-    '/kigh-media/gallery/community-park-event-2025/thumbs/IMG_5762.jpg',
+    '/kigh-media/houstonmainimage-hero.jpg',
+    '/kigh-media/houstonmainimage-hero.jpg',
     null,
     'Kenyan Community Houston park gathering',
     'published',
@@ -58,8 +60,8 @@ insert into gallery_images (id, album_id, image_url, thumbnail_url, caption, alt
   (
     '00000000-0000-0000-0000-0000000000d3',
     '00000000-0000-0000-0000-0000000000c5',
-    '/kigh-media/gallery/community-park-event-2025/web/IMG_5763.jpg',
-    '/kigh-media/gallery/community-park-event-2025/thumbs/IMG_5763.jpg',
+    '/kigh-media/houstonmainimage-hero.jpg',
+    '/kigh-media/houstonmainimage-hero.jpg',
     null,
     'Kenyan Community Houston park gathering',
     'published',
