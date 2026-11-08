@@ -13,6 +13,7 @@ import { isEventPast } from '@/lib/eventDate'
 import { MapLink } from '@/components/MapLink'
 import { trackEntityView } from '@/lib/analytics'
 import { safeExternalHref } from '@/lib/externalUrl'
+import { linkifyText } from '@/lib/linkifyText'
 import { EventComments } from '@/components/events/EventComments'
 import { volunteerSignupPath } from '@/lib/eventVolunteerSignup'
 import {
@@ -205,7 +206,21 @@ export function EventDetailPage() {
               data-testid="event-detail-description"
               className="text-foreground/85 leading-relaxed whitespace-pre-wrap mb-6 text-[15px]"
             >
-              {event.description}
+              {linkifyText(event.description).map((seg, i) =>
+                seg.type === 'link' ? (
+                  <a
+                    key={i}
+                    href={seg.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline underline-offset-2 break-all font-medium"
+                  >
+                    {seg.value}
+                  </a>
+                ) : (
+                  <span key={i}>{seg.value}</span>
+                )
+              )}
             </p>
 
             {relatedResources.length > 0 && (
