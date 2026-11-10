@@ -184,6 +184,21 @@ export function Footer() {
           </div>
         </div>
         <p className="mt-4 text-[11px] text-white/40">Content moderated by community volunteers.</p>
+        <div data-testid="footer-builder-credit" className="mt-4 space-y-1 border-t border-white/5 pt-4 text-[11px] text-white/40">
+          <p>© 2024–{year} AfriSora Digital. All rights reserved.</p>
+          <p>AfriSora Digital is operated by Omasseno LLC, a Texas limited liability company.</p>
+          <p>
+            Built by{' '}
+            <a
+              href="https://afrisoradigital.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-white/60 underline-offset-4 transition-colors hover:text-white hover:underline"
+            >
+              afrisoradigital.com
+            </a>
+          </p>
+        </div>
       </div>
     </footer>
   )
