@@ -59,6 +59,13 @@ try {
     shell: false,
   })
 
+  if (result.status === 0) {
+    // Tell IndexNow engines about new/changed/removed public URLs. Never
+    // fails the deploy: a missed run is caught up by the next one.
+    console.log('\nNotifying IndexNow of changed public URLs…')
+    spawnSync('node', ['scripts/indexnow-submit.mjs'], { stdio: 'inherit', shell: false })
+  }
+
   process.exit(result.status ?? 1)
 } finally {
   rl.close()

@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom'
 import { Home, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { SEOHead } from '@/components/SEOHead'
 
 export function NotFoundPage() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+      {/* The SPA answers unknown paths with HTTP 200; noindex keeps them out of search. */}
+      <SEOHead title="Page Not Found" noIndex />
       <div className="mb-6 text-8xl font-black text-muted-foreground/20">404</div>
       <h1 className="text-3xl font-bold mb-3">Page Not Found</h1>
       <p className="text-muted-foreground max-w-md mb-8">
