@@ -183,17 +183,15 @@ export function Footer() {
             </Link>
           </div>
         </div>
-        <p className="mt-4 text-[11px] text-white/40">Content moderated by community volunteers.</p>
-        <div data-testid="footer-builder-credit" className="mt-4 space-y-1 border-t border-white/5 pt-4 text-[11px] text-white/40">
-          <p>© 2024–{year} AfriSora Digital. All rights reserved.</p>
-          <p>AfriSora Digital is operated by Omasseno LLC, a Texas limited liability company.</p>
-          <p>
-            Built by{' '}
+        <div className="mt-6 flex flex-col gap-2 border-t border-white/5 pt-4 text-[11px] leading-relaxed text-white/40 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+          <p className="shrink-0">Content moderated by community volunteers.</p>
+          <p data-testid="footer-builder-credit" className="lg:text-right">
+            © 2024–{year} AfriSora Digital, operated by Omasseno LLC, a Texas limited liability company. Built by{' '}
             <a
               href="https://afrisoradigital.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-white/60 underline-offset-4 transition-colors hover:text-white hover:underline"
+              className="text-white/60 underline-offset-4 transition-colors hover:text-white hover:underline"
             >
               afrisoradigital.com
             </a>
