@@ -17,7 +17,8 @@
     "test:e2e:report": "playwright show-report",
     "deploy:preview": "vercel",
     "deploy:prod": "node scripts/deploy-production-guard.mjs",
-    "deploy:production": "node scripts/deploy-production-guard.mjs"
+    "deploy:production": "node scripts/deploy-production-guard.mjs",
+    "seo:indexnow": "node scripts/indexnow-submit.mjs"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.0.4",

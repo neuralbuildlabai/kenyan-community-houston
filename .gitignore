@@ -68,3 +68,7 @@ scripts/copy-*-uat-to-prod.mjs
 
 # Local backups created by manual cutover/restore work.
 backups/
+
+# IndexNow submission state and log (local to the deploying machine)
+.indexnow-state.json
+.indexnow-log.jsonl

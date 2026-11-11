@@ -39,9 +39,18 @@ const SITE_URL = 'https://www.kenyansingreaterhouston.org'
 const SITE_NAME = 'Kenyans in Greater Houston'
 const FALLBACK_IMAGE = `${SITE_URL}/og-image.png`
 
-/** Scrapers that read tags but never execute the app. */
+/**
+ * Link-preview scrapers that read tags but never execute the app.
+ *
+ * Search-engine crawlers (Googlebot, Google-InspectionTool, bingbot, Applebot,
+ * DuckDuckBot, Yahoo! Slurp) are deliberately NOT here. They render
+ * JavaScript, so they receive the real app and index the full listing. The
+ * preview document below carries only a title, description and one link; served
+ * to a search engine it is what got indexed, so every listing looked like a
+ * near-empty page. Pinned by linkPreviewMiddleware.test.ts.
+ */
 const CRAWLER_UA =
-  /(facebookexternalhit|facebookcatalog|WhatsApp|Twitterbot|LinkedInBot|Slackbot|Slack-ImgProxy|TelegramBot|Discordbot|Pinterest|redditbot|SkypeUriPreview|vkShare|Google-InspectionTool|Googlebot|bingbot|Applebot|embedly|iframely|Yahoo! Slurp|DuckDuckBot|Mastodon|Bluesky)/i
+  /(facebookexternalhit|facebookcatalog|WhatsApp|Twitterbot|LinkedInBot|Slackbot|Slack-ImgProxy|TelegramBot|Discordbot|Pinterest|redditbot|SkypeUriPreview|vkShare|embedly|iframely|Mastodon|Bluesky)/i
 
 /**
  * Clients refused outright. Two groups:
@@ -315,12 +324,144 @@ async function archivedMemorialGate(
   })
 }
 
+/* ---------------------------------------------------------------------- *
+ * XML sitemap
+ * ---------------------------------------------------------------------- */
+
+/**
+ * Public pages that are meant to be found in search. Submission forms,
+ * sign-in, member-only and admin routes are left out on purpose, as are
+ * memorial pages (they are withdrawn after the service) and polls.
+ * Keep in step with the public <Route>s in src/App.tsx.
+ */
+const SITEMAP_STATIC_PATHS = [
+  '/',
+  '/events',
+  '/calendar',
+  '/announcements',
+  '/businesses',
+  '/community-support',
+  '/sports-youth',
+  '/gallery',
+  '/new-to-houston',
+  '/resources',
+  '/community-groups',
+  '/membership',
+  '/serve',
+  '/support',
+  '/governance',
+  '/leadership',
+  '/about',
+  '/contact',
+  '/certificates-and-acknowledgements',
+  '/privacy',
+  '/terms',
+  '/disclaimer',
+]
+
+/** Listing tables whose published rows have their own public page. */
+const SITEMAP_SECTIONS: Array<{ section: string; table: string; extra?: () => string }> = [
+  { section: 'events', table: 'events' },
+  {
+    section: 'announcements',
+    table: 'announcements',
+    // Expired announcements stop being listed in the app; keep them out too.
+    extra: () => `&or=(expires_at.is.null,expires_at.gt.${new Date().toISOString()})`,
+  },
+  { section: 'businesses', table: 'businesses' },
+  { section: 'community-support', table: 'fundraisers' },
+  { section: 'sports-youth', table: 'sports_posts' },
+]
+
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+}
+
+async function publishedRows(
+  table: string,
+  extra: string,
+  supabaseUrl: string,
+  supabaseKey: string,
+): Promise<Array<{ slug: string; updated_at?: string | null }>> {
+  try {
+    const endpoint =
+      `${supabaseUrl.replace(/\/$/, '')}/rest/v1/${table}` +
+      `?status=eq.published&select=slug,updated_at&order=updated_at.desc&limit=5000${extra}`
+    const response = await fetch(endpoint, {
+      headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+      signal: AbortSignal.timeout(4000),
+    })
+    if (!response.ok) return []
+    const rows = (await response.json()) as Array<{ slug?: string | null; updated_at?: string | null }>
+    return rows.filter((r): r is { slug: string; updated_at?: string | null } =>
+      Boolean(r.slug && SLUG_PATTERN.test(r.slug)),
+    )
+  } catch {
+    // One failing table must not take the whole sitemap down.
+    return []
+  }
+}
+
+/**
+ * Builds /sitemap.xml from the static public pages plus every published
+ * listing. `lastmod` is only given where the database records a real change
+ * time; static pages carry none rather than an invented date.
+ */
+async function renderSitemap(): Promise<string> {
+  const entries: Array<{ loc: string; lastmod?: string }> = SITEMAP_STATIC_PATHS.map((p) => ({
+    loc: `${SITE_URL}${p === '/' ? '/' : p}`,
+  }))
+
+  const supabaseUrl = process.env.VITE_SUPABASE_URL
+  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY
+  if (supabaseUrl && supabaseKey) {
+    const results = await Promise.all(
+      SITEMAP_SECTIONS.map(({ table, extra }) =>
+        publishedRows(table, extra ? extra() : '', supabaseUrl, supabaseKey),
+      ),
+    )
+    SITEMAP_SECTIONS.forEach(({ section }, i) => {
+      for (const row of results[i]) {
+        const lastmod = row.updated_at ? new Date(row.updated_at) : undefined
+        entries.push({
+          loc: `${SITE_URL}/${section}/${row.slug}`,
+          lastmod: lastmod && !Number.isNaN(lastmod.getTime()) ? lastmod.toISOString() : undefined,
+        })
+      }
+    })
+  }
+
+  const body = entries
+    .map(
+      (e) =>
+        `  <url><loc>${escapeXml(e.loc)}</loc>${e.lastmod ? `<lastmod>${e.lastmod}</lastmod>` : ''}</url>`,
+    )
+    .join('\n')
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`
+}
+
 export default async function middleware(request: Request) {
   const url = new URL(request.url)
   const [, section, slug] = url.pathname.split('/')
 
   const blocked = blockedClient(request, url.pathname)
   if (blocked) return blocked
+
+  if (url.pathname === '/sitemap.xml') {
+    return new Response(await renderSitemap(), {
+      status: 200,
+      headers: {
+        'content-type': 'application/xml; charset=utf-8',
+        // New listings should appear within the hour without hammering Supabase.
+        'cache-control': 'public, max-age=600, s-maxage=3600',
+      },
+    })
+  }
 
   // Runs for every visitor, crawlers included — unlike the preview below.
   if (section === 'memorials' && slug) return archivedMemorialGate(request, slug)
