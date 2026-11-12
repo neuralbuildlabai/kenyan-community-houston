@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ExternalLink, Eye, MailCheck, Search, Send } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ExternalLink, Eye, MailCheck, Search, Send, Users } from 'lucide-react'
 import { SEOHead } from '@/components/SEOHead'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -17,6 +19,7 @@ import { toast } from 'sonner'
 import type { VolunteerSignupStatus } from '@/lib/types'
 import { VOLUNTEER_SIGNUP_STATUSES, volunteerSignupStatusLabel } from '@/lib/eventVolunteerSignup'
 import { formatDateShort } from '@/lib/utils'
+import { isEventPast } from '@/lib/eventDate'
 import { ContactDetailDialog, OutreachPanel, useOutreachDraft } from '@/components/admin/ContactOutreach'
 
 const DEFAULT_DRAFT = {
@@ -40,7 +43,16 @@ type SignupRow = {
   reminder_emailed_at: string | null
   /** Null for volunteers confirmed before emails existed: they are never emailed automatically. */
   confirmed_at: string | null
-  events: { title: string; slug: string } | null
+  events: SignupEvent | null
+}
+
+type SignupEvent = {
+  title: string
+  slug: string
+  start_date: string
+  end_date: string | null
+  start_time: string | null
+  end_time: string | null
 }
 
 function emailedLabel(iso: string | null): string | null {
@@ -53,6 +65,8 @@ export function AdminVolunteersPage() {
   const [eventFilter, setEventFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
+  /** Off by default: once an event ends its volunteers drop off this list (they stay in the Volunteer Roster). */
+  const [showPast, setShowPast] = useState(false)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [selected, setSelected] = useState<SignupRow | null>(null)
   const [draft, setDraft] = useOutreachDraft('kigh.outreach.volunteers', DEFAULT_DRAFT)
@@ -62,7 +76,7 @@ export function AdminVolunteersPage() {
     const { data, error } = await supabase
       .from('event_volunteer_signups')
       .select(
-        'id, event_id, full_name, phone, email, volunteer_role, availability_note, status, submitted_at, confirmation_emailed_at, reminder_emailed_at, confirmed_at, events(title, slug)'
+        'id, event_id, full_name, phone, email, volunteer_role, availability_note, status, submitted_at, confirmation_emailed_at, reminder_emailed_at, confirmed_at, events(title, slug, start_date, end_date, start_time, end_time)'
       )
       .order('submitted_at', { ascending: false })
     if (error) {
@@ -71,7 +85,7 @@ export function AdminVolunteersPage() {
     } else {
       const list = Array.isArray(data) ? data : []
       const normalized: SignupRow[] = list.map((r: Record<string, unknown>) => {
-        const ev = r.events as { title?: string; slug?: string } | { title?: string; slug?: string }[] | null | undefined
+        const ev = r.events as Partial<SignupEvent> | Partial<SignupEvent>[] | null | undefined
         const one = Array.isArray(ev) ? ev[0] : ev
         return {
           id: r.id as string,
@@ -86,7 +100,17 @@ export function AdminVolunteersPage() {
           confirmation_emailed_at: (r.confirmation_emailed_at as string | null) ?? null,
           reminder_emailed_at: (r.reminder_emailed_at as string | null) ?? null,
           confirmed_at: (r.confirmed_at as string | null) ?? null,
-          events: one?.title ? { title: one.title, slug: one.slug ?? '' } : null,
+          events:
+            one?.title && one.start_date
+              ? {
+                  title: one.title,
+                  slug: one.slug ?? '',
+                  start_date: one.start_date,
+                  end_date: one.end_date ?? null,
+                  start_time: one.start_time ?? null,
+                  end_time: one.end_time ?? null,
+                }
+              : null,
         }
       })
       setRows(normalized)
@@ -98,18 +122,31 @@ export function AdminVolunteersPage() {
     void load()
   }, [load])
 
+  // Signups whose event has ended. Rows with no event data are kept visible.
+  const visibleRows = useMemo(() => {
+    if (showPast) return rows
+    const now = new Date()
+    return rows.filter((r) => !r.events || !isEventPast(r.events, now))
+  }, [rows, showPast])
+  const pastCount = rows.length - visibleRows.length
+
   const eventOptions = useMemo(() => {
     const map = new Map<string, string>()
-    for (const r of rows) {
+    for (const r of visibleRows) {
       const t = r.events?.title
       if (t) map.set(r.event_id, t)
     }
     return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]))
-  }, [rows])
+  }, [visibleRows])
+
+  // A filtered event that just dropped off (past events hidden) would leave an empty list.
+  useEffect(() => {
+    if (eventFilter !== 'all' && !eventOptions.some(([id]) => id === eventFilter)) setEventFilter('all')
+  }, [eventFilter, eventOptions])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    return rows.filter((r) => {
+    return visibleRows.filter((r) => {
       if (eventFilter !== 'all' && r.event_id !== eventFilter) return false
       if (statusFilter !== 'all' && r.status !== statusFilter) return false
       if (q) {
@@ -118,7 +155,7 @@ export function AdminVolunteersPage() {
       }
       return true
     })
-  }, [rows, eventFilter, statusFilter, search])
+  }, [visibleRows, eventFilter, statusFilter, search])
 
   const contacts = useMemo(
     () => filtered.map((r) => ({ name: r.full_name, phone: r.phone, email: r.email })),
@@ -163,9 +200,19 @@ export function AdminVolunteersPage() {
     <>
       <SEOHead title="Volunteers" noIndex />
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Event volunteers</h1>
-          <p className="text-muted-foreground text-sm mt-1">Private signups across published events. Names and phones are admin-only.</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Event volunteers</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Signups for upcoming and ongoing events. When an event ends, its volunteers move to the Volunteer Roster.
+              Names and phones are admin-only.
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm" className="gap-1.5 shrink-0">
+            <Link to="/admin/volunteer-roster">
+              <Users className="h-3.5 w-3.5" /> Volunteer Roster
+            </Link>
+          </Button>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-3 flex-wrap">
@@ -199,6 +246,12 @@ export function AdminVolunteersPage() {
               </Select>
             </div>
           </div>
+          <div className="flex items-center gap-2 lg:self-end lg:pb-2">
+            <Switch id="vol-show-past" checked={showPast} onCheckedChange={setShowPast} />
+            <Label htmlFor="vol-show-past" className="text-sm font-normal cursor-pointer whitespace-nowrap">
+              Show past events{pastCount > 0 ? ` (${pastCount})` : ''}
+            </Label>
+          </div>
         </div>
 
         <OutreachPanel contacts={contacts} draft={draft} onDraftChange={setDraft} audienceLabel="volunteers" />
@@ -230,7 +283,9 @@ export function AdminVolunteersPage() {
                   <TableCell colSpan={9} className="text-center py-14 text-muted-foreground">
                     {rows.length === 0
                       ? 'No volunteer signups yet. Enable volunteer signup on an event and share the link from Calendar.'
-                      : 'No rows match your filters.'}
+                      : visibleRows.length === 0
+                        ? 'No signups for upcoming events yet. Past volunteers are in the Volunteer Roster, or turn on “Show past events”.'
+                        : 'No rows match your filters.'}
                   </TableCell>
                 </TableRow>
               ) : (

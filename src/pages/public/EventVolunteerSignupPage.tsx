@@ -55,8 +55,11 @@ function rpcErrorToMessage(err: { message?: string } | null): string {
   if (/name_required/i.test(raw)) {
     return 'Please enter your full name (2–120 characters).'
   }
-  if (/membership_requires_email/i.test(raw)) {
-    return 'Please add your email so KIGH can follow up about membership.'
+  if (/email_required|membership_requires_email/i.test(raw)) {
+    return 'Please enter your email address.'
+  }
+  if (/invalid_email/i.test(raw)) {
+    return 'Please enter a valid email address.'
   }
   if (/invalid_note/i.test(raw)) {
     return 'Please revise your role or note so it follows community guidelines.'
@@ -170,8 +173,12 @@ export function EventVolunteerSignupPage() {
       return
     }
     const em = email.trim()
-    if (em && !isValidEmail(em)) {
-      setError('Please enter a valid email address or leave it blank.')
+    if (!em) {
+      setError('Please enter your email address.')
+      return
+    }
+    if (!isValidEmail(em)) {
+      setError('Please enter a valid email address.')
       return
     }
     const isOtherRole = role === VOLUNTEER_ROLE_OTHER_VALUE
@@ -196,14 +203,10 @@ export function EventVolunteerSignupPage() {
       }
     }
     if (!consent) {
-      setError('Please confirm KIGH may contact you about this event.')
+      setError('Please confirm KIGH may contact you about this event and future volunteer opportunities.')
       return
     }
     if (wantsMembership) {
-      if (!em) {
-        setError('Please add your email so KIGH can follow up about membership.')
-        return
-      }
       if (!membershipTermsAccepted) {
         setError('Please check "I accept" under membership, or uncheck the membership box to skip it.')
         return
@@ -228,11 +231,13 @@ export function EventVolunteerSignupPage() {
       p_event_id: event.id,
       p_full_name: name,
       p_phone: phoneRes.value,
-      p_email: em || null,
+      p_email: em,
       p_volunteer_role: encoded.volunteer_role,
       p_availability_note: encoded.availability_note,
       p_wants_membership: wantsMembership,
       p_membership_terms_accepted: wantsMembership && membershipTermsAccepted,
+      // The required consent box covers future opportunities too (migration 094).
+      p_recontact_consent: consent,
     })
     setSubmitting(false)
     if (rpcErr) {
@@ -456,8 +461,15 @@ export function EventVolunteerSignupPage() {
                 />
               </div>
               <div className="form-field-stack">
-                <Label htmlFor="vol-email">Email</Label>
-                <Input id="vol-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+                <Label htmlFor="vol-email">Email *</Label>
+                <Input
+                  id="vol-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  required
+                />
               </div>
               <div className="form-field-stack">
                 <Label htmlFor="vol-role">Your role</Label>
@@ -511,7 +523,7 @@ export function EventVolunteerSignupPage() {
               <div className="flex items-start gap-3 rounded-xl border p-3.5 transition-colors has-[:checked]:border-primary/30 has-[:checked]:bg-primary/[0.04]">
                 <Checkbox id="vol-consent" checked={consent} onCheckedChange={(v) => setConsent(v === true)} className="mt-0.5" />
                 <Label htmlFor="vol-consent" className="text-sm font-normal leading-snug cursor-pointer">
-                  KIGH may contact me about this event. *
+                  KIGH may contact me about this event and about future volunteer opportunities. *
                 </Label>
               </div>
 
@@ -566,7 +578,7 @@ export function EventVolunteerSignupPage() {
                         <Link to="/support" className="text-primary underline underline-offset-2">
                           Support KIGH
                         </Link>{' '}
-                        help fund welfare, youth programs, and community events. Requires an email above.
+                        help fund welfare, youth programs, and community events.
                       </p>
                     ) : (
                       <p className="text-[11px] text-muted-foreground">
@@ -574,7 +586,7 @@ export function EventVolunteerSignupPage() {
                         <Link to="/support" className="text-primary underline underline-offset-2">
                           Support KIGH
                         </Link>
-                        . Dues fund welfare, youth programs, and community events. Requires an email above.
+                        . Dues fund welfare, youth programs, and community events.
                       </p>
                     )}
                   </div>

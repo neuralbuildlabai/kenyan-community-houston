@@ -54,6 +54,7 @@ const AdminUsersPage = lazy(() => import('@/pages/admin/UsersPage').then((m) => 
 const AdminVendorDirectoryPage = lazy(() => import('@/pages/admin/AdminVendorDirectoryPage').then((m) => ({ default: m.AdminVendorDirectoryPage })))
 const AdminVendorsPage = lazy(() => import('@/pages/admin/AdminVendorsPage').then((m) => ({ default: m.AdminVendorsPage })))
 const AdminVolunteersPage = lazy(() => import('@/pages/admin/AdminVolunteersPage').then((m) => ({ default: m.AdminVolunteersPage })))
+const AdminVolunteerRosterPage = lazy(() => import('@/pages/admin/AdminVolunteerRosterPage').then((m) => ({ default: m.AdminVolunteerRosterPage })))
 const AnnouncementDetailPage = lazy(() => import('@/pages/public/AnnouncementDetailPage').then((m) => ({ default: m.AnnouncementDetailPage })))
 const AnnouncementsPage = lazy(() => import('@/pages/public/AnnouncementsPage').then((m) => ({ default: m.AnnouncementsPage })))
 const AuthCallbackPage = lazy(() => import('@/pages/auth/AuthCallbackPage').then((m) => ({ default: m.AuthCallbackPage })))
@@ -260,6 +261,7 @@ export default function App() {
             <Route path="chat" element={<AdminChatPage />} />
             <Route path="event-comments" element={<AdminEventCommentsPage />} />
             <Route path="volunteers" element={<AdminVolunteersPage />} />
+            <Route path="volunteer-roster" element={<AdminVolunteerRosterPage />} />
             <Route path="vendors" element={<AdminVendorsPage />} />
             <Route path="vendors-directory" element={<AdminVendorDirectoryPage />} />
             <Route path="invites" element={<AdminInvitesPage />} />

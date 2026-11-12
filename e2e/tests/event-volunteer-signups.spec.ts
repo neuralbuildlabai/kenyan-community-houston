@@ -31,7 +31,7 @@ test.describe('event volunteer signups', () => {
     await expect(page.getByRole('table')).toHaveCount(0)
   })
 
-  test('volunteer form: name, phone, consent, and phone validation when signup is open', async ({ page }) => {
+  test('volunteer form: name, phone, email, consent, and phone validation when signup is open', async ({ page }) => {
     const slug = 'kigh-financial-literacy-session-2026-04-24'
     await page.goto(`/events/${slug}/volunteer`, {
       waitUntil: 'networkidle',
@@ -59,7 +59,7 @@ test.describe('event volunteer signups', () => {
 
     await nameInput.fill(' ')
     await page.locator('#vol-phone').fill('+15551234567')
-    await page.getByRole('checkbox', { name: /agree that KIGH may contact me/i }).check()
+    await page.getByRole('checkbox', { name: /KIGH may contact me about this event and about future volunteer opportunities/i }).check()
     await page.getByRole('button', { name: /Submit signup/i }).click()
     await expect(page.getByText(/Please enter your full name/i)).toBeVisible()
 
@@ -69,9 +69,13 @@ test.describe('event volunteer signups', () => {
     await expect(page.getByText(/valid phone number|only numbers/i)).toBeVisible()
 
     await page.locator('#vol-phone').fill('+254712345678')
-    await page.getByRole('checkbox', { name: /agree that KIGH may contact me/i }).uncheck()
     await page.getByRole('button', { name: /Submit signup/i }).click()
-    await expect(page.getByText(/agree that KIGH may contact you/i)).toBeVisible()
+    await expect(page.getByText(/Please enter your email address/i)).toBeVisible()
+
+    await page.locator('#vol-email').fill('uat-volunteer@example.com')
+    await page.getByRole('checkbox', { name: /KIGH may contact me about this event/i }).uncheck()
+    await page.getByRole('button', { name: /Submit signup/i }).click()
+    await expect(page.getByText(/confirm KIGH may contact you about this event and future volunteer opportunities/i)).toBeVisible()
   })
 })
 
@@ -84,5 +88,12 @@ test.describe('event volunteer signups (admin, conditional)', () => {
   test('admin volunteers page loads', async ({ page }) => {
     await page.goto('/admin/volunteers')
     await expect(page.getByRole('heading', { name: /Event volunteers/i })).toBeVisible()
+    await expect(page.getByLabel(/Show past events/i)).toBeVisible()
+  })
+
+  test('admin volunteer roster loads', async ({ page }) => {
+    await page.goto('/admin/volunteer-roster')
+    await expect(page.getByRole('heading', { name: /Volunteer Roster/i })).toBeVisible()
+    await expect(page.getByText(/Contact permission/i).first()).toBeVisible()
   })
 })

@@ -88,6 +88,7 @@ function buildNavGroups(profileRole: string | null | undefined): NavGroup[] {
         { to: '/admin/chat', label: 'Community requests', Icon: MessagesSquare },
         { to: '/admin/event-comments', label: 'Event comments', Icon: ListTree },
         { to: '/admin/volunteers', label: 'Volunteers', Icon: HeartHandshake },
+        { to: '/admin/volunteer-roster', label: 'Volunteer Roster', Icon: Users },
         { to: '/admin/vendors', label: 'Vendors', Icon: Store },
         { to: '/admin/vendors-directory', label: 'Vendor directory', Icon: Store },
         { to: '/admin/invites', label: 'WhatsApp invites', Icon: MessageCircle },

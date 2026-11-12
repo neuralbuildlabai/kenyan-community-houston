@@ -32,7 +32,8 @@ Public page: `EventVolunteerSignupPage` at `/events/:slug/volunteer`.
 
 - **Full name** (trimmed length 2–120).
 - **Phone** (international rules; normalized before save).
-- **Consent** checkbox: agreement that KIGH may contact the volunteer about this event.
+- **Email** (required from migration **094**; `email_required` / `invalid_email` from the RPC). Email is how the Volunteer Roster recognises the same person across events, since people may sign up with different phones.
+- **Consent** checkbox: agreement that KIGH may contact the volunteer about this event **and about future volunteer opportunities**. The RPC stores the time in `recontact_consent_at` (migration 094); signups made before 094 have it null.
 
 ## 6. Phone validation
 
@@ -52,7 +53,8 @@ Public page: `EventVolunteerSignupPage` at `/events/:slug/volunteer`.
 
 ## 8. Admin volunteer management
 
-- **Admin → Volunteers** (`/admin/volunteers`): table of all signups with filters (event, status) and search (name or phone).
+- **Admin → Volunteers** (`/admin/volunteers`): signups for events that have not ended yet, with filters (event, status) and search (name, phone or email). When an event ends its signups drop off this list; the **Show past events** switch brings them back. Nothing is deleted.
+- **Admin → Volunteer Roster** (`/admin/volunteer-roster`): see section 14.
 - Status values: `submitted`, `confirmed`, `waitlisted`, `cancelled`, `declined`.
 - Updates use the Supabase client with elevated admin session; RLS enforces admin-only writes.
 
@@ -93,3 +95,14 @@ The volunteer/presenter signup form also offers a fully optional "I'd also like 
 - Duplicate protection: if an email already has a `members` row (any status), the insert is a silent no-op (`on conflict ((lower(email))) do nothing`) — the volunteer/presenter signup still succeeds either way.
 - **Guard rail note**: `public.members` has a hard trigger (migration 025) blocking any insert with `user_id is null` unless the caller is an elevated admin, specifically to prevent unaccountable member rows. Migration 071 adds one narrow, session-scoped bypass (`kigh.allow_pending_member_lead`) used only inside `create_event_volunteer_signup`, immediately before this specific insert. No other code path receives this bypass — do not reuse the flag elsewhere without deliberately re-reviewing this tradeoff.
 - These leads are easy to distinguish in **Admin → Members**: filter to `membership_status = pending` with no linked account, or search `review_notes` for "Auto-created from event volunteer/presenter signup".
+
+## 14. Volunteer Roster and re-contact consent (migration 094)
+
+**Admin → Volunteer Roster** lists every person who has volunteered, one row per person across all events, with their full history in the details view. Use it to invite past volunteers to the next event or cause: filter, then use the outreach panel (Gmail BCC, copy emails/phones for WhatsApp) or message one person from their details.
+
+- **Same person** (`src/lib/volunteerRoster.ts`): signups with the same email are one person, whatever phones they used. An older signup without email joins the one email-person who used that phone; a phone shared by two emails (a family phone) is not merged. Remaining no-email signups group by phone.
+- **Events helped** counts distinct events, excluding signups marked cancelled or declined.
+- **Filters**: event, role, last volunteered (6 / 12 months), events helped (1+ / 2+ / 3+), contact permission, and an **Include Call to Serve sign-ups** switch that merges `service_interests` submissions in by email or phone.
+- **Contact permission**: **Agreed** when any of their signups has `recontact_consent_at` set, or they submitted Call to Serve. **Ask first** means they only agreed to be contacted about their own event (signed up before 094): when messaging them, also ask whether they want to keep hearing about volunteering.
+- **Duplicates**: the RPC rejects the same email twice for one event (`duplicate_signup`), in addition to the existing one-signup-per-phone-per-event index. Different phones under one email across events are expected.
+- **Deploy order**: apply migration 094 before deploying the app. Until it is applied the roster still loads and shows every event volunteer as "Ask first"; the signup form needs 094 to save consent.
